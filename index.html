@@ -195,7 +195,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <h2>这一手的评论 <span class="here" id="hereLbl">开局</span></h2>
       <textarea id="comment" placeholder="写下这一手的想法，例如：这里应该先补断点。"></textarea>
       <div class="row" style="margin-top:8px;justify-content:space-between;align-items:center">
-        <p class="hint" style="margin:0">点棋盘空点可以试下变化，原来的棋谱不会被改掉。</p>
+        <p class="hint" style="margin:0">点棋盘空点可以试下变化，原来的棋谱不会被改掉。电脑上在棋盘上滚动鼠标滚轮可以前进、后退，按住 Shift 一次走 10 手。</p>
         <button class="btn warn" id="delBtn">删除这一手之后</button>
       </div>
     </section>
@@ -431,7 +431,8 @@ try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.soun
 function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}syncPrefUI();render()}
 function syncPrefUI(){document.querySelectorAll('[data-pref]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===prefs[g.dataset.pref])))}
 const SND={};
-function playSound(name){if(prefs.sound!=='on')return;try{const a=(SND[name]=SND[name]||new Audio(ASSETS[name]));const c=a.cloneNode();c.volume=.8;c.play().catch(()=>{})}catch(e){}}
+let lastSnd=0;
+function playSound(name){if(prefs.sound!=='on')return;const now=performance.now();if(now-lastSnd<60)return;lastSnd=now;try{const a=(SND[name]=SND[name]||new Audio(ASSETS[name]));const c=a.cloneNode();c.volume=.8;c.play().catch(()=>{})}catch(e){}}
 function soundFor(node){ // 落子声，有提子时用提子声
   if(!node||!node.parent||!moveOf(node))return;
   const n=sizeOf(root()),a=computeState(node.parent,n),b=computeState(node,n);
@@ -623,6 +624,19 @@ function armed(btn,label,run){if(btn._armed){clearTimeout(btn._t);btn._armed=fal
 
 /* ===================== 事件 ===================== */
 $('#board').addEventListener('click',boardClick);
+// 鼠标滚轮：往下滚 = 下一手，往上滚 = 上一手；滚得快就走得快
+let wheelAcc=0,wheelT=null;
+$('#board').addEventListener('wheel',e=>{
+  e.preventDefault();
+  let d=e.deltaY||e.deltaX;if(e.deltaMode===1)d*=40;else if(e.deltaMode===2)d*=400;
+  wheelAcc+=d;clearTimeout(wheelT);wheelT=setTimeout(()=>{wheelAcc=0},250);
+  const STEP=100;let k=0; // 滚轮一格 = 一手；按住 Shift 一格 = 十手
+  while(wheelAcc>=STEP){wheelAcc-=STEP;k++}
+  while(wheelAcc<=-STEP){wheelAcc+=STEP;k--}
+  if(e.shiftKey)k*=10;
+  if(k>0){let n=cur;for(let i=0;i<k&&n.children.length;i++)n=n.children[n._sel||0]||n.children[0];if(n!==cur){go(n);soundFor(n)}}
+  else if(k<0)back(-k);
+},{passive:false});
 $('#bStart').onclick=()=>{cur=root();render()};$('#bPrev').onclick=()=>back();$('#bNext').onclick=()=>fwd();
 $('#bBack10').onclick=()=>back(10);$('#bFwd10').onclick=()=>fwd(10);$('#bEnd').onclick=toEnd;
 $('#slider').oninput=e=>jumpTo(+e.target.value);
