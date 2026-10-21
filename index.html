@@ -148,6 +148,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
     <div class="top-actions">
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
       <button class="btn" id="redoBtn" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
+      <button class="btn" id="driveTop" hidden>连接 Drive</button>
       <button class="btn pri" id="saveBtn" title="保存 (Ctrl+S)">保存</button>
     </div>
   </header>
@@ -275,11 +276,10 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <div id="driveOn" hidden>
           <div class="row">
             <button class="btn pri" id="driveConnect">连接 Google Drive</button>
-            <button class="btn" id="driveSave" hidden>立即同步这盘</button>
-            <button class="btn" id="driveRefresh" hidden>刷新列表</button>
+            <button class="btn" id="driveSave" hidden>立即同步全部</button>
           </div>
           <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="driveAuto" checked> 改动后自动同步</label>
-          <div class="list" id="driveList" style="margin-top:8px"></div>
+          <p class="note">连接后，「我的棋谱」里的每盘棋都会和 Drive 双向同步：新载入的棋谱、评论、变化图、棋局信息都会上传；在另一台设备改过的会自动下载。网页切回前台时，以及每分钟，都会检查一次。</p>
           <div class="status" id="driveStatus"></div>
         </div>
       </div>
@@ -407,7 +407,7 @@ function openRoot(r,{id=null,driveId=null}={}){
       id=hit[0]; r=parseSGF(hit[1].sgf);
       if(driveId&&!hit[1].driveId)hit[1].driveId=driveId;
       flash('这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）');
-    }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; }
+    }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; setTimeout(()=>Drive.autoSync(),0); }
   }
   G={id,root:r}; store.lastId=id; lsSet(store);
   cur=r; undoStack=[];redoStack=[];undoUI(); renderTree(); render(); renderLib(); renderInfo();
@@ -422,7 +422,7 @@ function changed(structural=true){
   clearTimeout(saveT);$('#saveState').textContent='保存中…';
   saveT=setTimeout(()=>{const ok=lsSet(store);$('#saveState').textContent=ok?savedText():'无法保存（浏览器不允许本机储存，请用「导出」保存）';renderLib();Drive.autoSync()},400);
 }
-const savedText=()=>Drive.connected()?'已保存在本机 · Drive 自动同步中':'已保存在本机';
+const savedText=()=>Drive.connected()?'已保存 · Google Drive 同步中':(Drive.available?'已保存在本机 · 未连接 Drive':'已保存在本机');
 
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
@@ -664,7 +664,7 @@ document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('focus',(
 document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
 $('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash('这盘棋读不出来：'+err.message)}};
 $('#newBlank').onclick=()=>{const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
-$('#delGame').onclick=e=>armed(e.currentTarget,'再点一次确认删除',()=>{delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
+$('#delGame').onclick=e=>armed(e.currentTarget,'再点一次确认删除',()=>{Drive.trash(store.games[G.id]);delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
 $('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io('先把 SGF 粘贴到框里',true);try{importText(t);$('#pasteBox').value='';io('已打开')}catch(err){io(err.message,true)}};
 $('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io('已打开粘贴的棋谱')}catch(err){io(err.message,true)}}});
 $('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{importText(rd.result);io('已打开 '+f.name)}catch(err){io(err.message,true)}e.target.value=''};rd.readAsText(f)};
@@ -681,50 +681,108 @@ $('#dlBtn').onclick=async()=>{const t=toSGF(root());
 function io(msg,err){const s=$('#ioStatus');s.textContent=msg;s.classList.toggle('err',!!err)}
 
 /* ===================== Google Drive 同步 ===================== */
+// 规则：每盘棋是 Drive「围棋复盘」文件夹里的一个 .sgf。连接后双向同步整个棋谱库：
+// 只有一边改过 → 用改过的那边；两边都改过 → 用比较新的那边。
 const Drive=(()=>{
-  let token=null,tokenExp=0,client=null,folderId=null,syncT=null;
-  const on=!!DRIVE_CLIENT_ID;
+  let token=null,tokenExp=0,client=null,folderId=null,syncT=null,busy=false,again=false,pollT=null;
+  // 只有放在你自己的网址（GitHub Pages）时才能用 Google 登录
+  const on=!!DRIVE_CLIENT_ID&&/github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+  const API='https://www.googleapis.com/drive/v3/files',UP='https://www.googleapis.com/upload/drive/v3/files';
   const st=(m,err)=>{const s=$('#driveStatus');if(s){s.textContent=m;s.classList.toggle('err',!!err)}};
-  function loadGIS(){return new Promise((res,rej)=>{if(window.google&&google.accounts)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>rej(new Error('无法载入 Google 登录'));document.head.appendChild(s)})}
-  function getToken(prompt){return new Promise(async(res,rej)=>{
-    if(token&&Date.now()<tokenExp-60000)return res(token);
-    await loadGIS();
+  const ok=()=>!!token&&Date.now()<tokenExp-60000;
+  function loadGIS(){return new Promise((res,rej)=>{if(window.google&&google.accounts)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>rej(new Error('无法载入 Google 登录，请检查网络'));document.head.appendChild(s)})}
+  function login(){return new Promise(async(res,rej)=>{
+    try{await loadGIS()}catch(e){return rej(e)}
     client=client||google.accounts.oauth2.initTokenClient({client_id:DRIVE_CLIENT_ID,scope:'https://www.googleapis.com/auth/drive.file',callback:()=>{}});
     client.callback=r=>{if(r.error)return rej(new Error(r.error));token=r.access_token;tokenExp=Date.now()+(r.expires_in||3600)*1000;try{localStorage.setItem('goReview.driveOn','1')}catch(e){}res(token)};
-    client.requestAccessToken({prompt:prompt?'consent':''});
+    client.error_callback=e=>rej(new Error(e&&e.type==='popup_closed'?'登录窗口被关闭了':'登录失败（可能被浏览器拦截了弹窗）'));
+    let was=false;try{was=localStorage.getItem('goReview.driveOn')==='1'}catch(e){}
+    client.requestAccessToken({prompt:was?'':'consent'});
   })}
-  async function api(url,opt={}){const t=await getToken(false);const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+t}});if(!r.ok)throw new Error('Drive 错误 '+r.status);return r}
+  async function api(url,opt={}){
+    if(!ok()){token=null;ui();throw new Error('连接已过期，请点「连接 Drive」')}
+    const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+token}});
+    if(r.status===401){token=null;ui();throw new Error('连接已过期，请点「连接 Drive」')}
+    if(!r.ok)throw new Error('Drive 错误 '+r.status);return r}
   async function folder(){if(folderId)return folderId;
     const q=encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${DRIVE_FOLDER}' and trashed=false`);
-    const j=await(await api(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+    const j=await(await api(`${API}?q=${q}&fields=files(id)`)).json();
     if(j.files&&j.files[0])return folderId=j.files[0].id;
-    const c=await(await api('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
+    const c=await(await api(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
     return folderId=c.id}
   function multipart(meta,text){const b='goreview'+Math.random().toString(36).slice(2);return{body:`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/x-go-sgf; charset=UTF-8\r\n\r\n${text}\r\n--${b}--`,type:'multipart/related; boundary='+b}}
-  async function saveCurrent(){
-    const rec=store.games[G.id];const name=fileName();
-    if(rec.driveId){const m=multipart({name},rec.sgf);await api(`https://www.googleapis.com/upload/drive/v3/files/${rec.driveId}?uploadType=multipart`,{method:'PATCH',headers:{'Content-Type':m.type},body:m.body})}
-    else{const f=await folder();const m=multipart({name,parents:[f],mimeType:'application/x-go-sgf'},rec.sgf);const j=await(await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':m.type},body:m.body})).json();rec.driveId=j.id;lsSet(store);renderLib()}
-    st('已同步到 Google Drive · '+new Date().toLocaleTimeString());
+  const nameOf=rec=>{let r;try{r=parseSGF(rec.sgf)}catch(e){return(rec.title||'棋谱')+'.sgf'}return(titleOf(r)+(prop(r,'RE')?' '+prop(r,'RE'):'')).replace(/[\\/:*?"<>|·]/g,' ').replace(/\s+/g,' ').trim()+'.sgf'};
+  async function upload(id){
+    const rec=store.games[id];if(!rec)return;const sentAt=Date.now();const meta={name:nameOf(rec),appProperties:{key:(rec.key||'').slice(0,100),app:'go-review'}};let j;
+    if(rec.driveId){const m=multipart(meta,rec.sgf);j=await(await api(`${UP}/${rec.driveId}?uploadType=multipart&fields=id,modifiedTime`,{method:'PATCH',headers:{'Content-Type':m.type},body:m.body})).json()}
+    else{const f=await folder();const m=multipart({...meta,parents:[f],mimeType:'application/x-go-sgf'},rec.sgf);j=await(await api(`${UP}?uploadType=multipart&fields=id,modifiedTime`,{method:'POST',headers:{'Content-Type':m.type},body:m.body})).json()}
+    const r=store.games[id];if(!r)return;r.driveId=j.id;r.driveTime=Date.parse(j.modifiedTime);
+    if((r.updated||0)<=sentAt)r.syncedAt=Math.max(r.updated||0,sentAt); // 上传途中又改了，就留到下次
   }
-  async function list(){const f=await folder();const q=encodeURIComponent(`'${f}' in parents and trashed=false`);
-    const j=await(await api(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)`)).json();
-    const el=$('#driveList');const files=j.files||[];
-    el.innerHTML=files.length?files.map(f=>{const d=new Date(f.modifiedTime);return`<button class="li" data-id="${f.id}"><span class="k">☁</span><span class="t">${escH(f.name.replace(/\.sgf$/i,''))}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join(''):'<div class="empty">Drive 里还没有棋谱。</div>'}
-  async function openFile(id){const t=await(await api(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`)).text();
-    const r=parseSGF(t);const localId=Object.keys(store.games).find(k=>store.games[k].driveId===id);
-    if(localId){store.games[localId].sgf=toSGF(r);openRoot(r,{id:localId})}else openRoot(r,{driveId:id});
-    st('已从 Drive 打开最新版本')}
-  function connected(){$('#driveConnect').textContent='已连接';$('#driveSave').hidden=false;$('#driveRefresh').hidden=false}
+  async function download(id,f){
+    const t=await(await api(`${API}/${f.id}?alt=media`)).text();const r=parseSGF(fixFoxSgf(t));const sgf=toSGF(r);const now=Date.now();
+    const isCur=G&&G.id===id;const path=isCur?pathIdx(cur):null;
+    store.games[id]={...(store.games[id]||{}),sgf,key:gameKey(r),title:titleOf(r),updated:now,syncedAt:now,driveId:f.id,driveTime:Date.parse(f.modifiedTime)};
+    if(isCur){G.root=r;cur=nodeAt(r,path);undoStack=[];redoStack=[];undoUI();renderTree();render();renderInfo()}
+  }
+  async function listAll(){const fo=await folder();let out=[],pt='';
+    do{const q=encodeURIComponent(`'${fo}' in parents and trashed=false`);
+      const j=await(await api(`${API}?q=${q}&pageSize=1000&fields=nextPageToken,files(id,name,modifiedTime,appProperties)${pt?'&pageToken='+pt:''}`)).json();
+      out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);
+    return out.filter(f=>/\.sgf$/i.test(f.name))}
+  async function syncAll(){
+    if(!ok())return;if(busy){again=true;return}busy=true;st('同步中…');
+    try{
+      // 先处理本机删除的棋谱（移到 Drive 垃圾桶，可在 Drive 里还原）
+      for(const fid of (store.trashQueue||[]).slice()){try{await api(`${API}/${fid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:true})})}catch(e){}store.trashQueue=store.trashQueue.filter(x=>x!==fid)}
+      const files=await listAll();const byId={};files.forEach(f=>byId[f.id]=f);
+      const linked=new Set();let down=0,up=0,gone=0;
+      for(const id of Object.keys(store.games)){const rec=store.games[id];if(!rec.driveId)continue;const f=byId[rec.driveId];
+        const localChanged=(rec.updated||0)>(rec.syncedAt||0);
+        if(!f){ // Drive 上已被删除
+          if(localChanged){delete rec.driveId;await upload(id);up++}else{delete store.games[id];gone++}
+          continue}
+        linked.add(f.id);const dt=Date.parse(f.modifiedTime),driveChanged=dt>(rec.driveTime||0)+1000;
+        if(driveChanged&&(!localChanged||dt>(rec.updated||0))){await download(id,f);down++}
+        else if(localChanged){await upload(id);up++}
+      }
+      // Drive 上有、本机没有的：同一盘棋就连起来，否则下载成新棋谱
+      for(const f of files){if(linked.has(f.id))continue;
+        const k=f.appProperties&&f.appProperties.key;
+        const match=k&&Object.keys(store.games).find(id=>!store.games[id].driveId&&(store.games[id].key||'').slice(0,100)===k);
+        if(match){const rec=store.games[match];rec.driveId=f.id;rec.driveTime=0;
+          if(Date.parse(f.modifiedTime)>(rec.updated||0)){await download(match,f);down++}else{await upload(match);up++}}
+        else{await download(newId(),f);down++}
+      }
+      for(const id of Object.keys(store.games))if(!store.games[id].driveId){await upload(id);up++}
+      lsSet(store);renderLib();
+      if(G&&!store.games[G.id]){const ids=Object.keys(store.games);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]})}
+      const parts=[down&&`下载 ${down} 盘`,up&&`上传 ${up} 盘`,gone&&`移除 ${gone} 盘`].filter(Boolean);
+      st('已同步 · '+new Date().toLocaleTimeString()+(parts.length?'（'+parts.join('、')+'）':''));
+      if(typeof flash==='function'&&parts.length)flash('已和 Google Drive 同步：'+parts.join('、'));
+    }catch(e){st('同步失败：'+e.message,true)}
+    finally{busy=false;ui();if(again){again=false;syncAll()}}
+  }
+  function ui(){
+    const btn=$('#driveTop');if(btn){btn.hidden=!on||ok();btn.textContent=localStorageGet('goReview.driveOn')?'重新连接 Drive':'连接 Drive'}
+    const c=$('#driveConnect');if(c)c.textContent=ok()?'已连接':'连接 Google Drive';
+    const s=$('#driveSave');if(s)s.hidden=!ok();
+    if(!ok()&&on)st(localStorageGet('goReview.driveOn')?'未连接。每次打开网页后点「连接 Drive」，就会自动同步。':'');
+    $('#saveState').textContent=savedText();
+  }
+  function localStorageGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  async function connect(){try{st('正在连接…');await login();ui();await syncAll()}catch(e){st('连接失败：'+e.message,true);ui()}}
   function init(){
     $('#driveOff').hidden=on;$('#driveOn').hidden=!on;if(!on)return;
-    $('#driveConnect').onclick=async()=>{try{await getToken(true);connected();await list();st('已连接 Google Drive')}catch(e){st('连接失败：'+e.message,true)}};
-    $('#driveSave').onclick=async()=>{try{await saveCurrent();await list()}catch(e){st('同步失败：'+e.message,true)}};
-    $('#driveRefresh').onclick=async()=>{try{await list()}catch(e){st(e.message,true)}};
-    $('#driveList').onclick=async e=>{const b=e.target.closest('.li');if(!b)return;try{await openFile(b.dataset.id)}catch(err){st('打开失败：'+err.message,true)}};
+    $('#driveTop').onclick=connect;$('#driveConnect').onclick=connect;
+    $('#driveSave').onclick=()=>syncAll();
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncAll()});
+    pollT=setInterval(()=>{if(document.visibilityState==='visible')syncAll()},60000);
+    ui();
   }
-  function autoSync(){if(!on||!token||!$('#driveAuto').checked)return;clearTimeout(syncT);syncT=setTimeout(()=>saveCurrent().catch(e=>st('同步失败：'+e.message,true)),2500)}
-  return{init,autoSync,connected:()=>!!token,saveNow:async()=>{await saveCurrent();try{await list()}catch(e){}}};
+  function autoSync(){if(!on||!ok()||!$('#driveAuto').checked)return;clearTimeout(syncT);syncT=setTimeout(()=>syncAll(),2500)}
+  function trash(rec){if(!rec||!rec.driveId)return;(store.trashQueue=store.trashQueue||[]).push(rec.driveId);lsSet(store);if(ok())syncAll()}
+  return{init,autoSync,trash,connected:ok,available:on,saveNow:()=>syncAll()};
 })();
 
 /* ===================== 启动 ===================== */
@@ -734,7 +792,7 @@ function saveNow(){
   clearTimeout(saveT);const rec=store.games[G.id]||(store.games[G.id]={});
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
   const ok=lsSet(store);renderLib();
-  if(Drive.connected())Drive.saveNow().then(()=>flash('已保存，并同步到 Google Drive')).catch(e=>flash('已保存在本机；Drive 同步失败：'+e.message));
+  if(Drive.connected()){Drive.saveNow();flash('已保存，正在同步到 Google Drive')}
   else flash(ok?'已保存在本机（连接 Google Drive 可同步到其他设备）':'无法保存，请用「导出」');
 }
 $('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;$('#saveBtn').onclick=saveNow;
