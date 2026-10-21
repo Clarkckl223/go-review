@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>围棋复盘本</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: board is the page; a quiet side column holds the comment for the current move, then tabs for info / comments / library / files. Stacks to one column on phones. */
+:root{
+  --bg:#EBEEEE; --panel:#FFFFFF; --ink:#1C2326; --muted:#5B666B; --line:#D2D8DA;
+  --accent:#2F6B5A; --accent-ink:#FFFFFF; --accent-soft:#DCEAE4;
+  --wood:#DDB66D; --wood-edge:#C99E4E; --grid:#3A2A14; --danger:#B3402E;
+  --f-display:"Noto Serif SC","Songti SC","SimSun",serif;
+  --f-body:system-ui,-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121618; --panel:#1B2124; --ink:#E5EAEC; --muted:#93A1A7; --line:#2D363A;
+  --accent:#6DB59D; --accent-ink:#0E1A16; --accent-soft:#1F3A31;
+  --wood:#C49A55; --wood-edge:#A87F3C; --grid:#2A1D0C; --danger:#E0745F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121618; --panel:#1B2124; --ink:#E5EAEC; --muted:#93A1A7; --line:#2D363A;
+  --accent:#6DB59D; --accent-ink:#0E1A16; --accent-soft:#1F3A31;
+  --wood:#C49A55; --wood-edge:#A87F3C; --grid:#2A1D0C; --danger:#E0745F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 32px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+
+header.top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font-family:var(--f-display);font-size:1.35rem;margin:0;letter-spacing:.04em}
+.save-state{font-size:.8rem;color:var(--muted)}
+
+/* players strip */
+.players{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:10px}
+.pl{display:flex;align-items:center;gap:10px;min-width:0}
+.pl.w{justify-content:flex-end;text-align:right}
+.pl .nm{font-family:var(--f-display);font-weight:700;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .sub{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.dot{width:18px;height:18px;border-radius:50%;flex:none}
+.dot.b{background:radial-gradient(circle at 35% 30%,#666,#111 60%)}
+.dot.w{background:radial-gradient(circle at 35% 30%,#fff,#d8d8d8 70%);box-shadow:inset 0 0 0 1px #9a9a9a}
+.result{font-family:var(--f-mono);font-size:.85rem;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink);white-space:nowrap}
+
+.board-wrap{position:relative;max-width:min(100%,calc(100vh - 150px));min-width:min(100%,320px);margin:0 auto}
+#board{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:6px;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  box-shadow:0 1px 0 var(--wood-edge),0 6px 18px rgba(0,0,0,.18)}
+
+/* controls */
+.nav{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.nav .btns{display:flex;gap:4px}
+.ib{min-width:42px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--panel);display:inline-flex;align-items:center;justify-content:center;padding:0 10px}
+.ib:hover{border-color:var(--accent)}
+.ib:disabled{opacity:.4;cursor:default}
+.ib svg{width:18px;height:18px;fill:currentColor}
+#slider{flex:1 1 160px;accent-color:var(--accent);min-width:120px}
+.mno{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.9rem;min-width:7.5em;text-align:right;color:var(--muted)}
+.mno b{color:var(--ink);font-weight:500}
+
+.tools{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.tool{height:34px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:.85rem;display:inline-flex;align-items:center;gap:6px}
+.tool[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tool .g{font-family:var(--f-mono);font-size:.95rem}
+.tools .sep{width:1px;background:var(--line);margin:4px 4px}
+.vars{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:.85rem;color:var(--muted)}
+.vars button{height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel);font-family:var(--f-mono)}
+.vars button[aria-current="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+
+/* side */
+aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.card h2{font-size:.78rem;font-weight:600;letter-spacing:.12em;color:var(--muted);margin:0 0 8px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h2 .here{font-family:var(--f-mono);letter-spacing:0;text-transform:none;color:var(--ink);font-weight:500}
+#comment{width:100%;min-height:150px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);line-height:1.6}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-4px -4px 12px;overflow-x:auto}
+.tab{border:0;background:transparent;padding:8px 10px;font-size:.9rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+
+.list{display:flex;flex-direction:column;gap:2px;max-height:360px;overflow:auto}
+.li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:8px;border:0;background:transparent;text-align:left;width:100%}
+.li:hover{background:var(--accent-soft)}
+.li.on{background:var(--accent-soft)}
+.li .k{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.li .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .x{font-size:.75rem;color:var(--muted)}
+.empty{color:var(--muted);font-size:.88rem;padding:6px 2px}
+
+.grid2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;font-size:.88rem}
+.grid2 label{color:var(--muted)}
+.grid2 input{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg)}
+
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-size:.9rem}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{color:var(--danger)}
+.btn.warn.armed{background:var(--danger);border-color:var(--danger);color:#fff}
+#pasteBox,#exportBox{width:100%;min-height:90px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);font-family:var(--f-mono);font-size:.78rem;resize:vertical}
+.file-in{font-size:.85rem;max-width:100%}
+.note{font-size:.82rem;color:var(--muted);margin:8px 0 0;line-height:1.55}
+.status{font-size:.82rem;margin-top:8px;min-height:1.2em}
+.status.err{color:var(--danger)}
+.stack{display:flex;flex-direction:column;gap:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <h1>围棋复盘本</h1>
+    <span class="save-state" id="saveState">已保存在本机</span>
+  </header>
+
+  <main>
+    <div class="players">
+      <div class="pl b"><span class="dot b"></span><div style="min-width:0"><div class="nm" id="pbName">黑方</div><div class="sub" id="pbSub"></div></div></div>
+      <span class="result" id="resultTag">—</span>
+      <div class="pl w"><div style="min-width:0"><div class="nm" id="pwName">白方</div><div class="sub" id="pwSub"></div></div><span class="dot w"></span></div>
+    </div>
+
+    <div class="board-wrap"><svg id="board" viewBox="0 0 800 800" role="img" aria-label="棋盘"></svg></div>
+
+    <div class="nav">
+      <div class="btns">
+        <button class="ib" id="bStart" title="第一手" aria-label="第一手"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="ib" id="bBack10" title="后退10手" aria-label="后退10手"><svg viewBox="0 0 24 24"><path d="M12 5v14L2 12zM22 5v14l-10-7z"/></svg></button>
+        <button class="ib" id="bPrev" title="上一手 (←)" aria-label="上一手"><svg viewBox="0 0 24 24"><path d="M16 5v14L5 12z"/></svg></button>
+        <button class="ib" id="bNext" title="下一手 (→)" aria-label="下一手"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="ib" id="bFwd10" title="前进10手" aria-label="前进10手"><svg viewBox="0 0 24 24"><path d="M2 5v14l10-7zM12 5v14l10-7z"/></svg></button>
+        <button class="ib" id="bEnd" title="最后一手" aria-label="最后一手"><svg viewBox="0 0 24 24"><path d="M4 5v14l11-7zM16 5h2v14h-2z"/></svg></button>
+      </div>
+      <input type="range" id="slider" min="0" max="0" value="0" aria-label="跳到第几手">
+      <span class="mno" id="mno">第 <b>0</b> 手</span>
+    </div>
+
+    <div class="tools" role="toolbar" aria-label="工具">
+      <button class="tool" data-tool="play" aria-pressed="true"><span class="g">●</span>落子 / 试下</button>
+      <span class="sep"></span>
+      <button class="tool" data-tool="TR" aria-pressed="false"><span class="g">△</span></button>
+      <button class="tool" data-tool="CR" aria-pressed="false"><span class="g">○</span></button>
+      <button class="tool" data-tool="SQ" aria-pressed="false"><span class="g">□</span></button>
+      <button class="tool" data-tool="MA" aria-pressed="false"><span class="g">✕</span></button>
+      <button class="tool" data-tool="LB" aria-pressed="false"><span class="g">A</span></button>
+      <button class="tool" data-tool="erase" aria-pressed="false">擦除标记</button>
+      <span class="sep"></span>
+      <button class="tool" id="numToggle" aria-pressed="false">显示手数</button>
+    </div>
+
+    <div class="vars" id="vars" hidden></div>
+  </main>
+
+  <aside>
+    <section class="card">
+      <h2>这一手的评论 <span class="here" id="hereLbl">开局</span></h2>
+      <textarea id="comment" placeholder="写下这一手的想法，例如：这里应该先补断点。"></textarea>
+      <div class="row" style="margin-top:8px;justify-content:space-between;align-items:center">
+        <p class="hint" style="margin:0">点棋盘空点可以试下变化，原来的棋谱不会被改掉。</p>
+        <button class="btn warn" id="delBtn">删除这一手之后</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="notes" aria-selected="true">评论列表</button>
+        <button class="tab" role="tab" data-tab="info" aria-selected="false">棋局信息</button>
+        <button class="tab" role="tab" data-tab="lib" aria-selected="false">我的棋谱</button>
+        <button class="tab" role="tab" data-tab="io" aria-selected="false">导入 / 导出</button>
+        <button class="tab" role="tab" data-tab="drive" aria-selected="false">Google Drive</button>
+      </div>
+
+      <div data-panel="notes"><div class="list" id="noteList"></div></div>
+
+      <div data-panel="info" hidden>
+        <div class="grid2">
+          <label for="iPB">黑方</label><input id="iPB" data-prop="PB">
+          <label for="iBR">黑方段位</label><input id="iBR" data-prop="BR">
+          <label for="iPW">白方</label><input id="iPW" data-prop="PW">
+          <label for="iWR">白方段位</label><input id="iWR" data-prop="WR">
+          <label for="iDT">日期</label><input id="iDT" data-prop="DT">
+          <label for="iRE">结果</label><input id="iRE" data-prop="RE" placeholder="例如 B+R、W+3.5">
+          <label for="iKM">贴目</label><input id="iKM" data-prop="KM">
+          <label for="iGN">标题</label><input id="iGN" data-prop="GN">
+        </div>
+      </div>
+
+      <div data-panel="lib" hidden>
+        <div class="list" id="libList"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="newBlank">新建空白棋盘</button>
+          <button class="btn warn" id="delGame">删除当前棋谱</button>
+        </div>
+        <p class="note" id="libNote">棋谱保存在这个浏览器里。换设备时，用"导入 / 导出"，或设置 Google Drive 自动同步。</p>
+      </div>
+
+      <div data-panel="io" hidden>
+        <div class="stack">
+          <div>
+            <label for="pasteBox" class="note" style="margin:0 0 4px;display:block">贴上 SGF（下载工具会自动把棋谱复制好，直接粘贴即可）</label>
+            <textarea id="pasteBox" placeholder="(;GM[1]FF[4]SZ[19]…"></textarea>
+            <div class="row" style="margin-top:6px"><button class="btn pri" id="importBtn">打开这盘棋</button></div>
+          </div>
+          <div>
+            <label for="fileIn" class="note" style="margin:0 0 4px;display:block">或打开 SGF 文件</label>
+            <input type="file" id="fileIn" class="file-in" accept=".sgf,text/plain,application/x-go-sgf">
+          </div>
+          <div>
+            <div class="row"><button class="btn" id="copyBtn">复制 SGF</button><button class="btn" id="dlBtn">下载 SGF</button></div>
+            <textarea id="exportBox" readonly hidden aria-label="SGF 文本"></textarea>
+            <div class="status" id="ioStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-panel="drive" hidden>
+        <div id="driveOff">
+          <p class="note" style="margin-top:0">设置好之后，棋谱和评论会自动存到你 Google Drive 里的「围棋复盘」文件夹，电脑、Android、iPhone 登录同一个账号就能接着看。</p>
+          <p class="note">需要先把这个网页放到 GitHub Pages，并在代码里填入 Google 登录 ID（DRIVE_CLIENT_ID）。</p>
+        </div>
+        <div id="driveOn" hidden>
+          <div class="row">
+            <button class="btn pri" id="driveConnect">连接 Google Drive</button>
+            <button class="btn" id="driveSave" hidden>立即同步这盘</button>
+            <button class="btn" id="driveRefresh" hidden>刷新列表</button>
+          </div>
+          <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="driveAuto" checked> 改动后自动同步</label>
+          <div class="list" id="driveList" style="margin-top:8px"></div>
+          <div class="status" id="driveStatus"></div>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script>
+/* ===================== 设置 ===================== */
+// 放到 GitHub Pages 后，把 Google Cloud 里申请的「OAuth 客户端 ID」填在这里，就会启用 Drive 同步。
+const DRIVE_CLIENT_ID = '';
+const DRIVE_FOLDER = '围棋复盘';
+
+/* == SGF == */
+function parseSGF(s){
+  s=String(s); let i=0;
+  const ws=()=>{while(i<s.length&&/\s/.test(s[i]))i++};
+  function props(node){
+    for(;;){
+      ws(); let id='';
+      while(i<s.length&&/[A-Za-z]/.test(s[i])){ if(/[A-Z]/.test(s[i])) id+=s[i]; i++; }
+      if(!id){ return; }
+      const vals=[]; ws();
+      while(s[i]==='['){
+        i++; let v='';
+        while(i<s.length&&s[i]!==']'){
+          if(s[i]==='\\'){ i++; if(s[i]==='\r'&&s[i+1]==='\n'){i+=2;continue} if(s[i]==='\n'||s[i]==='\r'){i++;continue} v+=s[i++]; }
+          else v+=s[i++];
+        }
+        i++; vals.push(v); ws();
+      }
+      if(node.props[id]) node.props[id].push(...vals); else node.props[id]=vals;
+    }
+  }
+  function tree(parent){
+    i++; ws(); let first=null, cur=parent;
+    while(i<s.length&&s[i]===';'){ i++; const n={props:{},children:[],parent:cur}; props(n); if(cur)cur.children.push(n); if(!first)first=n; cur=n; ws(); }
+    while(i<s.length&&s[i]==='('){ const f=tree(cur); if(!cur&&!first)first=f; ws(); }
+    if(s[i]===')')i++;
+    return first;
+  }
+  const start=s.indexOf('(');
+  if(start<0) throw new Error('这不是 SGF 棋谱（找不到"("）');
+  i=start; const root=tree(null);
+  if(!root) throw new Error('SGF 里没有任何内容');
+  return root;
+}
+function escV(v){return String(v).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}
+function nodeStr(n){let o=';';for(const k in n.props){const vs=n.props[k];if(!vs||!vs.length)continue;o+=k+vs.map(v=>'['+escV(v)+']').join('')}return o}
+function toSGF(root){
+  function t(n){let o='(',c=n;o+=nodeStr(c)+(c===root?'\n':'');while(c.children.length===1){c=c.children[0];o+=nodeStr(c)}if(c.children.length>1)for(const ch of c.children)o+='\n'+t(ch);return o+')'}
+  return t(root)+'\n';
+}
+/* == /SGF == */
+
+/* ===================== 棋盘规则 ===================== */
+const sizeOf=r=>{const v=parseInt((r.props.SZ||['19'])[0],10);return v>=2&&v<=25?v:19};
+const ptToXY=(p,size)=>{if(!p||p.length<2)return null;const x=p.charCodeAt(0)-97,y=p.charCodeAt(1)-97;if(x<0||y<0||x>=size||y>=size)return null;return[x,y]};
+const xyToPt=(x,y)=>String.fromCharCode(97+x)+String.fromCharCode(97+y);
+function expandPts(vals,size){const out=[];for(const v of vals||[]){if(v.includes(':')){const[a,b]=v.split(':');const A=ptToXY(a,size),B=ptToXY(b,size);if(!A||!B)continue;for(let x=Math.min(A[0],B[0]);x<=Math.max(A[0],B[0]);x++)for(let y=Math.min(A[1],B[1]);y<=Math.max(A[1],B[1]);y++)out.push([x,y])}else{const p=ptToXY(v,size);if(p)out.push(p)}}return out}
+function nbrs(x,y,n){const r=[];if(x>0)r.push([x-1,y]);if(x<n-1)r.push([x+1,y]);if(y>0)r.push([x,y-1]);if(y<n-1)r.push([x,y+1]);return r}
+function groupOf(g,x,y,n){const c=g[y][x],seen=new Set([y*n+x]),st=[[x,y]],stones=[];let libs=0;const libSeen=new Set();
+  while(st.length){const[a,b]=st.pop();stones.push([a,b]);for(const[p,q]of nbrs(a,b,n)){const k=q*n+p;if(g[q][p]===0){if(!libSeen.has(k)){libSeen.add(k);libs++}}else if(g[q][p]===c&&!seen.has(k)){seen.add(k);st.push([p,q])}}}
+  return{stones,libs}}
+function place(g,x,y,c,n){g[y][x]=c;const o=3-c;let removed=[];
+  for(const[p,q]of nbrs(x,y,n))if(g[q][p]===o){const G=groupOf(g,p,q,n);if(G.libs===0){for(const[a,b]of G.stones)g[b][a]=0;removed=removed.concat(G.stones)}}
+  const own=groupOf(g,x,y,n);let suicide=false;if(own.libs===0){for(const[a,b]of own.stones)g[b][a]=0;suicide=true}
+  return{removed,suicide}}
+const moveOf=n=>n.props.B?['B',n.props.B[0]]:n.props.W?['W',n.props.W[0]]:null;
+function pathTo(node){const p=[];for(let n=node;n;n=n.parent)p.unshift(n);return p}
+function computeState(node,size){
+  const g=Array.from({length:size},()=>Array(size).fill(0));const nums=new Map();let mn=0,capB=0,capW=0,last=null;
+  for(const n of pathTo(node)){
+    for(const[x,y]of expandPts(n.props.AE,size))g[y][x]=0;
+    for(const[x,y]of expandPts(n.props.AB,size))g[y][x]=1;
+    for(const[x,y]of expandPts(n.props.AW,size))g[y][x]=2;
+    const m=moveOf(n);if(!m)continue;mn++;
+    const xy=ptToXY(m[1],size);
+    if(!xy||(m[1]==='tt'&&size<=19)){last={pass:true,color:m[0]};continue}
+    const c=m[0]==='B'?1:2;const r=place(g,xy[0],xy[1],c,size);
+    for(const[a,b]of r.removed)nums.delete(b*size+a);
+    if(c===1)capB+=r.removed.length;else capW+=r.removed.length;
+    nums.set(xy[1]*size+xy[0],mn);last={x:xy[0],y:xy[1],color:m[0]};
+  }
+  return{g,nums,mn,capB,capW,last};
+}
+function nextColor(node){
+  if(node.props.PL)return node.props.PL[0].toUpperCase()==='W'?'W':'B';
+  const m=moveOf(node);if(m)return m[0]==='B'?'W':'B';
+  for(const c of node.children){const cm=moveOf(c);if(cm)return cm[0]}
+  const ha=parseInt((root().props.HA||['0'])[0],10);
+  return ha>=2&&(node.props.AB)?'W':'B';
+}
+const moveNo=node=>pathTo(node).filter(moveOf).length;
+
+/* ===================== 存储 ===================== */
+const LS_KEY='goReview.v1';
+function lsGet(){try{return JSON.parse(localStorage.getItem(LS_KEY))||null}catch(e){return null}}
+function lsSet(v){try{localStorage.setItem(LS_KEY,JSON.stringify(v));return true}catch(e){return false}}
+let store=lsGet()||{games:{},lastId:null};
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function prop(r,k){return(r.props[k]||[''])[0]}
+function titleOf(r){const pb=prop(r,'PB')||'黑',pw=prop(r,'PW')||'白';const dt=prop(r,'DT');return(prop(r,'GN')||`${pb} vs ${pw}`)+(dt?` · ${dt}`:'')}
+function mainLine(r){const out=[];let n=r;while(n){const m=moveOf(n);if(m)out.push(m[0]+m[1]);n=n.children[0]}return out.join('')}
+function gameKey(r){return[prop(r,'DT'),prop(r,'PB'),prop(r,'PW'),mainLine(r)].join('|')}
+
+/* ===================== 状态 ===================== */
+let G=null;   // {id, root}
+let cur=null; // 当前节点
+let tool='play', showNums=false;
+const root=()=>G.root;
+
+function fixFoxSgf(t){
+  // 野狐写法 KM[375] = 贴 3¾ 子 = 7.5 目
+  return String(t).replace(/KM\[375\]/,'KM[7.5]').replace(/KM\[650\]/,'KM[6.5]');
+}
+function openRoot(r,{id=null,driveId=null}={}){
+  if(!id){
+    const key=gameKey(r);
+    const hit=Object.entries(store.games).find(([,g])=>g.key===key);
+    if(hit){ // 同一盘棋已经存在：打开旧的（保留之前写的评论）
+      id=hit[0]; r=parseSGF(hit[1].sgf);
+      if(driveId&&!hit[1].driveId)hit[1].driveId=driveId;
+      flash('这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）');
+    }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; }
+  }
+  G={id,root:r}; store.lastId=id; lsSet(store);
+  cur=r; render(); renderLib(); renderInfo();
+}
+function importText(t,opts){const r=parseSGF(fixFoxSgf(t));openRoot(r,opts);return r}
+
+let saveT=null;
+function changed(){
+  const rec=store.games[G.id]||(store.games[G.id]={});
+  rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
+  clearTimeout(saveT);$('#saveState').textContent='保存中…';
+  saveT=setTimeout(()=>{const ok=lsSet(store);$('#saveState').textContent=ok?savedText():'无法保存（浏览器不允许本机储存，请用「导出」保存）';renderLib();Drive.autoSync()},400);
+}
+const savedText=()=>Drive.connected()?'已保存在本机 · Drive 自动同步中':'已保存在本机';
+
+/* ===================== 绘制 ===================== */
+const $=s=>document.querySelector(s);
+const U=40, PAD=40; // 每格 40，四周留 40 给坐标
+const COLS='ABCDEFGHJKLMNOPQRSTUVWXYZ';
+function starPts(n){if(n===19)return[3,9,15];if(n===13)return[3,6,9];if(n===9)return[2,4,6];if(n>=15)return[3,Math.floor(n/2),n-4];return[]}
+function render(){
+  const r=root(),n=sizeOf(r),st=computeState(cur,n);
+  const W=PAD*2+U*(n-1);
+  const svg=$('#board');svg.setAttribute('viewBox',`0 0 ${W} ${W}`);
+  const X=i=>PAD+U*i;
+  let o=`<defs>
+  <radialGradient id="gB" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#6b6b6b"/><stop offset=".45" stop-color="#1e1e1e"/><stop offset="1" stop-color="#050505"/></radialGradient>
+  <radialGradient id="gW" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e9e7e2"/><stop offset="1" stop-color="#bdbab3"/></radialGradient>
+  </defs><rect width="${W}" height="${W}" fill="var(--wood)"/>`;
+  // 坐标
+  o+=`<g font-family="IBM Plex Mono,ui-monospace,monospace" font-size="15" fill="var(--grid)" opacity=".75" text-anchor="middle">`;
+  for(let i=0;i<n;i++){o+=`<text x="${X(i)}" y="${PAD*0.45}" dominant-baseline="middle">${COLS[i]}</text><text x="${X(i)}" y="${W-PAD*0.42}" dominant-baseline="middle">${COLS[i]}</text>`;
+    o+=`<text x="${PAD*0.42}" y="${X(i)}" dominant-baseline="middle">${n-i}</text><text x="${W-PAD*0.42}" y="${X(i)}" dominant-baseline="middle">${n-i}</text>`}
+  o+=`</g><g stroke="var(--grid)" stroke-width="1.2">`;
+  for(let i=0;i<n;i++){o+=`<line x1="${X(0)}" y1="${X(i)}" x2="${X(n-1)}" y2="${X(i)}"/><line x1="${X(i)}" y1="${X(0)}" x2="${X(i)}" y2="${X(n-1)}"/>`}
+  o+=`<rect x="${X(0)}" y="${X(0)}" width="${U*(n-1)}" height="${U*(n-1)}" fill="none" stroke-width="2"/></g>`;
+  const sp=starPts(n);for(const a of sp)for(const b of sp)o+=`<circle cx="${X(a)}" cy="${X(b)}" r="4" fill="var(--grid)"/>`;
+  // 棋子
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=st.g[y][x];if(!c)continue;
+    o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.48}" fill="url(#${c===1?'gB':'gW'})" ${c===2?'stroke="#8f8b84" stroke-width="1"':''}/>`;
+    if(showNums&&st.nums.has(y*n+x)){const num=st.nums.get(y*n+x);o+=`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-size="${num>99?13:16}" fill="${c===1?'#f2f2f2':'#1a1a1a'}">${num}</text>`}
+  }
+  // 最后一手
+  if(st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
+  // 标记
+  const ink=(x,y)=>st.g[y][x]===1?'#ffffff':'#1d1d1d';
+  const pad=(x,y)=>st.g[y][x]===0?`<rect x="${X(x)-U*.36}" y="${X(y)-U*.36}" width="${U*.72}" height="${U*.72}" fill="var(--wood)"/>`:'';
+  const P=cur.props,R=U*0.26;
+  for(const[x,y]of expandPts(P.TR,n)){const cx=X(x),cy=X(y);o+=`<polygon points="${cx},${cy-R*1.15} ${cx+R},${cy+R*0.7} ${cx-R},${cy+R*0.7}" fill="none" stroke="${ink(x,y)}" stroke-width="2.5"/>`}
+  for(const[x,y]of expandPts(P.CR,n))o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${R}" fill="none" stroke="${ink(x,y)}" stroke-width="2.5"/>`;
+  for(const[x,y]of expandPts(P.SQ,n))o+=`<rect x="${X(x)-R*.85}" y="${X(y)-R*.85}" width="${R*1.7}" height="${R*1.7}" fill="none" stroke="${ink(x,y)}" stroke-width="2.5"/>`;
+  for(const[x,y]of expandPts(P.MA,n)){const a=R*.85;o+=`<path d="M${X(x)-a} ${X(y)-a}L${X(x)+a} ${X(y)+a}M${X(x)+a} ${X(y)-a}L${X(x)-a} ${X(y)+a}" stroke="${ink(x,y)}" stroke-width="2.5"/>`}
+  for(const v of P.LB||[]){const[pt,txt]=v.split(':');const xy=ptToXY(pt,n);if(!xy)continue;const[x,y]=xy;o+=pad(x,y)+`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-weight="500" font-size="20" fill="${ink(x,y)}">${escH(txt||'')}</text>`}
+  // 分支提示
+  if(cur.children.length>1)cur.children.forEach((ch,i)=>{const m=moveOf(ch);if(!m)return;const xy=ptToXY(m[1],n);if(!xy||st.g[xy[1]][xy[0]])return;
+    o+=`<circle cx="${X(xy[0])}" cy="${X(xy[1])}" r="${U*.34}" fill="${m[0]==='B'?'#111':'#fff'}" opacity=".35"/><text x="${X(xy[0])}" y="${X(xy[1])}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,monospace" font-size="17" fill="${m[0]==='B'?'#fff':'#000'}">${String.fromCharCode(65+i)}</text>`});
+  svg.innerHTML=o;
+
+  // 双方信息
+  $('#pbName').textContent=prop(r,'PB')||'黑方';$('#pwName').textContent=prop(r,'PW')||'白方';
+  $('#pbSub').textContent=[prop(r,'BR'),`提子 ${st.capB}`].filter(Boolean).join(' · ');
+  $('#pwSub').textContent=[prop(r,'WR'),`提子 ${st.capW}`].filter(Boolean).join(' · ');
+  $('#resultTag').textContent=resultText(prop(r,'RE'));
+  // 手数 / 滑杆
+  const line=lineFrom(cur);const total=line.filter(moveOf).length;
+  $('#slider').max=total;$('#slider').value=st.mn;
+  $('#mno').innerHTML=`第 <b>${st.mn}</b> / ${total} 手`;
+  $('#hereLbl').textContent=hereLabel(cur,st);
+  const box=$('#comment');const c=(cur.props.C||[''])[0];if(document.activeElement!==box||box.value!==c)box.value=c;
+  $('#bPrev').disabled=$('#bStart').disabled=$('#bBack10').disabled=!cur.parent;
+  $('#bNext').disabled=$('#bEnd').disabled=$('#bFwd10').disabled=!cur.children.length;
+  renderVars();renderNotes();
+}
+function escH(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function resultText(re){if(!re)return'—';const m=re.match(/^([BW])\+(.*)$/i);if(!m)return re==='0'||/^d/i.test(re)?'和棋':re;
+  const who=m[1].toUpperCase()==='B'?'黑':'白';const how=m[2];if(/^R/i.test(how))return who+'中盘胜';if(/^T/i.test(how))return who+'超时胜';if(!how)return who+'胜';return who+'胜 '+how}
+function coordName(m,n){const xy=ptToXY(m[1],n);if(!xy||(m[1]==='tt'&&n<=19))return'停一手';return COLS[xy[0]]+(n-xy[1])}
+function hereLabel(node,st){const m=moveOf(node);if(!m)return node===root()?'开局':`第 ${st.mn} 手`;return`第 ${st.mn} 手 ${m[0]==='B'?'黑':'白'} ${coordName(m,sizeOf(root()))}`}
+function lineFrom(node){const p=pathTo(node);let n=node;while(n.children.length){n=n.children[n._sel||0]||n.children[0];p.push(n)}return p}
+function onMainLine(node){for(let n=node;n.parent;n=n.parent)if(n.parent.children[0]!==n)return false;return true}
+
+function renderVars(){
+  const v=$('#vars');const kids=cur.children;
+  if(kids.length<2){v.hidden=true;v.innerHTML='';return}
+  v.hidden=false;const n=sizeOf(root());
+  v.innerHTML='<span>下一手有 '+kids.length+' 种走法：</span>'+kids.map((ch,i)=>{const m=moveOf(ch);return`<button data-i="${i}" aria-current="${(cur._sel||0)===i}">${String.fromCharCode(65+i)}${m?' '+coordName(m,n):''}${i===0?' · 实战':''}</button>`}).join('');
+}
+function renderNotes(){
+  const out=[];const n=sizeOf(root());
+  (function walk(node,mn){const m=moveOf(node);if(m)mn++;if(node.props.C&&node.props.C[0].trim())out.push({node,mn,m,main:onMainLine(node)});node.children.forEach(c=>walk(c,mn))})(root(),0);
+  const el=$('#noteList');
+  if(!out.length){el.innerHTML='<div class="empty">还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。</div>';return}
+  el.innerHTML=out.map((o,i)=>`<button class="li${o.node===cur?' on':''}" data-i="${i}"><span class="k">${o.m?(o.m[0]==='B'?'●':'○')+' '+o.mn:'开局'}</span><span class="t">${escH(o.node.props.C[0].trim().split('\n')[0])}</span><span class="x">${o.main?'':'变化'}</span></button>`).join('');
+  el._items=out;
+}
+function renderLib(){
+  const el=$('#libList');const ids=Object.keys(store.games).sort((a,b)=>store.games[b].updated-store.games[a].updated);
+  if(!ids.length){el.innerHTML='<div class="empty">还没有棋谱。</div>';return}
+  el.innerHTML=ids.map(id=>{const g=store.games[id];const d=new Date(g.updated);return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||'未命名')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
+}
+function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)})}
+
+/* ===================== 操作 ===================== */
+function go(node){if(!node)return;cur=node;if(node.parent)node.parent._sel=node.parent.children.indexOf(node);render()}
+function fwd(k=1){let n=cur;for(let i=0;i<k&&n.children.length;i++)n=n.children[n._sel||0]||n.children[0];go(n)}
+function back(k=1){let n=cur;for(let i=0;i<k&&n.parent;i++)n=n.parent;cur=n;render()}
+function toEnd(){let n=cur;while(n.children.length)n=n.children[n._sel||0]||n.children[0];go(n)}
+function jumpTo(mn){const line=lineFrom(cur);let c=0,target=line[0];for(const n of line){if(moveOf(n))c++;if(c<=mn)target=n;else break}cur=target;render()}
+
+function boardClick(ev){
+  const svg=$('#board');const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
+  const p=pt.matrixTransform(svg.getScreenCTM().inverse());const n=sizeOf(root());
+  const x=Math.round((p.x-PAD)/U),y=Math.round((p.y-PAD)/U);if(x<0||y<0||x>=n||y>=n)return;
+  const pt2=xyToPt(x,y);
+  if(tool==='play'){
+    const color=nextColor(cur);
+    const hit=cur.children.find(c=>{const m=moveOf(c);return m&&m[1]===pt2});
+    if(hit){go(hit);return}
+    const st=computeState(cur,n);if(st.g[y][x])return;
+    const test=st.g.map(r=>r.slice());const res=place(test,x,y,color==='B'?1:2,n);if(res.suicide)return flash('这里是禁着点（自杀）');
+    const node={props:{[color]:[pt2]},children:[],parent:cur};cur.children.push(node);go(node);changed();return;
+  }
+  const P=cur.props;const marks=['TR','CR','SQ','MA'];
+  const has=k=>(P[k]||[]).includes(pt2);const del=k=>{if(!P[k])return;P[k]=P[k].filter(v=>v!==pt2);if(!P[k].length)delete P[k]};
+  const delLB=()=>{if(!P.LB)return;P.LB=P.LB.filter(v=>v.split(':')[0]!==pt2);if(!P.LB.length)delete P.LB};
+  if(tool==='erase'){marks.forEach(del);delLB()}
+  else if(tool==='LB'){const had=(P.LB||[]).some(v=>v.split(':')[0]===pt2);delLB();marks.forEach(del);
+    if(!had){const used=new Set((P.LB||[]).map(v=>v.split(':')[1]));let L='A';for(let i=0;i<26;i++){L=String.fromCharCode(65+i);if(!used.has(L))break}(P.LB=P.LB||[]).push(pt2+':'+L)}}
+  else{const on=has(tool);marks.forEach(del);delLB();if(!on)(P[tool]=P[tool]||[]).push(pt2)}
+  render();changed();
+}
+let flashT=null;function flash(msg){const s=$('#saveState');s.textContent=msg;clearTimeout(flashT);flashT=setTimeout(()=>{s.textContent=savedText()},3500)}
+
+/* 二次确认按钮（这个页面不能用弹窗） */
+function armed(btn,label,run){if(btn._armed){clearTimeout(btn._t);btn._armed=false;btn.classList.remove('armed');btn.textContent=btn._orig;run();return}
+  btn._orig=btn._orig||btn.textContent;btn._armed=true;btn.classList.add('armed');btn.textContent=label;btn._t=setTimeout(()=>{btn._armed=false;btn.classList.remove('armed');btn.textContent=btn._orig},3000)}
+
+/* ===================== 事件 ===================== */
+$('#board').addEventListener('click',boardClick);
+$('#bStart').onclick=()=>{cur=root();render()};$('#bPrev').onclick=()=>back();$('#bNext').onclick=()=>fwd();
+$('#bBack10').onclick=()=>back(10);$('#bFwd10').onclick=()=>fwd(10);$('#bEnd').onclick=toEnd;
+$('#slider').oninput=e=>jumpTo(+e.target.value);
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
+  if(e.key==='ArrowRight'){fwd(e.shiftKey?10:1);e.preventDefault()}else if(e.key==='ArrowLeft'){back(e.shiftKey?10:1);e.preventDefault()}
+  else if(e.key==='Home'){cur=root();render()}else if(e.key==='End')toEnd();
+  else if(e.key==='ArrowUp'||e.key==='ArrowDown'){if(cur.parent&&cur.parent.children.length>1){const sib=cur.parent.children;const i=sib.indexOf(cur)+(e.key==='ArrowDown'?1:-1);if(sib[i])go(sib[i]);e.preventDefault()}}});
+document.querySelectorAll('.tool[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('.tool[data-tool]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('#numToggle').onclick=e=>{showNums=!showNums;e.currentTarget.setAttribute('aria-pressed',showNums);render()};
+$('#vars').onclick=e=>{const b=e.target.closest('button');if(!b)return;cur._sel=+b.dataset.i;go(cur.children[+b.dataset.i])};
+$('#comment').addEventListener('input',e=>{const v=e.target.value;if(v.trim())cur.props.C=[v];else delete cur.props.C;changed();renderNotes()});
+$('#delBtn').onclick=e=>{if(!cur.parent)return flash('开局不能删除');armed(e.currentTarget,'再点一次确认删除',()=>{const p=cur.parent;p.children.splice(p.children.indexOf(cur),1);p._sel=0;cur=p;render();changed()})};
+$('#noteList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const it=$('#noteList')._items[+b.dataset.i];let n=it.node;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=it.node;render()};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t.dataset.tab)});
+document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
+$('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash('这盘棋读不出来：'+err.message)}};
+$('#newBlank').onclick=()=>{const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
+$('#delGame').onclick=e=>armed(e.currentTarget,'再点一次确认删除',()=>{delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
+$('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io('先把 SGF 粘贴到框里',true);try{importText(t);$('#pasteBox').value='';io('已打开')}catch(err){io(err.message,true)}};
+$('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io('已打开粘贴的棋谱')}catch(err){io(err.message,true)}}});
+$('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{importText(rd.result);io('已打开 '+f.name)}catch(err){io(err.message,true)}e.target.value=''};rd.readAsText(f)};
+function fileName(){const r=root();return(titleOf(r)+(prop(r,'RE')?' '+prop(r,'RE'):'')).replace(/[\\/:*?"<>|·]/g,' ').replace(/\s+/g,' ').trim()+'.sgf'}
+$('#copyBtn').onclick=()=>{const t=toSGF(root());const box=$('#exportBox');box.value=t;
+  const fall=()=>{box.hidden=false;box.focus();box.select();io('请按 Ctrl+C（手机：长按 → 复制）复制上面的文字')};
+  try{navigator.clipboard.writeText(t).then(()=>{box.hidden=true;io('已复制 SGF，可以粘贴到其他软件')},fall)}catch(e){fall()}};
+$('#dlBtn').onclick=async()=>{const t=toSGF(root());
+  // 在 Claude 里打开时：经由 Claude 的下载确认（只允许 .txt，下载后把文件名的 .txt 删掉即可）
+  let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
+  if(dl){try{await dl.save({filename:fileName()+'.txt',data:t});io('已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱')}catch(e){io(e.code==='declined'?'已取消下载':'下载不可用，请改用「复制 SGF」',e.code!=='declined')}return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/x-go-sgf;charset=utf-8'}));a.download=fileName();document.body.appendChild(a);a.click();a.remove();
+  io('如果没有开始下载，请改用「复制 SGF」')};
+function io(msg,err){const s=$('#ioStatus');s.textContent=msg;s.classList.toggle('err',!!err)}
+
+/* ===================== Google Drive 同步 ===================== */
+const Drive=(()=>{
+  let token=null,tokenExp=0,client=null,folderId=null,syncT=null;
+  const on=!!DRIVE_CLIENT_ID;
+  const st=(m,err)=>{const s=$('#driveStatus');if(s){s.textContent=m;s.classList.toggle('err',!!err)}};
+  function loadGIS(){return new Promise((res,rej)=>{if(window.google&&google.accounts)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>rej(new Error('无法载入 Google 登录'));document.head.appendChild(s)})}
+  function getToken(prompt){return new Promise(async(res,rej)=>{
+    if(token&&Date.now()<tokenExp-60000)return res(token);
+    await loadGIS();
+    client=client||google.accounts.oauth2.initTokenClient({client_id:DRIVE_CLIENT_ID,scope:'https://www.googleapis.com/auth/drive.file',callback:()=>{}});
+    client.callback=r=>{if(r.error)return rej(new Error(r.error));token=r.access_token;tokenExp=Date.now()+(r.expires_in||3600)*1000;try{localStorage.setItem('goReview.driveOn','1')}catch(e){}res(token)};
+    client.requestAccessToken({prompt:prompt?'consent':''});
+  })}
+  async function api(url,opt={}){const t=await getToken(false);const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+t}});if(!r.ok)throw new Error('Drive 错误 '+r.status);return r}
+  async function folder(){if(folderId)return folderId;
+    const q=encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${DRIVE_FOLDER}' and trashed=false`);
+    const j=await(await api(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)`)).json();
+    if(j.files&&j.files[0])return folderId=j.files[0].id;
+    const c=await(await api('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
+    return folderId=c.id}
+  function multipart(meta,text){const b='goreview'+Math.random().toString(36).slice(2);return{body:`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/x-go-sgf; charset=UTF-8\r\n\r\n${text}\r\n--${b}--`,type:'multipart/related; boundary='+b}}
+  async function saveCurrent(){
+    const rec=store.games[G.id];const name=fileName();
+    if(rec.driveId){const m=multipart({name},rec.sgf);await api(`https://www.googleapis.com/upload/drive/v3/files/${rec.driveId}?uploadType=multipart`,{method:'PATCH',headers:{'Content-Type':m.type},body:m.body})}
+    else{const f=await folder();const m=multipart({name,parents:[f],mimeType:'application/x-go-sgf'},rec.sgf);const j=await(await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':m.type},body:m.body})).json();rec.driveId=j.id;lsSet(store);renderLib()}
+    st('已同步到 Google Drive · '+new Date().toLocaleTimeString());
+  }
+  async function list(){const f=await folder();const q=encodeURIComponent(`'${f}' in parents and trashed=false`);
+    const j=await(await api(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)`)).json();
+    const el=$('#driveList');const files=j.files||[];
+    el.innerHTML=files.length?files.map(f=>{const d=new Date(f.modifiedTime);return`<button class="li" data-id="${f.id}"><span class="k">☁</span><span class="t">${escH(f.name.replace(/\.sgf$/i,''))}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join(''):'<div class="empty">Drive 里还没有棋谱。</div>'}
+  async function openFile(id){const t=await(await api(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`)).text();
+    const r=parseSGF(t);const localId=Object.keys(store.games).find(k=>store.games[k].driveId===id);
+    if(localId){store.games[localId].sgf=toSGF(r);openRoot(r,{id:localId})}else openRoot(r,{driveId:id});
+    st('已从 Drive 打开最新版本')}
+  function connected(){$('#driveConnect').textContent='已连接';$('#driveSave').hidden=false;$('#driveRefresh').hidden=false}
+  function init(){
+    $('#driveOff').hidden=on;$('#driveOn').hidden=!on;if(!on)return;
+    $('#driveConnect').onclick=async()=>{try{await getToken(true);connected();await list();st('已连接 Google Drive')}catch(e){st('连接失败：'+e.message,true)}};
+    $('#driveSave').onclick=async()=>{try{await saveCurrent();await list()}catch(e){st('同步失败：'+e.message,true)}};
+    $('#driveRefresh').onclick=async()=>{try{await list()}catch(e){st(e.message,true)}};
+    $('#driveList').onclick=async e=>{const b=e.target.closest('.li');if(!b)return;try{await openFile(b.dataset.id)}catch(err){st('打开失败：'+err.message,true)}};
+  }
+  function autoSync(){if(!on||!token||!$('#driveAuto').checked)return;clearTimeout(syncT);syncT=setTimeout(()=>saveCurrent().catch(e=>st('同步失败：'+e.message,true)),2500)}
+  return{init,autoSync,connected:()=>!!token};
+})();
+
+/* ===================== 启动 ===================== */
+const SAMPLE=`(;GM[1]FF[4]SZ[19]GN[]DT[2026-10-19]PB[槟州0010]PW[槟州0013]BR[25级]WR[25级]KM[7.5]HA[0]RU[Chinese]RE[W+R]AP[foxwq]
+;B[dp];W[pd];B[qp];W[dd];B[fd];W[cf];B[dc];W[cc];B[eb];W[cb];B[db];W[de];B[qc];W[qd];B[pc];W[oc];B[ob];W[nc];B[nb];W[mc];B[rd];W[re];B[op];W[cq];B[cp];W[dq];B[fq];W[eq];B[ep];W[fr];B[gq];W[gr];B[bq];W[br];B[aq];W[hr];B[hq];W[mb];B[na];W[qf];B[cm];W[di];B[cj];W[ci];B[fl];W[fi];B[ej];W[ei];B[gj];W[gi];B[kq];W[dj];B[dk];W[bj];B[ck];W[pi];B[pm];W[ok];B[ol];W[nk];B[nl];W[ff];B[jk];W[fj];B[fk];W[ii];B[jd];W[jf];B[he];W[hf];B[ie];W[if];B[ee];W[ef];B[me];W[ne];B[le];W[nf];B[lg];W[li];B[mh];W[ni];B[ma];W[rc];B[rb];W[sc];B[pa];W[sb];B[ra];W[sd];B[qb];W[jc];B[kc];W[jb];B[kb];W[ik];B[il];W[hk];B[gk];W[hj];B[hl];W[jj];B[lk];W[kk];B[kl];W[kj];B[jl];W[mj];B[mk];W[mi];B[kf];W[ge];B[gd];W[qk];B[ql];W[rl];B[rm];W[rk];B[pl];W[ar];B[bo];W[cs];B[bk];W[aj];B[ak];W[bh];B[ek];W[da];B[ea];W[ca];B[ed];W[fe];B[lc];W[md];B[ld];W[je];B[ke];W[id];B[hd];W[kd];B[ir];W[jd];B[ic];W[hc];B[og];W[pf];B[ng];W[mf];B[lf];W[ka];B[la];W[ja];B[lb];W[gc];B[mg];W[pg];B[od];W[nd];B[of];W[oe];B[jg];W[ig];B[jh];W[ih];B[ji];W[kh];B[ki];W[kg];B[fc];W[gb];B[oh];W[ph];B[oi];W[oj];B[nh];W[pk];B[sl];W[sk];B[sm];W[qn];B[pp];W[qm];B[pn];W[ro];B[qo];W[rn];B[rp];W[sn];B[sp];W[ip];B[fp];W[iq];B[jr];W[ko];B[hs];W[dr];B[gs];W[es];B[is];W[fs];B[sa];W[jq];B[kr];W[kp];B[jo];W[io];B[jn];W[lq];B[lr];W[jp];B[in];W[mq];B[mr];W[np];B[no];W[mo];B[ln];W[nn];B[oo];W[kn];B[km];W[lm];B[mn];W[mm];B[nq];W[lp];B[mp];W[lo];B[np];W[ll];B[ml];W[hn];B[im];W[gm];B[gl];W[gn];B[fo];W[fn];B[en];W[on];B[nm];W[lj];B[om];W[po];B[pn];W[pm])`;
+(function boot(){
+  Drive.init();
+  // 从下载工具传来的棋谱：网址 #sgf=...
+  const h=location.hash;
+  if(h.startsWith('#sgf=')){try{importText(decodeURIComponent(h.slice(5)));history.replaceState(null,'',location.pathname+location.search);return}catch(e){flash('棋谱读取失败：'+e.message)}}
+  const id=store.lastId&&store.games[store.lastId]?store.lastId:Object.keys(store.games)[0];
+  if(id){try{openRoot(parseSGF(store.games[id].sgf),{id});return}catch(e){}}
+  importText(SAMPLE);
+})();
+</script>
+
+</body>
+</html>
