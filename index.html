@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2F6B5A">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="复盘本">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
 <body>
@@ -108,6 +116,50 @@ h1{font-family:var(--f-display);font-size:1.35rem;margin:0;letter-spacing:.04em}
 .share hr{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .share .sub{font-size:.95rem}
 .share a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+/* 形势判断 */
+.judge{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:0 auto 8px;max-width:min(100%,calc(100vh - 150px));
+  background:var(--ink);color:var(--panel);border-radius:10px;padding:8px 14px}
+.judge .side{display:flex;flex-direction:column;gap:1px;font-size:.82rem;font-variant-numeric:tabular-nums;min-width:0}
+.judge .side.w{text-align:right;align-items:flex-end}
+.judge .side b{font-size:1.05rem;font-weight:600}
+.judge .side span{opacity:.75}
+.judge .mid{text-align:center}
+.judge .lead{font-family:var(--f-display);font-size:1.35rem;font-weight:700;color:#F2C14E;white-space:nowrap}
+.judge .komi{font-size:.75rem;opacity:.75}
+.judge .dot{width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-right:4px}
+.judge .side b{white-space:nowrap}
+@media (max-width:480px){.judge{padding:6px 10px;gap:6px}.judge .side b{font-size:.9rem}.judge .side{font-size:.74rem}.judge .lead{font-size:1.08rem}}
+.tool.judging[aria-pressed="true"]{background:#F2C14E;border-color:#F2C14E;color:#1C2326}
+/* 好手 / 恶手 */
+.anno{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:8px;font-size:.82rem;color:var(--muted)}
+.anno button{height:28px;min-width:44px;padding:0 8px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:.8rem;color:var(--ink)}
+.anno button b{font-family:var(--f-mono);margin-right:3px}
+.anno button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.tr .an,.li .an{font-family:var(--f-mono);font-weight:700;font-size:.8rem}
+/* 自动播放 */
+#playSpeed{height:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:0 6px}
+.ib.playing{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* 棋谱库筛选 */
+.libbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.libbar input,.libbar select{height:34px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg);font-size:.86rem;min-width:0}
+.libbar input{flex:1 1 160px}
+.libtags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.libtags:empty{display:none}
+.libtags button{height:26px;padding:0 9px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:.78rem}
+.libtags button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tag{display:inline-block;font-size:.7rem;padding:1px 6px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:4px;vertical-align:1px}
+.li .sub{display:block;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 猜下一手 */
+.train .big{font-family:var(--f-display);font-size:1.15rem;margin:0}
+.train .big.ok{color:#2E8B57}.train .big.no{color:#C0392B}
+.train .stats{font-size:.86rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.tool.training[aria-pressed="true"]{background:#2E6FA8;border-color:#2E6FA8;color:#fff}
+body.is-training #tree,body.is-training #vars{visibility:hidden}
+/* 存成图片 */
+.imgopts{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.88rem}
+.imgopts label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+.imgopts input[type=number]{width:4.5em;height:32px;border:1px solid var(--line);border-radius:6px;padding:0 6px;background:var(--bg);font-family:var(--f-mono)}
+#imgPreview{max-width:min(100%,420px);border:1px solid var(--line);border-radius:8px;display:block}
 .prefs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;font-size:.9rem}
 .prefs label{color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
@@ -196,6 +248,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="btn" id="langBtn" title="English / 中文">EN</button>
       <button class="btn" id="shareBtn">分享</button>
       <button class="btn" id="helpBtn">说明</button>
+      <button class="btn" id="installBtn" hidden>安装 App</button>
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
       <button class="btn" id="redoBtn" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
       <button class="btn" id="driveTop" hidden>连接 Drive</button>
@@ -208,6 +261,12 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <div class="pl b"><span class="dot b"></span><div style="min-width:0"><div class="nm" id="pbName">黑方</div><div class="sub" id="pbSub"></div></div></div>
       <span class="result" id="resultTag">—</span>
       <div class="pl w"><div style="min-width:0"><div class="nm" id="pwName">白方</div><div class="sub" id="pwSub"></div></div><span class="dot w"></span></div>
+    </div>
+
+    <div class="judge" id="judgeBar" hidden>
+      <div class="side b"><b><span class="dot b"></span><span id="jB">0</span></b><span id="jBcap"></span></div>
+      <div class="mid"><div class="lead" id="jLead"></div><div class="komi" id="jKomi"></div></div>
+      <div class="side w"><b><span id="jW">0</span><span class="dot w" style="margin:0 0 0 4px"></span></b><span id="jWcap"></span></div>
     </div>
 
     <div class="board-wrap"><svg id="board" viewBox="0 0 800 800" role="img" aria-label="棋盘"></svg></div>
@@ -223,6 +282,8 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       </div>
       <input type="range" id="slider" min="0" max="0" value="0" aria-label="跳到第几手">
       <span class="mno" id="mno">第 <b>0</b> 手</span>
+      <button class="ib" id="bPlay" title="自动播放（空格键）" aria-label="自动播放"><svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></button>
+      <select id="playSpeed" aria-label="播放速度"><option value="1000">1 秒</option><option value="2000" selected>2 秒</option><option value="3000">3 秒</option><option value="5000">5 秒</option></select>
     </div>
 
     <div class="tools" role="toolbar" aria-label="工具">
@@ -237,6 +298,9 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <span class="sep"></span>
       <button class="tool" id="numToggle" aria-pressed="false">显示手数</button>
       <span class="sep"></span>
+      <button class="tool" id="imgToggle" aria-pressed="false">存成图片</button>
+      <button class="tool training" id="trainToggle" aria-pressed="false">猜下一手</button>
+      <button class="tool judging" id="judgeToggle" aria-pressed="false">形势</button>
       <button class="tool scoring" id="scoreToggle" aria-pressed="false">数子 / 数目</button>
     </div>
 
@@ -286,13 +350,50 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>数子 / 数目</dt><dd>选规则，点死子把它标出来，就会算出胜负。</dd>
         <dt>保存</dt><dd>改动会自动保存在这台设备。撤销、重做：Ctrl+Z、Ctrl+Y。</dd>
         <dt>Google Drive</dt><dd>每次打开网页按「连接 Drive」，棋谱库就会在你的电脑、手机、iPad 之间自动同步。</dd>
-        <dt>分享</dt><dd>生成这盘棋的链接给别人。链接不会自动更新；对方改完发回新链接，你打开后会自动合并。</dd>
+        <dt>分享</dt><dd>「共享链接」大家打开同一个链接一起写，几秒内互相看到；「快照链接」是一次性的副本。</dd>
+        <dt>好手 / 恶手</dt><dd>在评论框上方点 ! !! ? ?? ?! !?，棋盘、棋谱树和评论列表都会显示。</dd>
+        <dt>形势</dt><dd>按「形势」看估算的地和目数差，结果显示在棋盘上方。</dd>
+        <dt>猜下一手</dt><dd>从目前这一手开始，让学生猜接下来的棋，猜错会提示，最后显示正确率。</dd>
+        <dt>自动播放</dt><dd>按 ▶ 或空格键，遇到有评论的那一手会自动停下来。</dd>
+        <dt>存成图片</dt><dd>把目前局面或某段手数（带编号）存成 PNG，可以分享到 WhatsApp。</dd>
+        <dt>我的棋谱</dt><dd>可以搜索、按棋手筛选；在「棋局信息」加标签（如：比赛、需复习）方便分类。</dd>
+        <dt>装到桌面</dt><dd>Android / 电脑 Chrome：按「安装 App」或浏览器菜单的「安装应用」；iPhone / iPad Safari：按分享 → 「添加到主屏幕」。</dd>
       </dl>
       <div class="row"><button class="btn" id="helpClose">关闭</button></div>
     </div>
 
+    <div class="score" id="imgBox" hidden>
+      <div class="score-head"><b>存成图片</b><span>把棋盘存成 PNG 图片，可以贴到 WhatsApp 或做讲义。</span></div>
+      <div class="imgopts">
+        <span class="seg" id="imgMode"><button data-m="now">目前局面</button><button data-m="range">手数范围</button></span>
+        <span id="imgRange" class="imgopts"><label>从第 <input type="number" id="imgFrom" min="1"> 手</label><label>到第 <input type="number" id="imgTo" min="1"> 手</label></span>
+        <label><input type="checkbox" id="imgNums"> 显示手数</label>
+        <label><input type="checkbox" id="imgCoords" checked> 显示坐标</label>
+      </div>
+      <img id="imgPreview" alt="图片预览">
+      <div class="row">
+        <button class="btn pri" id="imgSave">下载图片</button>
+        <button class="btn" id="imgShare" hidden>分享图片…</button>
+        <button class="btn" id="imgClose">关闭</button>
+      </div>
+      <div class="status" id="imgStatus"></div>
+    </div>
+
+    <div class="score train" id="trainBox" hidden>
+      <div class="score-head"><b>猜下一手</b><span>从这一手开始，在棋盘上点你认为的下一手。</span></div>
+      <div class="score-opts"><span class="seg" id="trainSeg"><button data-c="B">猜黑棋</button><button data-c="W">猜白棋</button><button data-c="both">双方都猜</button></span></div>
+      <p class="big" id="trainMsg"></p>
+      <div class="stats" id="trainStats"></div>
+      <div class="row">
+        <button class="btn" id="trainHint">提示</button>
+        <button class="btn" id="trainShow">显示答案</button>
+        <button class="btn" id="trainRestart">从这一手重新开始</button>
+        <button class="btn pri" id="trainExit">结束练习</button>
+      </div>
+    </div>
+
     <div class="score" id="scoreBox" hidden>
-      <div class="score-head"><b>数子 / 数目</b><span>点棋盘上的死子把它标出来，再点一次取消。黑白小方块是各自的地。</span></div>
+      <div class="score-head"><b>数子 / 数目</b><span>死子已经自动判断（估算），点棋子可以修改。黑白小方块是各自的地。</span></div>
       <div class="score-opts">
         <div class="seg" id="ruleSeg"><button data-r="cn">中国数子</button><button data-r="jp">日韩数目</button><button data-r="ing">应氏计点</button></div>
         <label for="komiIn"><span>贴目</span><input id="komiIn" type="number" step="0.25" inputmode="decimal"></label>
@@ -319,6 +420,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <span id="whoAdd" hidden><input id="whoName" maxlength="12" placeholder="名字"> <button class="btn pri" id="whoOk">确定</button> <button class="btn" id="whoCancel">取消</button></span>
         <button class="btn" id="whoDel" hidden>删除这个名字</button>
       </div>
+      <div class="anno" id="annoRow"><span>评价这一手</span></div>
       <div class="others" id="others"></div>
       <textarea id="comment" placeholder="写下这一手的想法，例如：这里应该先补断点。"></textarea>
       <div class="row" style="margin-top:8px;justify-content:space-between;align-items:center">
@@ -356,10 +458,17 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
           <label for="iRE">结果</label><input id="iRE" data-prop="RE" placeholder="例如 B+R、W+3.5">
           <label for="iKM">贴目</label><input id="iKM" data-prop="KM">
           <label for="iGN">标题</label><input id="iGN" data-prop="GN">
+          <label for="iTags">标签</label><input id="iTags" placeholder="用逗号分开，例如：比赛, 需复习">
         </div>
       </div>
 
       <div data-panel="lib" hidden>
+        <div class="libbar">
+          <input id="libSearch" type="search" placeholder="搜索棋手、标题、标签" aria-label="搜索棋谱">
+          <select id="libPlayer" aria-label="按棋手筛选"></select>
+          <select id="libSort" aria-label="排序"><option value="upd">最近修改</option><option value="date">对局日期</option></select>
+        </div>
+        <div class="libtags" id="libTags"></div>
         <div class="list" id="libList"></div>
         <div class="row" style="margin-top:10px">
           <button class="btn" id="newBlank">新建空白棋盘</button>
@@ -509,6 +618,41 @@ const EN={
 '无法连接共享服务，请检查网络':'Couldn’t reach the sharing service. Check your connection.','找不到这个共享棋谱':'This shared game wasn’t found',
 '共享连接出错：{0}':'Sharing error: {0}','共享同步失败：{0}':'Sharing sync failed: {0}','这个网页还没设置共享功能':'Sharing isn’t set up on this page yet',
 '已打开共享棋谱':'Opened the shared game',
+// 形势
+'形势':'Estimate','黑领先 {0} 目':'Black leads by {0}','白领先 {0} 目':'White leads by {0}','双方相同':'Even',
+'{0} 子':'{0} pts','提 {0} 子':'captured {0}','贴 {0} 子 · 估算':'komi {0} stones · estimate',
+'死子已经自动判断（估算），点棋子可以修改。黑白小方块是各自的地。':'Dead stones are marked automatically (an estimate); click a stone to change it. Small black and white squares show each side’s territory.',
+// 好手 / 恶手、自动播放、棋谱库
+'评价这一手':'Rate this move','好手':'Good','妙手':'Brilliant','恶手':'Bad','大恶手':'Blunder','疑问手':'Dubious','有趣':'Interesting',
+'自动播放（空格键）':'Autoplay (Space)','自动播放':'Autoplay','播放速度':'Speed','1 秒':'1 s','2 秒':'2 s','3 秒':'3 s','5 秒':'5 s',
+'这一手有评论，已暂停':'Paused at a comment','已播放到最后一手':'Reached the last move',
+'标签':'Tags','用逗号分开，例如：比赛, 需复习':'Separate with commas, e.g. tournament, review',
+'搜索棋手、标题、标签':'Search players, titles, tags','搜索棋谱':'Search games','按棋手筛选':'Filter by player','排序':'Sort',
+'最近修改':'Recently edited','对局日期':'Game date','全部棋手':'All players','没有符合的棋谱。':'No matching games.',
+// 猜下一手
+'猜下一手':'Guess the next move','从这一手开始，在棋盘上点你认为的下一手。':'Starting from this move, click where you think the next move goes.',
+'猜黑棋':'Guess Black','猜白棋':'Guess White','双方都猜':'Guess both','提示':'Hint','显示答案':'Show answer','从这一手重新开始':'Restart from here','结束练习':'End practice',
+'轮到你猜：{0}下在哪里？':'Your turn: where does {0} play?','猜对了！':'Correct!','不对，再试一次（还有 {0} 次机会）':'Not quite, try again ({0} tries left)',
+'答案在绿色圆圈，点棋盘任何地方继续':'The answer is in the green circle. Click anywhere to continue.','提示：答案在亮起来的这一块':'Hint: the answer is in the highlighted area',
+'已猜 {0} 手 · 一次猜中 {1} 手 · 正确率 {2}%':'{0} guessed · {1} first try · {2}% correct',
+'练习完成！共猜 {0} 手，一次猜中 {1} 手（{2}%）':'Done! {0} moves guessed, {1} on the first try ({2}%)',
+'练习中，先结束练习再翻棋谱':'Practising: end the practice before stepping through the game',
+// 存成图片
+'存成图片':'Save as image','把棋盘存成 PNG 图片，可以贴到 WhatsApp 或做讲义。':'Save the board as a PNG to paste into WhatsApp or use in handouts.',
+'目前局面':'Current position','手数范围':'Move range','从第 {0} 手':'From move {0}','到第 {0} 手':'to move {0}','显示手数':'Move numbers','显示坐标':'Coordinates',
+'图片预览':'Image preview','下载图片':'Download image','分享图片…':'Share image…','图片已下载':'Image downloaded','做图片时出错：{0}':'Couldn’t make the image: {0}',
+'第 {0}–{1} 手':'Moves {0}–{1}','由 围棋复盘本 制作':'Made with Go Review Notebook','从第':'From move','到第':'to move','手':'',
+// 说明（新功能）、安装
+'安装 App':'Install app','已安装，可以从桌面打开':'Installed. Open it from your home screen.',
+'「共享链接」大家打开同一个链接一起写，几秒内互相看到；「快照链接」是一次性的副本。':'A shared link lets everyone write in the same game and see changes within seconds; a snapshot link is a one-off copy.',
+'好手 / 恶手':'Good / bad moves','在评论框上方点 ! !! ? ?? ?! !?，棋盘、棋谱树和评论列表都会显示。':'Tap ! !! ? ?? ?! !? above the comment box; the mark shows on the board, game tree and comment list.',
+'按「形势」看估算的地和目数差，结果显示在棋盘上方。':'Tap Estimate to see the estimated territory and score, shown above the board.',
+'从目前这一手开始，让学生猜接下来的棋，猜错会提示，最后显示正确率。':'From the current move, students guess the next moves, get hints when wrong, and see their accuracy at the end.',
+'按 ▶ 或空格键，遇到有评论的那一手会自动停下来。':'Tap ▶ or press Space; it pauses at moves with comments.',
+'把目前局面或某段手数（带编号）存成 PNG，可以分享到 WhatsApp。':'Save the current position or a numbered range of moves as a PNG to share on WhatsApp.',
+'可以搜索、按棋手筛选；在「棋局信息」加标签（如：比赛、需复习）方便分类。':'Search and filter by player; add tags (e.g. tournament, review) in Game info.',
+'装到桌面':'Home screen','Android / 电脑 Chrome：按「安装 App」或浏览器菜单的「安装应用」；iPhone / iPad Safari：按分享 → 「添加到主屏幕」。':'Android / desktop Chrome: tap “Install app” or Install in the browser menu. iPhone / iPad Safari: Share → Add to Home Screen.',
+'自动播放':'Autoplay','猜下一手':'Guess the next move',
 // 数子 / 数目
 '活子':'Stones on board','地':'Territory','公气（各算一半）':'Dame (half each)','还子（让子棋）':'Handicap return','合计':'Total','提子':'Prisoners','死子':'Dead stones','贴目（白）':'Komi (White)',
 '黑 {0} 子，白 {1} 子':'Black {0} stones, White {1} stones','黑 {0} 目，白 {1} 目':'Black {0} points, White {1} points','黑 {0} 点，白 {1} 点':'Black {0} points, White {1} points',
@@ -516,7 +660,7 @@ const EN={
 '和棋（平局）':'Jigo (draw)','平分，应氏规则判黑胜':'Tied: Black wins under Ing rules','平分，让子棋判白胜':'Tied: White wins in a handicap game',
 '黑需要 {0} 子才胜（贴 {1} 子）。':'Black needs {0} stones to win (komi {1} stones).',
 '中国规则：活子加围住的空点；公气各算一半。让子棋黑方要还子。':'Chinese rules: stones on board plus surrounded points; dame split evenly. Black returns half a stone per handicap stone.',
-'日韩规则：围住的空点加提子和死子。双活里的眼不算地，这里没有自动排除，遇到双活请自己核对。':'Japanese/Korean rules: surrounded points plus prisoners and dead stones. Eyes inside seki don’t count; this tool doesn’t exclude them, so check seki by hand.',
+'日韩规则：围住的空点加提子和死子。双活里的眼和假眼不算地，由 goscorer（KataGo 作者开发）自动判断。':'Japanese/Korean rules: surrounded points plus prisoners and dead stones. Eyes in seki and false eyes don’t count; goscorer (by the author of KataGo) handles this automatically.',
 '应氏规则：和中国规则一样数活子和地，白贴 8 点；平分时黑胜（让子棋白胜）。':'Ing rules: count stones and territory like Chinese rules, White gets 8 points; ties go to Black (White in handicap games).',
 '结果已写入：{0}':'Result saved: {0}',
 '还没标出任何死子。如果棋局还没下完，数出来的结果会不准。':'No dead stones marked yet. If the game isn’t finished, the count won’t be accurate.',
@@ -536,6 +680,1601 @@ function applyStatic(){
   document.documentElement.lang=LANG==='en'?'en':'zh-CN';
   document.title=T('围棋复盘本');
   const b=document.getElementById('langBtn');if(b)b.textContent=LANG==='en'?'中文':'EN';
+}
+
+/* 形势判断（估算，不是 AI）
+   1) 找出可能的死子：没有两只眼、而且被对方势力包围的棋块
+   2) 去掉死子后，用 Bouzy 5/21 算出确定的地，其余空点按双方势力（离谁近、谁的子多）分配
+   需要：nbrs(x,y,n)、groupOf(g,x,y,n) */
+const EST_R=6;const MOYO_E=10,MOYO_F=0.5,MOYO_MAX=10;const EST_DIL=5,EST_ERO=21,EST_NB={};
+const EST_W=(()=>{const w=[];for(let d=0;d<=EST_R;d++)w.push(Math.pow(1-d/(EST_R+1),2));return w})();
+function estInfluence(g,n,skip){
+  const I=new Float32Array(n*n);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=g[y][x];if(!c||(skip&&skip.has(y*n+x)))continue;const s=c===1?1:-1;
+    for(let dy=-EST_R;dy<=EST_R;dy++){const yy=y+dy;if(yy<0||yy>=n)continue;const rem=EST_R-Math.abs(dy);
+      for(let dx=-rem;dx<=rem;dx++){const xx=x+dx;if(xx<0||xx>=n)continue;I[yy*n+xx]+=s*EST_W[Math.abs(dx)+Math.abs(dy)]}}}
+  return I;
+}
+function estBouzy(g,n,skip,dil,ero){
+  let v=new Int32Array(n*n);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=g[y][x];if(c&&!(skip&&skip.has(y*n+x)))v[y*n+x]=c===1?128:-128}
+  const nb=EST_NB[n]||(EST_NB[n]=Array.from({length:n*n},(_,p)=>nbrs(p%n,(p/n)|0,n).map(([a,b])=>b*n+a)));
+  for(let k=0;k<dil;k++){const w=v.slice();
+    for(let p=0;p<n*n;p++){const a=v[p];let pos=0,neg=0;for(const q of nb[p]){if(v[q]>0)pos++;else if(v[q]<0)neg++}
+      if(a>=0&&!neg)w[p]=a+pos;else if(a<=0&&!pos)w[p]=a-neg}
+    v=w}
+  for(let k=0;k<ero;k++){const w=v.slice();
+    for(let p=0;p<n*n;p++){const a=v[p];if(!a)continue;let cnt=0;for(const q of nb[p]){if(a>0?v[q]<=0:v[q]>=0)cnt++}
+      w[p]=a>0?Math.max(0,a-cnt):Math.min(0,a+cnt)}
+    v=w}
+  return v;
+}
+function estimatePosition(g,n){
+  // 棋块
+  const gidAt=new Int32Array(n*n).fill(-1),groups=[];
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(!g[y][x]||gidAt[y*n+x]>=0)continue;
+    const G=groupOf(g,x,y,n);const id=groups.length;const keys=G.stones.map(([a,b])=>b*n+a);keys.forEach(k=>gidAt[k]=id);
+    groups.push({id,c:g[y][x],keys,libs:G.libs,eyes:0})}
+  // 眼：只被一方包围、不太大的空地。单点的眼要看斜角，假眼不算
+  const parent=groups.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
+  const regions=[];const seen=new Uint8Array(n*n);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(g[y][x]||seen[y*n+x])continue;
+    const pts=[],st=[[x,y]];seen[y*n+x]=1;const cols=new Set(),gs=new Set();
+    while(st.length){const[p,q]=st.pop();pts.push([p,q]);for(const[u,v]of nbrs(p,q,n)){const c=g[v][u];if(c){cols.add(c);gs.add(gidAt[v*n+u])}else if(!seen[v*n+u]){seen[v*n+u]=1;st.push([u,v])}}}
+    if(cols.size!==1)continue; // 大块的地也算两只眼（活棋）
+    const c=[...cols][0];let val;
+    if(pts.length>=6)val=2;else if(pts.length>=2)val=1;
+    else{const[ex,ey]=pts[0];let own=0,tot=0;for(const[dx,dy]of[[1,1],[1,-1],[-1,1],[-1,-1]]){const u=ex+dx,v=ey+dy;if(u<0||v<0||u>=n||v>=n)continue;tot++;if(g[v][u]===c||(!g[v][u]&&nbrs(u,v,n).every(([a,b2])=>g[b2][a]===c)))own++}
+      val=(tot<4?own===tot:own>=3)?1:0}
+    const ids=[...gs];for(const id of ids)parent[find(id)]=find(ids[0]); // 共用一个眼的棋块算同一条龙
+    regions.push({ids,val})}
+  const dragons={};groups.forEach(G=>{const r=find(G.id);(dragons[r]=dragons[r]||{c:G.c,keys:[],eyes:0}).keys.push(...G.keys)});
+  for(const R of regions)dragons[find(R.ids[0])].eyes+=R.val;
+  const weak=Object.values(dragons).filter(D=>D.eyes<2);
+  // 死子判断：把这条龙拿掉，如果它所在的地方变成对方确定的地（被包围了），就当它是死子
+  // 收官阶段（棋盘上的子超过四成）才用较宽松的模样标准，中盘不轻易判死
+  let stones=0;for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(g[y][x])stones++;const late=stones>=n*n*0.4;
+  let dead=new Set();
+  for(let it=0;it<3;it++){
+    const nd=new Set();
+    for(const D of weak){
+      const skip=new Set(dead);for(const k of D.keys)skip.add(k);
+      const B=estBouzy(g,n,skip,EST_DIL,EST_ERO),s=D.c===1?1:-1;
+      let enemy=0;for(const k of D.keys)if(s*B[k]<0)enemy++;
+      // 第二个标准（只用在收官、小块棋）：拿掉后落在对方的大模样里
+      const M=estBouzy(g,n,skip,5,MOYO_E);let moyo=0;for(const k of D.keys)if(s*M[k]<0)moyo++;
+      if(enemy===D.keys.length||(late&&D.keys.length<=MOYO_MAX&&moyo>=D.keys.length*MOYO_F))for(const k of D.keys)nd.add(k)}
+    dead=nd}
+  // 地
+  const B=estBouzy(g,n,dead,5,21),I=estInfluence(g,n,dead);
+  const own=new Int8Array(n*n);let aB=0,aW=0,tB=0,tW=0,dame=0,dB=0,dW=0;
+  for(let p=0;p<n*n;p++){const x=p%n,y=(p/n)|0,c=g[y][x];
+    if(c&&!dead.has(p)){if(c===1)aB++;else aW++;own[p]=c===1?1:-1;continue}
+    if(c){if(c===1)dB++;else dW++}
+    let o=B[p]>0?1:B[p]<0?-1:(I[p]>0.35?1:I[p]<-0.35?-1:0);
+    if(c&&!o)o=c===1?-1:1; // 死子的位置算对方的
+    own[p]=o;if(o>0)tB++;else if(o<0)tW++;else dame++}
+  return{dead,own,aB,aW,tB,tW,dame,deadB:dB,deadW:dW};
+}
+
+let judging=false,estCache={node:null,res:null};
+let estT=null;
+// 快速翻棋谱时先不算，停下来约 0.1 秒再算，滚轮才不会卡
+function estimateFor(node,st,sync){
+  if(estCache.node===node&&estCache.res)return estCache.res;
+  const run=()=>{const res=estimatePosition(st.g,sizeOf(root()));estCache={node,res};return res};
+  if(sync)return run();
+  clearTimeout(estT);estT=setTimeout(()=>{if(cur===node){run();render()}},90);return null}
+
+/* goscorer — 数目（含双活、假眼判断）由 KataGo 作者 David J Wu (lightvector) 的 goscorer 计算
+   https://github.com/lightvector/goscorer  Copyright 2024 David J Wu ("lightvector"). MIT License:
+   Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+   The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
+const GoScorer=(()=>{
+/**
+ * An attempt at territory scoring in Go with seki detection.
+ * See https://github.com/lightvector/goscorer
+ * Original Author: lightvector
+ * Released under MIT license (https://github.com/lightvector/goscorer/blob/main/LICENSE.txt)
+ */
+
+const EMPTY = 0;
+const BLACK = 1;
+const WHITE = 2;
+
+/**
+ * Indicates how a given location on the board should be scored for territory, along with other metadata.
+ * isTerritoryFor is the primary field, indicating the territory (EMPTY / BLACK / WHITE) at each location.
+ * See the Python version of this code for more detailed documentation on the fields of this class.
+ */
+class LocScore {
+    constructor() {
+        this.isTerritoryFor = EMPTY;
+        this.belongsToSekiGroup = EMPTY;
+        this.isFalseEye = false;
+        this.isUnscorableFalseEye = false;
+        this.isDame = false;
+        this.eyeValue = 0;
+    }
+}
+
+/**
+ * @param {color[][]} stones - BLACK or WHITE or EMPTY indicating the stones on the board.
+ * @param {bool[][]} markedDead - true if the location has a stone marked as dead, and false otherwise.
+ * @param {float} blackPointsFromCaptures - points to add to black's score due to captures
+ * @param {float} whitePointsFromCaptures - points to add to white's score due to captures
+ * @param {float} komi - points to add to white's score due to komi
+ * @param {bool} [scoreFalseEyes=false] - defaults to false, if set to true will score territory in false eyes even if
+      is_unscorable_false_eye is true.
+ * @return { {black:finalBlackScore,white:finalWhiteScore} }
+ */
+function finalTerritoryScore(
+    stones,
+    markedDead,
+    blackPointsFromCaptures,
+    whitePointsFromCaptures,
+    komi,
+    scoreFalseEyes = false
+) {
+    const scoring = territoryScoring(stones,markedDead,scoreFalseEyes);
+
+    const ysize = stones.length;
+    const xsize = stones[0].length;
+    let finalBlackScore = 0;
+    let finalWhiteScore = 0;
+    for(let y = 0; y<ysize; y++) {
+        for(let x = 0; x<xsize; x++) {
+            if(scoring[y][x].isTerritoryFor == BLACK)
+                finalBlackScore += 1;
+            else if(scoring[y][x].isTerritoryFor == WHITE)
+                finalWhiteScore += 1;
+
+            if(stones[y][x] == BLACK && markedDead[y][x])
+                finalWhiteScore += 1;
+            else if(stones[y][x] == WHITE && markedDead[y][x])
+                finalBlackScore += 1;
+        }
+    }
+    finalBlackScore += blackPointsFromCaptures;
+    finalWhiteScore += whitePointsFromCaptures;
+    finalWhiteScore += komi;
+    return {black:finalBlackScore,white:finalWhiteScore};
+}
+
+/**
+ * @param {color[][]} stones - BLACK or WHITE or EMPTY indicating the stones on the board.
+ * @param {bool[][]} markedDead - true if the location has a stone marked as dead, and false otherwise.
+ * @param {float} komi - points to add to white's score due to komi
+ * @return { {black:finalBlackScore,white:finalWhiteScore} }
+ */
+function finalAreaScore(
+    stones,
+    markedDead,
+    komi,
+) {
+    const scoring = areaScoring(stones,markedDead);
+
+    const ysize = stones.length;
+    const xsize = stones[0].length;
+    let finalBlackScore = 0;
+    let finalWhiteScore = 0;
+    for(let y = 0; y<ysize; y++) {
+        for(let x = 0; x<xsize; x++) {
+            if(scoring[y][x] == BLACK)
+                finalBlackScore += 1;
+            else if(scoring[y][x] == WHITE)
+                finalWhiteScore += 1;
+        }
+    }
+    finalWhiteScore += komi;
+    return {black:finalBlackScore,white:finalWhiteScore};
+}
+
+/**
+ * @param {color[][]} stones - BLACK or WHITE or EMPTY indicating the stones on the board.
+ * @param {bool[][]} markedDead - true if the location has a stone marked as dead, and false otherwise.
+ * @param {bool} [scoreFalseEyes=false] - defaults to false, if set to true will score territory in false eyes even if
+      is_unscorable_false_eye is true.
+ * @return {LocScore[][]}
+ */
+function territoryScoring(
+    stones,
+    markedDead,
+    scoreFalseEyes = false
+) {
+    const ysize = stones.length;
+    const xsize = stones[0].length;
+
+    stones.forEach(row => {
+        if(row.length !== xsize)
+            throw new Error(`Not all rows in stones are the same length ${xsize}`);
+        row.forEach(value => {
+            if(value !== EMPTY && value !== BLACK && value !== WHITE)
+                throw new Error("Unexpected value in stones " + value);
+        });
+    });
+
+    if(markedDead.length !== ysize)
+        throw new Error(`markedDead is not the same length as stones ${ysize}`);
+
+    markedDead.forEach(row => {
+        if(row.length !== xsize)
+            throw new Error(`Not all rows in markedDead are the same length as stones ${xsize}`);
+    });
+
+    const connectionBlocks = makeArray(ysize, xsize, EMPTY);
+    markConnectionBlocks(ysize, xsize, stones, markedDead, connectionBlocks);
+
+    // console.log("CONNECTIONBLOCKS");
+    // print2d(connectionBlocks, (s) =>
+    //         ".xo"[s]
+    //        );
+
+    const strictReachesBlack = makeArray(ysize, xsize, false);
+    const strictReachesWhite = makeArray(ysize, xsize, false);
+    markReachability(ysize, xsize, stones, markedDead, null, strictReachesBlack, strictReachesWhite);
+
+    const reachesBlack = makeArray(ysize, xsize, false);
+    const reachesWhite = makeArray(ysize, xsize, false);
+    markReachability(ysize, xsize, stones, markedDead, connectionBlocks, reachesBlack, reachesWhite);
+
+    const regionIds = makeArray(ysize, xsize, -1);
+    const regionInfosById = {};
+    markRegions(ysize, xsize, stones, markedDead, connectionBlocks, reachesBlack, reachesWhite, regionIds, regionInfosById);
+
+    // console.log("REGIONIDS");
+    // print2d(regionIds, (s) =>
+    //         ".0123456789abcdefghijklmnopqrstuvwxyz"[s+1]
+    //        );
+
+    const chainIds = makeArray(ysize, xsize, -1);
+    const chainInfosById = {};
+    markChains(ysize, xsize, stones, markedDead, regionIds, chainIds, chainInfosById);
+
+    const macrochainIds = makeArray(ysize, xsize, -1);
+    const macrochainInfosById = {};
+    markMacrochains(ysize, xsize, stones, markedDead, connectionBlocks, regionIds, regionInfosById, chainIds, chainInfosById, macrochainIds, macrochainInfosById);
+
+    // console.log("MACROCHAINS");
+    // print2d(macrochainIds, (s) =>
+    //         ".0123456789abcdefghijklmnopqrstuvwxyz"[s+1]
+    //        );
+
+    const eyeIds = makeArray(ysize, xsize, -1);
+    const eyeInfosById = {};
+    markPotentialEyes(ysize, xsize, stones, markedDead, strictReachesBlack, strictReachesWhite, regionIds, regionInfosById, macrochainIds, macrochainInfosById, eyeIds, eyeInfosById);
+
+    // console.log("EYE IDS");
+    // print2d(eyeIds, (s) =>
+    //         ".0123456789abcdefghijklmnopqrstuvwxyz"[s+1]
+    //        );
+
+    const isFalseEyePoint = makeArray(ysize, xsize, false);
+    markFalseEyePoints(ysize, xsize, regionIds, macrochainIds, macrochainInfosById, eyeInfosById, isFalseEyePoint);
+
+    markEyeValues(ysize, xsize, stones, markedDead, regionIds, regionInfosById, chainIds, chainInfosById, isFalseEyePoint, eyeIds, eyeInfosById);
+
+    const isUnscorableFalseEyePoint = makeArray(ysize, xsize, false);
+    markFalseEyePoints(ysize, xsize, regionIds, macrochainIds, macrochainInfosById, eyeInfosById, isUnscorableFalseEyePoint);
+
+    const scoring = makeArrayFromCallable(ysize, xsize, () => new LocScore());
+    markScoring(
+        ysize, xsize, stones, markedDead, scoreFalseEyes,
+        strictReachesBlack, strictReachesWhite, regionIds, regionInfosById,
+        chainIds, chainInfosById, isFalseEyePoint, eyeIds, eyeInfosById,
+        isUnscorableFalseEyePoint, scoring
+    );
+    return scoring;
+}
+
+/**
+ * @param {color[][]} stones - BLACK or WHITE or EMPTY indicating the stones on the board.
+ * @param {bool[][]} markedDead - true if the location has a stone marked as dead, and false otherwise.
+ * @return {color[][]}
+ */
+function areaScoring(
+    stones,
+    markedDead,
+) {
+    const ysize = stones.length;
+    const xsize = stones[0].length;
+
+    stones.forEach(row => {
+        if(row.length !== xsize)
+            throw new Error(`Not all rows in stones are the same length ${xsize}`);
+        row.forEach(value => {
+            if(value !== EMPTY && value !== BLACK && value !== WHITE)
+                throw new Error("Unexpected value in stones " + value);
+        });
+    });
+
+    if(markedDead.length !== ysize)
+        throw new Error(`markedDead is not the same length as stones ${ysize}`);
+
+    markedDead.forEach(row => {
+        if(row.length !== xsize)
+            throw new Error(`Not all rows in markedDead are the same length as stones ${xsize}`);
+    });
+
+    const strictReachesBlack = makeArray(ysize, xsize, false);
+    const strictReachesWhite = makeArray(ysize, xsize, false);
+    markReachability(ysize, xsize, stones, markedDead, null, strictReachesBlack, strictReachesWhite);
+
+    const scoring = makeArray(ysize, xsize, EMPTY);
+
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(strictReachesWhite[y][x] && !strictReachesBlack[y][x])
+                scoring[y][x] = WHITE;
+            if(strictReachesBlack[y][x] && !strictReachesWhite[y][x])
+                scoring[y][x] = BLACK;
+        }
+    }
+    return scoring;
+}
+
+
+function getOpp(pla) {
+    return 3 - pla;
+}
+
+function makeArray(ysize, xsize, initialValue) {
+    return Array.from({length: ysize}, () =>
+                      Array.from({length: xsize}, () => initialValue));
+}
+
+function makeArrayFromCallable(ysize, xsize, f) {
+    return Array.from({length: ysize}, () =>
+                      Array.from({length: xsize}, () => f()));
+}
+
+function isOnBoard(y, x, ysize, xsize) {
+    return y >= 0 && x >= 0 && y < ysize && x < xsize;
+}
+
+function isOnBorder(y, x, ysize, xsize) {
+    return y === 0 || x === 0 || y === ysize-1 || x === xsize-1;
+}
+
+function isAdjacent(y1, x1, y2, x2) {
+    return (y1 === y2 && (x1 === x2 + 1 || x1 === x2 - 1))
+        || (x1 === x2 && (y1 === y2 + 1 || y1 === y2 - 1));
+}
+
+function print2d(board, f) {
+    console.log(string2d(board, f));
+}
+
+function string2d(board, f) {
+    const ysize = board.length;
+    const lines = [];
+
+    for(let y = 0; y < ysize; y++) {
+        const pieces = [];
+        for(let item of board[y])
+            pieces.push(f(item));
+        lines.push(pieces.join(''));
+    }
+    return lines.join('\n');
+}
+
+function string2d2(board1, board2, f) {
+    const ysize = board1.length;
+    const lines = [];
+
+    for(let y = 0; y < ysize; y++) {
+        const pieces = [];
+        for(let x = 0; x < board1[y].length; x++) {
+            const item1 = board1[y][x];
+            const item2 = board2[y][x];
+            pieces.push(f(item1, item2));
+        }
+        lines.push(pieces.join(''));
+    }
+    return lines.join('\n');
+}
+
+function colorToStr(color) {
+    if(color === EMPTY)
+        return '.';
+    if(color === BLACK)
+        return 'x';
+    if(color === WHITE)
+        return 'o';
+    throw new Error("Invalid color: " + color);
+}
+
+function markConnectionBlocks(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    connectionBlocks // mutated by this function
+) {
+    const patterns = [
+        [
+            "pp",
+            "@e",
+            "pe",
+        ],
+        [
+            "ep?",
+            "e@e",
+            "ep?",
+        ],
+        [
+            "pee",
+            "e@p",
+            "pee",
+        ],
+        [
+            "?e?",
+            "p@p",
+            "xxx",
+        ],
+        [
+            "pp",
+            "@e",
+            "xx",
+        ],
+        [
+            "ep?",
+            "e@e",
+            "xxx",
+        ],
+    ];
+
+    for(const pla of [BLACK, WHITE]) {
+        const opp = getOpp(pla);
+
+        for(const [pdydy, pdydx, pdxdy, pdxdx] of [
+            [1,0,0,1],
+            [-1,0,0,1],
+            [1,0,0,-1],
+            [-1,0,0,-1],
+            [0,1,1,0],
+            [0,-1,1,0],
+            [0,1,-1,0],
+            [0,-1,-1,0],
+        ]) {
+            for(const pattern of patterns) {
+                let pylen = pattern.length;
+                const pxlen = pattern[0].length;
+                const isEdgePattern = pattern[pylen-1].includes('x');
+
+                if(isEdgePattern)
+                    pylen--;
+
+                let yRange = Array.from({length: ysize}, (_, i) => i);
+                let xRange = Array.from({length: xsize}, (_, i) => i);
+
+                if(isEdgePattern) {
+                    if(pdydy === -1)
+                        yRange = [pattern.length-2];
+                    else if(pdydy === 1)
+                        yRange = [ysize - (pattern.length-1)];
+                    else if(pdxdy === -1)
+                        xRange = [pattern.length-2];
+                    else if(pdxdy === 1)
+                        xRange = [xsize - (pattern.length-1)];
+                }
+
+                for(let y of yRange) {
+                    for(let x of xRange) {
+                        function getTargetYX(pdy, pdx) {
+                            return [
+                                y + pdydy*pdy + pdxdy*pdx,
+                                x + pdydx*pdy + pdxdx*pdx
+                            ];
+                        }
+
+                        let [ty, tx] = getTargetYX(pylen-1, pxlen-1);
+                        if(!isOnBoard(ty, tx, ysize, xsize))
+                            continue;
+                        if(!isOnBoard(y, x, ysize, xsize))
+                            continue;
+
+                        let atLoc;
+                        let mismatch = false;
+                        for(let pdy = 0; pdy < pylen; pdy++) {
+                            for(let pdx = 0; pdx < pxlen; pdx++) {
+                                const c = pattern[pdy][pdx];
+                                if(c === "?")
+                                    continue;
+
+                                [ty, tx] = getTargetYX(pdy, pdx);
+                                if(c === 'p') {
+                                    if(!(stones[ty][tx] === pla && !markedDead[ty][tx])) {
+                                        mismatch = true;
+                                        break;
+                                    }
+                                }
+                                else if(c === 'e') {
+                                    if(!(
+                                        stones[ty][tx] === EMPTY ||
+                                            stones[ty][tx] === pla && !markedDead[ty][tx] ||
+                                            stones[ty][tx] === opp && markedDead[ty][tx]
+                                    )) {
+                                        mismatch = true;
+                                        break;
+                                    }
+                                }
+                                else if(c === '@') {
+                                    if(stones[ty][tx] !== EMPTY) {
+                                        mismatch = true;
+                                        break;
+                                    }
+                                    atLoc = [ty, tx];
+                                }
+                                else {
+                                    throw new Error("Invalid char: " + c);
+                                }
+                            }
+                            if(mismatch)
+                                break;
+                        }
+
+                        if(!mismatch) {
+                            [ty, tx] = atLoc;
+                            connectionBlocks[ty][tx] = pla;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+function markReachability(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    connectionBlocks,
+    reachesBlack, // mutated by this function
+    reachesWhite // mutated by this function
+) {
+    function fillReach(y, x, reachesPla, pla) {
+        if(!isOnBoard(y,x,ysize,xsize))
+            return;
+        if(reachesPla[y][x])
+            return;
+        if(stones[y][x] === getOpp(pla) && !markedDead[y][x])
+            return;
+
+        reachesPla[y][x] = true;
+
+        if(connectionBlocks && connectionBlocks[y][x] === getOpp(pla))
+            return;
+
+        fillReach(y-1, x, reachesPla, pla);
+        fillReach(y+1, x, reachesPla, pla);
+        fillReach(y, x-1, reachesPla, pla);
+        fillReach(y, x+1, reachesPla, pla);
+    }
+
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(stones[y][x] === BLACK && !markedDead[y][x])
+                fillReach(y, x, reachesBlack, BLACK);
+            if(stones[y][x] === WHITE && !markedDead[y][x])
+                fillReach(y, x, reachesWhite, WHITE);
+        }
+    }
+}
+
+class RegionInfo {
+    constructor(regionId, color, regionAndDame, eyes) {
+        this.regionId = regionId;
+        this.color = color;
+        this.regionAndDame = regionAndDame;
+        this.eyes = eyes;
+    }
+}
+
+function markRegions(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    connectionBlocks,
+    reachesBlack,
+    reachesWhite,
+    regionIds, // mutated by this function
+    regionInfosById // mutated by this function
+) {
+    function fillRegion(y, x, withId, opp, reachesPla, reachesOpp, visited) {
+        if(!isOnBoard(y,x,ysize,xsize))
+            return;
+        if(visited[y][x])
+            return;
+        if(regionIds[y][x] !== -1)
+            return;
+        if(stones[y][x] === opp && !markedDead[y][x])
+            return;
+
+        visited[y][x] = true;
+        regionInfosById[withId].regionAndDame.add([y, x]);
+
+        if(reachesPla[y][x] && !reachesOpp[y][x])
+            regionIds[y][x] = withId;
+
+        if(connectionBlocks[y][x] === opp)
+            return;
+
+        fillRegion(y-1, x, withId, opp, reachesPla, reachesOpp, visited);
+        fillRegion(y+1, x, withId, opp, reachesPla, reachesOpp, visited);
+        fillRegion(y, x-1, withId, opp, reachesPla, reachesOpp, visited);
+        fillRegion(y, x+1, withId, opp, reachesPla, reachesOpp, visited);
+    }
+
+    let nextRegionId = 0;
+
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(reachesBlack[y][x] && !reachesWhite[y][x] && regionIds[y][x] === -1) {
+                const regionId = nextRegionId++;
+                regionInfosById[regionId] = new RegionInfo(
+                    regionId, BLACK, new CoordinateSet(), new Set()
+                );
+
+                const visited = makeArray(ysize, xsize, false);
+                fillRegion(y, x, regionId, WHITE, reachesBlack, reachesWhite, visited);
+            }
+            if(reachesWhite[y][x] && !reachesBlack[y][x] && regionIds[y][x] === -1) {
+                const regionId = nextRegionId++;
+                regionInfosById[regionId] = new RegionInfo(
+                    regionId, WHITE, new CoordinateSet(), new Set()
+                );
+
+                const visited = makeArray(ysize, xsize, false);
+                fillRegion(y, x, regionId, BLACK, reachesWhite, reachesBlack, visited);
+            }
+        }
+    }
+}
+
+
+class ChainInfo {
+    constructor(chainId, regionId, color, points, neighbors, adjacents, liberties, isMarkedDead) {
+        this.chainId = chainId;
+        this.regionId = regionId;
+        this.color = color;
+        this.points = points;
+        this.neighbors = neighbors;
+        this.adjacents = adjacents;
+        this.liberties = liberties;
+        this.isMarkedDead = isMarkedDead;
+    }
+}
+
+function markChains(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    regionIds,
+    chainIds, // mutated by this function
+    chainInfosById // mutated by this function
+) {
+    function fillChain(y, x, withId, color, isMarkedDead) {
+
+        if(!isOnBoard(y,x,ysize,xsize))
+            return;
+        if(chainIds[y][x] === withId)
+            return;
+
+        if(chainIds[y][x] !== -1) {
+            const otherId = chainIds[y][x];
+            chainInfosById[otherId].neighbors.add(withId);
+            chainInfosById[withId].neighbors.add(otherId);
+            chainInfosById[withId].adjacents.add([y, x]);
+            if(stones[y][x] == EMPTY)
+                chainInfosById[withId].liberties.add([y, x]);
+            return;
+        }
+        if(stones[y][x] !== color || markedDead[y][x] !== isMarkedDead) {
+            chainInfosById[withId].adjacents.add([y, x]);
+            if(stones[y][x] == EMPTY)
+                chainInfosById[withId].liberties.add([y, x]);
+            return;
+        }
+
+        chainIds[y][x] = withId;
+        chainInfosById[withId].points.push([y, x]);
+        if(chainInfosById[withId].regionId !== regionIds[y][x])
+            chainInfosById[withId].regionId = -1;
+
+        assert(color === EMPTY || regionIds[y][x] === chainInfosById[withId].regionId);
+
+        fillChain(y-1, x, withId, color, isMarkedDead);
+        fillChain(y+1, x, withId, color, isMarkedDead);
+        fillChain(y, x-1, withId, color, isMarkedDead);
+        fillChain(y, x+1, withId, color, isMarkedDead);
+    }
+
+    let nextChainId = 0;
+
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(chainIds[y][x] === -1) {
+                const chainId = nextChainId++;
+                const color = stones[y][x];
+                const isMarkedDead = markedDead[y][x];
+
+                chainInfosById[chainId] = new ChainInfo(
+                    chainId,
+                    regionIds[y][x],
+                    color,
+                    [],
+                    new Set(),
+                    new CoordinateSet(),
+                    new CoordinateSet(),
+                    isMarkedDead
+                );
+
+                assert(isMarkedDead || color === EMPTY || regionIds[y][x] !== -1);
+                fillChain(y, x, chainId, color, isMarkedDead);
+            }
+        }
+    }
+}
+
+
+class MacroChainInfo {
+    constructor(macrochainId, regionId, color, points, chains, eyeNeighborsFrom) {
+        this.macrochainId = macrochainId;
+        this.regionId = regionId;
+        this.color = color;
+        this.points = points;
+        this.chains = chains;
+        this.eyeNeighborsFrom = eyeNeighborsFrom;
+    }
+}
+
+function markMacrochains(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    connectionBlocks,
+    regionIds,
+    regionInfosById,
+    chainIds,
+    chainInfosById,
+    macrochainIds, // mutated by this function
+    macrochainInfosById // mutated by this function
+) {
+    let nextMacrochainId = 0;
+
+    for(const pla of [BLACK, WHITE]) {
+        const opp = getOpp(pla);
+        const chainsHandled = new Set();
+        const visited = makeArray(ysize, xsize, false);
+
+        for(let chainId in chainInfosById) {
+            chainId = Number(chainId);
+            if(chainsHandled.has(chainId))
+                continue;
+
+            const chainInfo = chainInfosById[chainId];
+            if(!(chainInfo.color === pla && !chainInfo.isMarkedDead))
+                continue;
+
+            const regionId = chainInfo.regionId;
+            assert(regionId !== -1);
+
+            const macrochainId = nextMacrochainId++;
+            const points = [];
+            const chains = new Set();
+
+            function walkAndAccumulate(y, x) {
+                if(!isOnBoard(y,x,ysize,xsize))
+                    return;
+                if(visited[y][x])
+                    return;
+
+                visited[y][x] = true;
+
+                const chainId2 = chainIds[y][x];
+                const chainInfo2 = chainInfosById[chainId2];
+
+                let shouldRecurse = false;
+                if(stones[y][x] === pla && !markedDead[y][x]) {
+                    macrochainIds[y][x] = macrochainId;
+                    points.push([y,x]);
+                    if(!chains.has(chainId2)) {
+                        chains.add(chainId2);
+                        chainsHandled.add(chainId2);
+                    }
+                    shouldRecurse = true;
+                }
+                else if(regionIds[y][x] === -1 && connectionBlocks[y][x] !== opp) {
+                    shouldRecurse = true;
+                }
+
+                if(shouldRecurse) {
+                    walkAndAccumulate(y-1, x);
+                    walkAndAccumulate(y+1, x);
+                    walkAndAccumulate(y, x-1);
+                    walkAndAccumulate(y, x+1);
+                }
+            }
+
+            const [y, x] = chainInfo.points[0];
+            walkAndAccumulate(y, x);
+
+            macrochainInfosById[macrochainId] = new MacroChainInfo(
+                macrochainId,
+                regionId,
+                pla,
+                points,
+                chains,
+                {} // filled in later
+            );
+
+        }
+
+    }
+
+}
+
+
+class EyeInfo {
+    constructor(pla, regionId, eyeId, potentialPoints, realPoints, macrochainNeighborsFrom, isLoose, eyeValue) {
+        this.pla = pla;
+        this.regionId = regionId;
+        this.eyeId = eyeId;
+        this.potentialPoints = potentialPoints;
+        this.realPoints = realPoints;
+        this.macrochainNeighborsFrom = macrochainNeighborsFrom;
+        this.isLoose = isLoose;
+        this.eyeValue = eyeValue;
+    }
+}
+
+function markPotentialEyes(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    strictReachesBlack,
+    strictReachesWhite,
+    regionIds,
+    regionInfosById, // mutated by this function
+    macrochainIds,
+    macrochainInfosById, // mutated by this function
+    eyeIds, // mutated by this function
+    eyeInfosById // mutated by this function
+) {
+    let nextEyeId = 0;
+    const visited = makeArray(ysize, xsize, false);
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(visited[y][x])
+                continue;
+            if(eyeIds[y][x] !== -1)
+                continue;
+            if(stones[y][x] !== EMPTY && !markedDead[y][x])
+                continue;
+
+            const regionId = regionIds[y][x];
+            if(regionId === -1)
+                continue;
+
+            const regionInfo = regionInfosById[regionId];
+            const pla = regionInfo.color;
+            const isLoose = strictReachesWhite[y][x] && strictReachesBlack[y][x];
+            const eyeId = nextEyeId++;
+            const potentialPoints = new CoordinateSet();
+            const macrochainNeighborsFrom = {};
+
+            function accRegion(y, x, prevY, prevX) {
+                if(!isOnBoard(y,x,ysize,xsize))
+                    return;
+                if(visited[y][x])
+                    return;
+                if(regionIds[y][x] !== regionId)
+                    return;
+
+                if(macrochainIds[y][x] !== -1) {
+                    const macrochainId = macrochainIds[y][x];
+
+                    if(!macrochainNeighborsFrom[macrochainId])
+                        macrochainNeighborsFrom[macrochainId] = new CoordinateSet();
+                    macrochainNeighborsFrom[macrochainId].add([prevY, prevX]);
+                    if(!macrochainInfosById[macrochainId].eyeNeighborsFrom[eyeId])
+                        macrochainInfosById[macrochainId].eyeNeighborsFrom[eyeId] = new CoordinateSet();
+
+                    macrochainInfosById[macrochainId].eyeNeighborsFrom[eyeId].add([y, x]);
+                }
+
+                if(stones[y][x] !== EMPTY && !markedDead[y][x])
+                    return;
+
+                visited[y][x] = true;
+                eyeIds[y][x] = eyeId;
+                potentialPoints.add([y,x]);
+
+                accRegion(y-1, x, y, x);
+                accRegion(y+1, x, y, x);
+                accRegion(y, x-1, y, x);
+                accRegion(y, x+1, y, x);
+            }
+
+            assert(macrochainIds[y][x] === -1);
+            accRegion(y, x, 10000, 10000);
+
+            eyeInfosById[eyeId] = new EyeInfo(
+                pla,
+                regionId,
+                eyeId,
+                potentialPoints,
+                new CoordinateSet(), // filled in later
+                macrochainNeighborsFrom,
+                isLoose,
+                0 // filled in later
+            );
+
+            regionInfosById[regionId].eyes.add(eyeId);
+
+        }
+    }
+
+}
+
+
+function markFalseEyePoints(
+    ysize,
+    xsize,
+    regionIds,
+    macrochainIds,
+    macrochainInfosById,
+    eyeInfosById,
+    isFalseEyePoint // mutated by this function
+) {
+    for(let origEyeId in eyeInfosById) {
+        origEyeId = Number(origEyeId);
+        const origEyeInfo = eyeInfosById[origEyeId];
+
+        for(let origMacrochainId in origEyeInfo.macrochainNeighborsFrom) {
+            origMacrochainId = Number(origMacrochainId);
+            const neighborsFromEyePoints = origEyeInfo.macrochainNeighborsFrom[origMacrochainId];
+
+            for(let [ey, ex] of neighborsFromEyePoints) {
+                let sameEyeAdjCount = 0;
+                for(let [y, x] of [[ey-1,ex], [ey+1,ex], [ey,ex-1], [ey,ex+1]]) {
+                    if(origEyeInfo.potentialPoints.has([y, x]))
+                        sameEyeAdjCount += 1;
+                }
+                if(sameEyeAdjCount > 1)
+                    continue;
+
+                const reachingSides = new CoordinateSet();
+                const visitedMacro = new Set();
+                const visitedOtherEyes = new Set();
+                const visitedOrigEyePoints = new CoordinateSet();
+                visitedOrigEyePoints.add([ey,ex]);
+
+                let targetSideCount = 0;
+                for(let [y, x] of [[ey-1,ex], [ey+1,ex], [ey,ex-1], [ey, ex+1]]) {
+                    if(isOnBoard(y, x, ysize, xsize) && regionIds[y][x] === origEyeInfo.regionId)
+                        targetSideCount += 1;
+                }
+                // console.log("CHECKING EYE " + origEyeId + " " + [ey,ex]);
+                function search(macrochainId) {
+                    if(visitedMacro.has(macrochainId))
+                        return false;
+                    visitedMacro.add(macrochainId);
+                    // console.log("Searching macrochain " + macrochainId + "");
+
+                    const macrochainInfo = macrochainInfosById[macrochainId];
+                    for(let eyeId in macrochainInfo.eyeNeighborsFrom) {
+                        eyeId = Number(eyeId);
+                        if(visitedOtherEyes.has(eyeId))
+                            continue;
+                        // console.log("Searching macrochain " + macrochainId + " iterating eyeId " + eyeId + "");
+
+                        if(eyeId === origEyeId) {
+                            // console.log("Orig!");
+                            const eyeInfo = eyeInfosById[eyeId];
+                            for(let [y, x] of macrochainInfo.eyeNeighborsFrom[eyeId]) {
+                                if(isAdjacent(y, x, ey, ex)) {
+                                    reachingSides.add([y, x]);
+                                    if(reachingSides.size >= targetSideCount)
+                                        return true;
+                                }
+                            }
+
+                            const pointsReached = findRecursivelyAdjacentPoints(
+                                eyeInfo.potentialPoints,
+                                eyeInfo.macrochainNeighborsFrom[macrochainId],
+                                visitedOrigEyePoints
+                            );
+                            if(pointsReached.size === 0)
+                                continue;
+
+                            pointsReached.forEach(item => visitedOrigEyePoints.add(item));
+
+                            if(eyeInfo.eyeValue > 0) {
+                                for(let point of pointsReached) {
+                                    if(eyeInfo.realPoints.has(point))
+                                        return true;
+                                }
+                            }
+
+                            for(let [y, x] of pointsReached) {
+                                if(isAdjacent(y, x, ey, ex)) {
+                                    reachingSides.add([y,x]);
+                                    if(reachingSides.size >= targetSideCount)
+                                        return true;
+                                }
+                            }
+
+                            for(let nextMacrochainId in eyeInfo.macrochainNeighborsFrom) {
+                                if([...eyeInfo.macrochainNeighborsFrom[nextMacrochainId]].some(point => pointsReached.has(point))) {
+                                    if(search(Number(nextMacrochainId)))
+                                        return true;
+                                }
+                            }
+
+                        }
+                        else {
+                            visitedOtherEyes.add(eyeId);
+                            const eyeInfo = eyeInfosById[eyeId];
+                            if(eyeInfo.eyeValue > 0)
+                                return true;
+
+                            for(let nextMacrochainId of Object.keys(eyeInfo.macrochainNeighborsFrom)) {
+                                if(search(Number(nextMacrochainId)))
+                                    return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+
+                if(search(origMacrochainId)) {
+                    // pass
+                }
+                else {
+                    isFalseEyePoint[ey][ex] = true;
+                }
+            }
+        }
+    }
+}
+
+
+
+function findRecursivelyAdjacentPoints(
+    withinSet,
+    fromPoints,
+    excludingPoints
+) {
+    const expanded = new CoordinateSet();
+    fromPoints = [...fromPoints];
+
+    for(let i = 0; i < fromPoints.length; i++) {
+        const point = fromPoints[i];
+        if(excludingPoints.has(point) || expanded.has(point) || !withinSet.has(point))
+            continue;
+        expanded.add(point);
+        const [y, x] = point;
+        fromPoints.push([y-1, x]);
+        fromPoints.push([y+1, x]);
+        fromPoints.push([y, x-1]);
+        fromPoints.push([y, x+1]);
+    }
+
+    return expanded;
+}
+
+
+function getPieces(ysize, xsize, points, pointsToDelete) {
+    const usedPoints = new CoordinateSet();
+    function floodfill(point, piece) {
+        if(usedPoints.has(point) || pointsToDelete.has(point))
+            return;
+        usedPoints.add(point);
+        piece.add(point);
+        const [y, x] = point;
+        const adjacents = [[y-1, x], [y+1, x], [y, x-1], [y, x+1]];
+        for(let adjacent of adjacents) {
+            if(points.has(adjacent))
+                floodfill(adjacent, piece);
+        }
+    }
+
+    const pieces = [];
+    for(let point of points) {
+        if(!usedPoints.has(point)) {
+            const piece = new CoordinateSet();
+            floodfill(point, piece);
+            if(piece.size > 0)
+                pieces.push(piece);
+        }
+    }
+    return pieces;
+}
+
+function isPseudoLegal(ysize, xsize, stones, chainIds, chainInfosById, y, x, pla) {
+    if(stones[y][x] !== EMPTY)
+        return false;
+    const adjacents = [[y-1, x], [y+1, x], [y, x-1], [y, x+1]];
+    const opp = getOpp(pla);
+    for(let [ay, ax] of adjacents) {
+        if(isOnBoard(ay, ax, ysize, xsize)) {
+            if(stones[ay][ax] !== opp)
+                return true;
+            if(chainInfosById[chainIds[ay][ax]].liberties.size <= 1)
+                return true;
+        }
+    }
+    return false;
+}
+
+function countAdjacentsIn(y, x, points) {
+    let count = 0;
+    const adjacents = [[y-1, x], [y+1, x], [y, x-1], [y, x+1]];
+    for(let a of adjacents) {
+        if(points.has(a))
+            count += 1;
+    }
+    return count;
+}
+
+class EyePointInfo {
+    constructor(
+        adjPoints,
+        adjEyePoints,
+        numEmptyAdjPoints=0,
+        numEmptyAdjFalsePoints=0,
+        numEmptyAdjEyePoints=0,
+        numOppAdjFalsePoints=0,
+        isFalseEyePoke=false,
+        numMovesToBlock=0,
+        numBlockablesDependingOnThisSpot=0
+    ) {
+        this.adjPoints = adjPoints;
+        this.adjEyePoints = adjEyePoints;
+        this.numEmptyAdjPoints = numEmptyAdjPoints;
+        this.numEmptyAdjFalsePoints = numEmptyAdjFalsePoints;
+        this.numEmptyAdjEyePoints = numEmptyAdjEyePoints;
+        this.numOppAdjFalsePoints = numOppAdjFalsePoints;
+        this.isFalseEyePoke = isFalseEyePoke;
+        this.numMovesToBlock = numMovesToBlock;
+        this.numBlockablesDependingOnThisSpot = numBlockablesDependingOnThisSpot;
+    }
+}
+
+
+function count(points, predicate) {
+    let c = 0;
+    for(let p of points)
+        if(predicate(p)) {
+            c++;
+    }
+    return c;
+}
+
+function markEyeValues(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    regionIds,
+    regionInfosById,
+    chainIds,
+    chainInfosById,
+    isFalseEyePoint,
+    eyeIds,
+    eyeInfosById // mutated by this function
+) {
+    for(let eyeId in eyeInfosById) {
+        eyeId = Number(eyeId);
+
+        const eyeInfo = eyeInfosById[eyeId];
+        const pla = eyeInfo.pla;
+        const opp = getOpp(pla);
+
+        const infoByPoint = {};
+        eyeInfo.realPoints = new CoordinateSet();
+        for(let [y, x] of eyeInfo.potentialPoints) {
+            if(!isFalseEyePoint[y][x]) {
+                eyeInfo.realPoints.add([y, x]);
+
+                const info = new EyePointInfo([], []);
+                infoByPoint[[y, x]] = info;
+            }
+        }
+
+        for(let [y, x] of eyeInfo.realPoints) {
+            const info = infoByPoint[[y, x]];
+            const adjacents = [[y-1, x], [y+1, x], [y, x-1], [y, x+1]];
+            for(let [ay, ax] of adjacents) {
+                if(!isOnBoard(ay, ax, ysize, xsize))
+                    continue;
+
+                info.adjPoints.push([ay, ax]);
+                if(eyeInfo.realPoints.has([ay, ax]))
+                    info.adjEyePoints.push([ay, ax]);
+            }
+        }
+
+        for(let [y, x] of eyeInfo.realPoints) {
+            const info = infoByPoint[[y, x]];
+            for(let [ay, ax] of info.adjPoints) {
+                if(stones[ay][ax] === EMPTY)
+                    info.numEmptyAdjPoints += 1;
+                if(stones[ay][ax] === EMPTY && eyeInfo.realPoints.has([ay, ax]))
+                    info.numEmptyAdjEyePoints += 1;
+                if(stones[ay][ax] === EMPTY && isFalseEyePoint[ay][ax])
+                    info.numEmptyAdjFalsePoints += 1;
+                if(stones[ay][ax] === opp && isFalseEyePoint[ay][ax])
+                    info.numOppAdjFalsePoints += 1;
+            }
+
+            if(info.numOppAdjFalsePoints > 0 && stones[y][x] === opp)
+                info.isFalseEyePoke = true;
+            if(info.numEmptyAdjFalsePoints >= 2 && stones[y][x] === opp)
+                info.isFalseEyePoke = true;
+        }
+
+        for(let [y, x] of eyeInfo.realPoints) {
+            const info = infoByPoint[[y, x]];
+            info.numMovesToBlock = 0;
+            info.numMovesToBlockNoOpps = 0;
+
+            for(let [ay, ax] of info.adjPoints) {
+                let block = 0;
+                if(stones[ay][ax] === EMPTY && !eyeInfo.realPoints.has([ay, ax]))
+                    block = 1;
+                if(stones[ay][ax] === EMPTY && [ay, ax] in infoByPoint && infoByPoint[[ay, ax]].numOppAdjFalsePoints >= 1)
+                    block = 1;
+                if(stones[ay][ax] === opp && [ay, ax] in infoByPoint && infoByPoint[[ay, ax]].numEmptyAdjFalsePoints >= 1)
+                    block = 1;
+                if(stones[ay][ax] === opp && isFalseEyePoint[ay][ax])
+                    block = 1000;
+                if(stones[ay][ax] === opp && [ay, ax] in infoByPoint && infoByPoint[[ay, ax]].isFalseEyePoke)
+                    block = 1000;
+
+                info.numMovesToBlock += block;
+            }
+        }
+
+        let eyeValue = 0;
+        if(count(eyeInfo.realPoints, ([y, x]) => infoByPoint[[y, x]].numMovesToBlock <= 1) >= 1)
+            eyeValue = 1;
+
+        for(let [dy, dx] of eyeInfo.realPoints) {
+
+            if(!isPseudoLegal(ysize, xsize, stones, chainIds, chainInfosById, dy, dx, pla))
+                continue;
+
+            const pieces = getPieces(ysize, xsize, eyeInfo.realPoints, new CoordinateSet([[dy, dx]]));
+            if(pieces.length < 2)
+                continue;
+
+            let shouldBonus = infoByPoint[[dy, dx]].numOppAdjFalsePoints === 1;
+            let numDefiniteEyePieces = 0;
+            for(let piece of pieces) {
+                let zeroMovesToBlock = false;
+                for(let point of piece) {
+                    if(infoByPoint[point].numMovesToBlock <= 0) {
+                        zeroMovesToBlock = true;
+                        break;
+                    }
+                    if(shouldBonus && infoByPoint[point].numMovesToBlock <= 1) {
+                        zeroMovesToBlock = true;
+                        break;
+                    }
+                }
+
+                if(zeroMovesToBlock)
+                    numDefiniteEyePieces++;
+            }
+            eyeValue = Math.max(eyeValue, numDefiniteEyePieces);
+        }
+
+        let markedDeadCount = count(eyeInfo.realPoints, ([y,x]) => stones[y][x] === opp && markedDead[y][x]);
+        if(markedDeadCount >= 5)
+            eyeValue = Math.max(eyeValue, 1);
+        if(markedDeadCount >= 8)
+            eyeValue = Math.max(eyeValue, 2);
+
+        if(eyeValue < 2 && (
+            eyeInfo.realPoints.size
+                - count(eyeInfo.realPoints, ([y,x]) => infoByPoint[[y,x]].numMovesToBlock >= 1)
+                - count(eyeInfo.realPoints, ([y,x]) => infoByPoint[[y,x]].numMovesToBlock >= 2)
+                - count(eyeInfo.realPoints, ([y,x]) => stones[y][x] === opp && infoByPoint[[y,x]].adjEyePoints.length >= 2)
+                >= 6
+        )) {
+            eyeValue = Math.max(eyeValue, 2);
+        }
+
+        if(eyeValue < 2 && (
+            count(eyeInfo.realPoints, ([y,x]) => stones[y][x] === EMPTY && infoByPoint[[y,x]].adjEyePoints.length >= 4) +
+                count(eyeInfo.realPoints, ([y,x]) => stones[y][x] === EMPTY && infoByPoint[[y,x]].adjEyePoints.length >= 3)
+                >= 6
+        )) {
+            eyeValue = Math.max(eyeValue, 2);
+        }
+
+        if(eyeValue < 2) {
+            for(let [dy, dx] of eyeInfo.realPoints) {
+                if(stones[dy][dx] !== EMPTY)
+                    continue;
+                if(isOnBorder(dy, dx, ysize, xsize))
+                    continue;
+                if(!isPseudoLegal(ysize, xsize, stones, chainIds, chainInfosById, dy, dx, pla))
+                    continue;
+
+                const info1 = infoByPoint[[dy, dx]];
+                if(info1.numMovesToBlock > 1 || info1.adjEyePoints.length < 3)
+                    continue;
+
+                for(let adjacent of info1.adjEyePoints) {
+                    const info2 = infoByPoint[adjacent];
+                    if(info2.adjEyePoints.length < 3)
+                        continue;
+                    if(info2.numMovesToBlock > 1)
+                        continue;
+
+                    const [dy2, dx2] = adjacent;
+                    if(stones[dy2][dx2] !== EMPTY && info2.numEmptyAdjEyePoints <= 1)
+                        continue;
+
+                    const pieces = getPieces(ysize, xsize, eyeInfo.realPoints, new CoordinateSet([[dy, dx], adjacent]));
+                    if(pieces.length < 2)
+                        continue;
+
+                    let numDefiniteEyePieces = 0;
+                    let numDoubleDefiniteEyePieces = 0;
+
+                    for(let piece of pieces) {
+                        let numZeroMovesToBlock = 0;
+                        for(let point of piece) {
+                            if(infoByPoint[point].numMovesToBlock <= 0) {
+                                numZeroMovesToBlock += 1;
+                                if(numZeroMovesToBlock >= 2)
+                                    break;
+                            }
+                        }
+                        if(numZeroMovesToBlock >= 1)
+                            numDefiniteEyePieces += 1;
+                        if(numZeroMovesToBlock >= 2)
+                            numDoubleDefiniteEyePieces += 1;
+                    }
+
+                    if(numDefiniteEyePieces >= 2 &&
+                       numDoubleDefiniteEyePieces >= 1 &&
+                       (stones[dy2][dx2] === EMPTY || numDoubleDefiniteEyePieces >= 2)
+                      ) {
+                        eyeValue = Math.max(eyeValue, 2);
+                        break;
+                    }
+
+                }
+
+                if(eyeValue >= 2)
+                    break;
+            }
+        }
+
+        if(eyeValue < 2) {
+            const deadOppsInEye = new CoordinateSet();
+            const unplayableInEye = [];
+            for(let point of eyeInfo.realPoints) {
+                const [dy, dx] = point;
+                if(stones[dy][dx] === opp && markedDead[dy][dx])
+                    deadOppsInEye.add(point);
+                else if(!isPseudoLegal(ysize, xsize, stones, chainIds, chainInfosById, dy, dx, pla))
+                    unplayableInEye.push(point);
+            }
+
+            if(deadOppsInEye.size > 0) {
+                let numThrowins = 0;
+                for(let [y,x] of eyeInfo.potentialPoints) {
+                    if(stones[y][x] === opp && isFalseEyePoint[y][x])
+                        numThrowins += 1;
+                }
+
+                const possibleOmissions = [...unplayableInEye];
+                possibleOmissions.push(null);
+                let allGoodForDefender = true;
+                for(let omitted of possibleOmissions) {
+                    const remainingShape = deadOppsInEye.copy();
+                    for(let point of unplayableInEye) {
+                        if(point !== omitted)
+                            remainingShape.add(point);
+                    }
+
+                    const initialPieceCount = getPieces(ysize, xsize, remainingShape, new CoordinateSet()).length;
+                    let numBottlenecks = 0;
+                    let numNonBottlenecksHighDegree = 0;
+                    for(let pointToDelete of remainingShape) {
+                        const [dy,dx] = pointToDelete;
+                        if(getPieces(ysize, xsize, remainingShape, new CoordinateSet([pointToDelete])).length > initialPieceCount)
+                            numBottlenecks += 1;
+                        else if(countAdjacentsIn(dy,dx,remainingShape) >= 3)
+                            numNonBottlenecksHighDegree += 1;
+                    }
+
+                    let bonus = 0;
+                    if(remainingShape.size >= 7)
+                        bonus += 1;
+
+                    if(initialPieceCount - numThrowins + Math.floor((numBottlenecks + numNonBottlenecksHighDegree + bonus) / 2) < 2) {
+                        allGoodForDefender = false;
+                        break;
+                    }
+                }
+                if(allGoodForDefender)
+                    eyeValue = 2;
+            }
+        }
+
+        eyeValue = Math.min(eyeValue, 2);
+        eyeInfo.eyeValue = eyeValue;
+    }
+}
+
+function markScoring(
+    ysize,
+    xsize,
+    stones,
+    markedDead,
+    scoreFalseEyes,
+    strictReachesBlack,
+    strictReachesWhite,
+    regionIds,
+    regionInfosById,
+    chainIds,
+    chainInfosById,
+    isFalseEyePoint,
+    eyeIds,
+    eyeInfosById,
+    isUnscorableFalseEyePoint,
+    scoring // mutated by this function
+) {
+    const extraBlackUnscoreablePoints = new CoordinateSet();
+    const extraWhiteUnscoreablePoints = new CoordinateSet();
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            if(isUnscorableFalseEyePoint[y][x] && stones[y][x] != EMPTY && markedDead[y][x]) {
+                const adjacents = [[y-1, x], [y+1, x], [y, x-1], [y, x+1]];
+                if(stones[y][x] == WHITE) {
+                    for(const point of adjacents)
+                        extraBlackUnscoreablePoints.add(point);
+                }
+                else {
+                    for(const point of adjacents)
+                        extraWhiteUnscoreablePoints.add(point);
+                }
+            }
+        }
+    }
+
+    for(let y = 0; y < ysize; y++) {
+        for(let x = 0; x < xsize; x++) {
+            const s = scoring[y][x];
+            const regionId = regionIds[y][x];
+
+            if(regionId === -1) {
+                s.isDame = true;
+            }
+            else {
+                const regionInfo = regionInfosById[regionId];
+                const color = regionInfo.color;
+                const totalEyes = Array.from(regionInfo.eyes)
+                      .reduce((acc, eyeId) => acc + eyeInfosById[eyeId].eyeValue, 0);
+
+                if(totalEyes <= 1)
+                    s.belongsToSekiGroup = regionInfo.color;
+                if(isFalseEyePoint[y][x])
+                    s.isFalseEye = true;
+                if(isUnscorableFalseEyePoint[y][x])
+                    s.isUnscorableFalseEye = true;
+                if((stones[y][x] == EMPTY || markedDead[y][x]) && (
+                    (color == BLACK && extraBlackUnscoreablePoints.has([y,x])) ||
+                        (color == WHITE && extraWhiteUnscoreablePoints.has([y,x]))
+                )) {
+                    s.isUnscorableFalseEye = true;
+                }
+
+                s.eyeValue = eyeIds[y][x] !== -1 ? eyeInfosById[eyeIds[y][x]].eyeValue : 0;
+
+                if((stones[y][x] !== color || markedDead[y][x]) &&
+                   s.belongsToSekiGroup === EMPTY &&
+                   (scoreFalseEyes || !s.isUnscorableFalseEye) &&
+                   chainInfosById[chainIds[y][x]].regionId === regionId &&
+                   !(color === WHITE && strictReachesBlack[y][x]) &&
+                   !(color === BLACK && strictReachesWhite[y][x])
+                  ) {
+                    s.isTerritoryFor = color;
+                }
+            }
+        }
+    }
+}
+
+function assert(condition, message) {
+    if(!condition) {
+        throw new Error(message || "Assertion failed");
+    }
+}
+
+class CoordinateSet {
+    constructor(initialCoords = []) {
+        this.map = new Map();
+        this.size = 0;
+
+        if(initialCoords.length > 0) {
+            for(let coord of initialCoords) {
+                this.add(coord);
+            }
+        }
+    }
+
+    add(coord) {
+        const [y, x] = coord;
+        if(!this.map.has(y)) {
+            this.map.set(y, new Set());
+        }
+        if(!this.map.get(y).has(x)) {
+            this.map.get(y).add(x);
+            this.size++;
+        }
+    }
+
+    has(coord) {
+        const [y, x] = coord;
+        return this.map.has(y) && this.map.get(y).has(x);
+    }
+
+    forEach(callback) {
+        for(let [y, xSet] of this.map.entries()) {
+            for(let x of xSet) {
+                callback([y, x]);
+            }
+        }
+    }
+
+    copy() {
+        const ret = new CoordinateSet();
+        ret.map = new Map(this.map);
+        ret.size = this.size;
+        return ret;
+    }
+
+    [Symbol.iterator]() {
+        const allCoords = [];
+        for(let [y, xSet] of this.map.entries()) {
+            for(let x of xSet) {
+                allCoords.push([y, x]);
+            }
+        }
+        return allCoords[Symbol.iterator]();
+    }
+}
+return{territoryScoring,areaScoring};
+})();
+
+// 用 goscorer 算地：中国 / 应氏用 areaScoring，日韩用 territoryScoring（会自动排除双活里的眼）
+function goScore(g,dead,n){
+  const md=Array.from({length:n},(_,y)=>Array.from({length:n},(_,x)=>dead.has(y*n+x)));
+  const area=GoScorer.areaScoring(g,md),terr=GoScorer.territoryScoring(g,md);
+  const ownA=area.map(r=>r.slice()),ownJ=terr.map(r=>r.map(c=>c.isTerritoryFor));
+  let aB=0,aW=0,areaB=0,areaW=0,dame=0,jtB=0,jtW=0,deadB=0,deadW=0,seki=0;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=g[y][x],d=md[y][x];
+    if(c===1&&!d)aB++;if(c===2&&!d)aW++;if(c===1&&d)deadB++;if(c===2&&d)deadW++;
+    if(area[y][x]===1)areaB++;else if(area[y][x]===2)areaW++;else dame++;
+    if(ownJ[y][x]===1)jtB++;else if(ownJ[y][x]===2)jtW++;
+    if(!c&&terr[y][x].belongsToSekiGroup&&!terr[y][x].isTerritoryFor)seki++}
+  return{ownA,ownJ,aB,aW,tB:areaB-aB,tW:areaW-aW,dame,jtB,jtW,deadB,deadW,seki};
 }
 
 /* ===================== 数子 / 数目 ===================== */
@@ -561,8 +2300,9 @@ function scoreBoard(g,dead,n){
 function scoreResult(sb,rule,komi,capB,capW,ha,n){
   const H=ha>=2?ha:0;
   if(rule==='jp'){
-    const B=sb.tB+capB+sb.deadW,W=sb.tW+capW+sb.deadB+komi;
-    return{rule,B,W,diff:B-W,rows:[['地',sb.tB,sb.tW],['提子',capB,capW],['死子',sb.deadW,sb.deadB],['贴目（白）','',komi]]};
+    const tb=sb.jtB!==undefined?sb.jtB:sb.tB,tw=sb.jtW!==undefined?sb.jtW:sb.tW;
+    const B=tb+capB+sb.deadW,W=tw+capW+sb.deadB+komi;
+    return{rule,B,W,diff:B-W,rows:[['地',tb,tw],['提子',capB,capW],['死子',sb.deadW,sb.deadB],['贴目（白）','',komi]]};
   }
   let B=sb.aB+sb.tB+sb.dame/2,W=sb.aW+sb.tW+sb.dame/2;
   const rows=[['活子',sb.aB,sb.aW],['地',sb.tB,sb.tW]];
@@ -669,7 +2409,7 @@ function gameKey(r){return[prop(r,'DT'),prop(r,'PB'),prop(r,'PW'),mainLine(r)].j
 /* ===================== 状态 ===================== */
 let G=null;   // {id, root}
 let cur=null; // 当前节点
-let tool='play', showNums=false;
+let tool='play', showNums=false, numRange=null, exporting=false, hideCoords=false;
 let scoring=null; // 数子模式：{node, dead:Set, rule, komi}
 const root=()=>G.root;
 
@@ -780,7 +2520,7 @@ function treeRow(node,mn){
   const b=document.createElement('button');b.className='tr';b._node=node;
   const m=moveOf(node);
   if(!m){b.innerHTML=`<span class="n"></span><span class="s r"></span><span>${node===root()?T('棋局信息'):T('（空）')}</span>`}
-  else b.innerHTML=`<span class="n">${mn}</span><span class="s ${m[0]==='B'?'b':'w'}"></span><span>${coordName(m,sizeOf(root()))}</span>`;
+  else b.innerHTML=`<span class="n">${mn}</span><span class="s ${m[0]==='B'?'b':'w'}"></span><span>${coordName(m,sizeOf(root()))}</span>${annoHtml(node)}`;
   const xa=node.props.XA&&node.props.XA[0];
   if(xa&&!(node.parent&&node.parent.props.XA&&node.parent.props.XA[0]===xa))b.insertAdjacentHTML('beforeend',chip(xa));
   if(node.props.C&&node.props.C[0].trim())b.insertAdjacentHTML('beforeend','<span class="c">'+T('评')+'</span>');
@@ -826,7 +2566,7 @@ function markRow(node){const r=rowOf.get(node);if(!r)return;const c=r.querySelec
 
 /* ===================== 绘制 ===================== */
 const $=s=>document.querySelector(s);
-const U=40, PAD=40; // 每格 40，四周留 40 给坐标
+const U=40, PAD=50; // 每格 40，四周留 50 给坐标（坐标字不会被边上的棋子挡住）
 const COLS='ABCDEFGHJKLMNOPQRSTUVWXYZ';
 const BF=()=>'var(--wood)';
 function starPts(n){if(n===19)return[3,9,15];if(n===13)return[3,6,9];if(n===9)return[2,4,6];if(n>=15)return[3,Math.floor(n/2),n-4];return[]}
@@ -840,9 +2580,9 @@ function render(){
   <radialGradient id="gW" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e9e7e2"/><stop offset="1" stop-color="#bdbab3"/></radialGradient>
   </defs><rect width="${W}" height="${W}" fill="${BF()}"/>`;
   // 坐标
-  o+=`<g font-family="IBM Plex Mono,ui-monospace,monospace" font-size="15" fill="var(--grid)" opacity=".75" text-anchor="middle">`;
-  for(let i=0;i<n;i++){o+=`<text x="${X(i)}" y="${PAD*0.45}" dominant-baseline="middle">${COLS[i]}</text><text x="${X(i)}" y="${W-PAD*0.42}" dominant-baseline="middle">${COLS[i]}</text>`;
-    o+=`<text x="${PAD*0.42}" y="${X(i)}" dominant-baseline="middle">${n-i}</text><text x="${W-PAD*0.42}" y="${X(i)}" dominant-baseline="middle">${n-i}</text>`}
+  o+=`<g font-family="IBM Plex Mono,ui-monospace,monospace" font-size="15" fill="var(--grid)" opacity="${hideCoords?0:.75}" text-anchor="middle">`;
+  for(let i=0;i<n;i++){o+=`<text x="${X(i)}" y="14" dominant-baseline="middle">${COLS[i]}</text><text x="${X(i)}" y="${W-14}" dominant-baseline="middle">${COLS[i]}</text>`;
+    o+=`<text x="14" y="${X(i)}" dominant-baseline="middle">${n-i}</text><text x="${W-14}" y="${X(i)}" dominant-baseline="middle">${n-i}</text>`}
   o+=`</g><g stroke="var(--grid)" stroke-width="1.2">`;
   for(let i=0;i<n;i++){o+=`<line x1="${X(0)}" y1="${X(i)}" x2="${X(n-1)}" y2="${X(i)}"/><line x1="${X(i)}" y1="${X(0)}" x2="${X(i)}" y2="${X(n-1)}"/>`}
   o+=`<rect x="${X(0)}" y="${X(0)}" width="${U*(n-1)}" height="${U*(n-1)}" fill="none" stroke-width="2"/></g>`;
@@ -850,18 +2590,29 @@ function render(){
   // 棋子
   for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=st.g[y][x];if(!c)continue;
     o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.48}" fill="url(#${c===1?'gB':'gW'})" ${c===2?'stroke="#8f8b84" stroke-width="1"':''}/>`;
-    if(showNums&&st.nums.has(y*n+x)){const num=st.nums.get(y*n+x);o+=`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-size="${num>99?13:16}" fill="${c===1?'#f2f2f2':'#1a1a1a'}">${num}</text>`}
+    if(showNums&&st.nums.has(y*n+x)&&(!numRange||(st.nums.get(y*n+x)>=numRange[0]&&st.nums.get(y*n+x)<=numRange[1]))){const num=st.nums.get(y*n+x);o+=`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-size="${num>99?13:16}" fill="${c===1?'#f2f2f2':'#1a1a1a'}">${num}</text>`}
   }
   // 数子：死子变淡，各方的地画小方块
   if(scoring){
-    if(scoring.node!==cur){scoring.node=cur;scoring.dead=new Set()}
-    const sb=scoreBoard(st.g,scoring.dead,n);scoring.sb=sb;scoring.st=st;
+    if(scoring.node!==cur){scoring.node=cur;scoring.dead=new Set(estimateFor(cur,st,true).dead)}
+    const sb=goScore(st.g,scoring.dead,n);scoring.sb=sb;scoring.st=st;sb.own=scoring.rule==='jp'?sb.ownJ:sb.ownA;
     for(const k of scoring.dead){const x=k%n,y=(k/n)|0;if(st.g[y][x])o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.49}" fill="${BF()}" opacity=".6"/>`}
     for(let y=0;y<n;y++)for(let x=0;x<n;x++){const ow=sb.own[y][x];if(!ow||(st.g[y][x]&&!scoring.dead.has(y*n+x)))continue;
       const s2=U*0.34;o+=`<rect x="${X(x)-s2/2}" y="${X(y)-s2/2}" width="${s2}" height="${s2}" fill="${ow===1?'#151515':'#fafafa'}" stroke="${ow===1?'#000':'#6b6b6b'}" stroke-width="1"/>`}
   }
+  // 形势：估算的地画小方块；死子上画对方颜色的小方块（和野狐一样）
+  if(judging&&!scoring&&!exporting){
+    const e=estimateFor(cur,st),sq=U*0.3;
+    if(e)for(let y=0;y<n;y++)for(let x=0;x<n;x++){const p=y*n+x,ow=e.own[p];if(!ow)continue;
+      if(st.g[y][x]&&!e.dead.has(p))continue;
+      o+=`<rect x="${X(x)-sq/2}" y="${X(y)-sq/2}" width="${sq}" height="${sq}" fill="${ow>0?'#151515':'#fafafa'}" stroke="${ow>0?'#000':'#6b6b6b'}" stroke-width="1"/>`}
+  }
   // 最后一手
-  if(!scoring&&st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
+  if(!scoring&&!judging&&st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
+  // 好手 / 恶手：在这一手的棋子右上角画小标
+  {const a=annoOf(cur),mv=moveOf(cur),xy=mv&&ptToXY(mv[1],n);
+    if(a&&xy){const bx=X(xy[0])+U*0.38,by=X(xy[1])-U*0.38,w=a.sym.length>1?U*0.74:U*0.52;
+      o+=`<rect x="${bx-w/2}" y="${by-U*0.26}" width="${w}" height="${U*0.52}" rx="${U*0.26}" fill="${a.col}" stroke="#fff" stroke-width="1.5"/><text x="${bx}" y="${by}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-weight="700" font-size="${U*0.42}" fill="#fff">${a.sym}</text>`}}
   // 标记
   const ink=(x,y)=>st.g[y][x]===1?'#ffffff':'#1d1d1d';
   const pad=(x,y)=>st.g[y][x]===0?`<rect x="${X(x)-U*.36}" y="${X(y)-U*.36}" width="${U*.72}" height="${U*.72}" fill="${BF()}"/>`:'';
@@ -872,7 +2623,14 @@ function render(){
   for(const[x,y]of expandPts(P.MA,n)){const a=R*.85;o+=`<path d="M${X(x)-a} ${X(y)-a}L${X(x)+a} ${X(y)+a}M${X(x)+a} ${X(y)-a}L${X(x)-a} ${X(y)+a}" stroke="${ink(x,y)}" stroke-width="2.5"/>`}
   for(const v of P.LB||[]){const[pt,txt]=v.split(':');const xy=ptToXY(pt,n);if(!xy)continue;const[x,y]=xy;o+=pad(x,y)+`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-weight="500" font-size="20" fill="${ink(x,y)}">${escH(txt||'')}</text>`}
   // 分支提示
-  if(cur.children.length>1)cur.children.forEach((ch,i)=>{const m=moveOf(ch);if(!m)return;const xy=ptToXY(m[1],n);if(!xy||st.g[xy[1]][xy[0]])return;
+  if(train){
+    for(const[x,y]of train.wrong){const a=U*0.22;o+=`<path d="M${X(x)-a} ${X(y)-a}L${X(x)+a} ${X(y)+a}M${X(x)+a} ${X(y)-a}L${X(x)-a} ${X(y)+a}" stroke="#C0392B" stroke-width="4" stroke-linecap="round"/>`}
+    const nx=trainNext(),m=nx&&moveOf(nx),xy=m&&ptToXY(m[1],n);
+    if(xy&&train.hint&&!train.reveal){const h=Math.ceil(n/2),qx=xy[0]<h?0:n-h,qy=xy[1]<h?0:n-h;
+      o+=`<rect x="${X(qx)-U/2}" y="${X(qy)-U/2}" width="${U*h}" height="${U*h}" fill="#F2C14E" opacity=".28" rx="8"/>`}
+    if(xy&&train.reveal)o+=`<circle cx="${X(xy[0])}" cy="${X(xy[1])}" r="${U*0.42}" fill="none" stroke="#2E8B57" stroke-width="5"/>`;
+  }
+  if(!train&&!exporting&&cur.children.length>1)cur.children.forEach((ch,i)=>{const m=moveOf(ch);if(!m)return;const xy=ptToXY(m[1],n);if(!xy||st.g[xy[1]][xy[0]])return;
     o+=`<circle cx="${X(xy[0])}" cy="${X(xy[1])}" r="${U*.34}" fill="${m[0]==='B'?'#111':'#fff'}" opacity=".35"/><text x="${X(xy[0])}" y="${X(xy[1])}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,monospace" font-size="17" fill="${m[0]==='B'?'#fff':'#000'}">${String.fromCharCode(65+i)}</text>`});
   svg.innerHTML=o;
 
@@ -889,14 +2647,27 @@ function render(){
   renderComment();
   $('#bPrev').disabled=$('#bStart').disabled=$('#bBack10').disabled=!cur.parent;
   $('#bNext').disabled=$('#bEnd').disabled=$('#bFwd10').disabled=!cur.children.length;
-  renderVars();renderNotes();treeHighlight();
+  renderVars();renderNotes();treeHighlight();renderAnno();renderTrain();
   if(scoring)renderScore();
+  renderJudge(st);
+}
+function renderJudge(st){
+  const bar=$('#judgeBar');if(!judging||scoring){bar.hidden=true;return}bar.hidden=false;
+  const r=root(),e=estimateFor(cur,st);bar.style.opacity=e?1:.55;if(!e)return;
+  const km=parseFloat(prop(r,'KM'));const komi=isFinite(km)&&km>0&&km<50?km:7.5;
+  const ha=parseInt(prop(r,'HA')||'0',10)||0,H=ha>=2?ha:0;
+  let B=e.aB+e.tB+e.dame/2,W=e.aW+e.tW+e.dame/2;if(H){B-=H/2;W+=H/2}
+  const lead=B-W-komi;
+  $('#jB').textContent=T('{0} 子',fmtQ(B));$('#jW').textContent=T('{0} 子',fmtQ(W));
+  $('#jBcap').textContent=T('提 {0} 子',st.capB);$('#jWcap').textContent=T('提 {0} 子',st.capW);
+  $('#jLead').textContent=lead>0?T('黑领先 {0} 目',fmtQ(lead)):lead<0?T('白领先 {0} 目',fmtQ(-lead)):T('双方相同');
+  $('#jKomi').textContent=T('贴 {0} 子 · 估算',fmtQ(komi/2));
 }
 const RULE_KOMI={cn:7.5,jp:6.5,ing:8};
 function guessRule(){const ru=(prop(root(),'RU')||'').toLowerCase();if(/japan|korea|jp|kr/.test(ru))return'jp';if(/ing|goe/.test(ru))return'ing';return'cn'}
 function startScoring(){
   const km=parseFloat(prop(root(),'KM'));const rule=guessRule();
-  scoring={node:cur,dead:new Set(),rule,komi:rule==='cn'&&isFinite(km)&&km>0&&km<50?km:RULE_KOMI[rule]};
+  scoring={node:null,dead:new Set(),rule,komi:rule==='cn'&&isFinite(km)&&km>0&&km<50?km:RULE_KOMI[rule]};
   $('#scoreBox').hidden=false;$('#scoreToggle').setAttribute('aria-pressed','true');render();
   $('#scoreBox').scrollIntoView({block:'nearest',behavior:'smooth'});
 }
@@ -923,7 +2694,7 @@ function renderScore(){
   }
   if(!scoring.dead.size)sub=(sub?sub+' ':'')+T('还没标出任何死子。如果棋局还没下完，数出来的结果会不准。');
   $('#scoreRes').innerHTML=escH(line)+(sub?`<small>${escH(sub)}</small>`:'');
-  $('#scoreNote').textContent=T(scoring.rule==='cn'?'中国规则：活子加围住的空点；公气各算一半。让子棋黑方要还子。':scoring.rule==='jp'?'日韩规则：围住的空点加提子和死子。双活里的眼不算地，这里没有自动排除，遇到双活请自己核对。':'应氏规则：和中国规则一样数活子和地，白贴 8 点；平分时黑胜（让子棋白胜）。');
+  $('#scoreNote').textContent=T(scoring.rule==='cn'?'中国规则：活子加围住的空点；公气各算一半。让子棋黑方要还子。':scoring.rule==='jp'?'日韩规则：围住的空点加提子和死子。双活里的眼和假眼不算地，由 goscorer（KataGo 作者开发）自动判断。':'应氏规则：和中国规则一样数活子和地，白贴 8 点；平分时黑胜（让子棋白胜）。');
 }
 function scoreRE(){const r=scoring.res;let d=r.diff;
   if(d===0){if(scoring.rule==='ing')return r.H?'W+0':'B+0';return'0'}
@@ -947,35 +2718,201 @@ function renderNotes(){
   const out=[];const authors=new Set();
   (function walk(node,mn){const m=moveOf(node);if(m)mn++;const secs=secsOf(node);secs.forEach(x=>x.author&&authors.add(x.author));
     const pick=noteFilter?secs.filter(x=>x.author===noteFilter):secs;
-    if(pick.length)out.push({node,mn,m,main:onMainLine(node),secs:pick});node.children.forEach(c=>walk(c,mn))})(root(),0);
+    if(pick.length||(!noteFilter&&annoOf(node)))out.push({node,mn,m,main:onMainLine(node),secs:pick.length?pick:[{author:'',text:''}]});node.children.forEach(c=>walk(c,mn))})(root(),0);
   if(noteFilter&&!authors.has(noteFilter))noteFilter='';
   const fl=$('#noteFilter');
   fl.innerHTML=authors.size?[`<button data-a="" aria-pressed="${!noteFilter}">${escH(T('全部'))}</button>`].concat([...authors].map(a=>`<button data-a="${escH(a)}" aria-pressed="${noteFilter===a}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${authorColor(a)};margin-right:5px"></span>${escH(a)}</button>`)).join(''):'';
   const el=$('#noteList');
   if(!out.length){el.innerHTML='<div class="empty">'+T('还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。')+'</div>';el._items=[];return}
   el.innerHTML=out.map((o,i)=>{const first=o.secs[0];const names=[...new Set(o.secs.map(x=>x.author).filter(Boolean))];
-    return`<button class="li${o.node===cur?' on':''}" data-i="${i}"><span class="k">${o.m?(o.m[0]==='B'?'●':'○')+' '+o.mn:T('开局')}</span><span class="t">${names.length?`<span class="chips">${names.map(chip).join('')}</span> `:''}${escH(first.text.split('\n')[0])}</span><span class="x">${o.main?'':T('变化')}</span></button>`}).join('');
+    return`<button class="li${o.node===cur?' on':''}" data-i="${i}"><span class="k">${o.m?(o.m[0]==='B'?'●':'○')+' '+o.mn:T('开局')}</span><span class="t">${annoHtml(o.node)} ${names.length?`<span class="chips">${names.map(chip).join('')}</span> `:''}${escH(first.text.split('\n')[0])}</span><span class="x">${o.main?'':T('变化')}</span></button>`}).join('');
   el._items=out;
 }
 function renderLib(){
-  const el=$('#libList');const ids=Object.keys(store.games).sort((a,b)=>store.games[b].updated-store.games[a].updated);
-  if(!ids.length){el.innerHTML='<div class="empty">'+T('还没有棋谱。')+'</div>';return}
-  el.innerHTML=ids.map(id=>{const g=store.games[id];const d=new Date(g.updated);return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
+  const el=$('#libList');const all=Object.keys(store.games);
+  // 棋手下拉：按出现次数排序
+  const cnt={};const tagCnt={};
+  for(const id of all){const m=metaOf(store.games[id]);for(const nm of[m.pb,m.pw])if(nm)cnt[nm]=(cnt[nm]||0)+1;for(const t of m.tags)tagCnt[t]=(tagCnt[t]||0)+1}
+  const sel=$('#libPlayer'),pv=sel.value;
+  sel.innerHTML=`<option value="">${escH(T('全部棋手'))}</option>`+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||a.localeCompare(b,'zh')).map(nm=>`<option value="${escH(nm)}">${escH(nm)} (${cnt[nm]})</option>`).join('');
+  sel.value=cnt[pv]?pv:'';
+  if(libTag&&!tagCnt[libTag])libTag='';
+  const tags=Object.keys(tagCnt).sort((a,b)=>tagCnt[b]-tagCnt[a]);
+  $('#libTags').innerHTML=tags.length?[`<button data-t="" aria-pressed="${!libTag}">${escH(T('全部'))}</button>`].concat(tags.map(t=>`<button data-t="${escH(t)}" aria-pressed="${libTag===t}">${escH(t)} ${tagCnt[t]}</button>`)).join(''):'';
+  const q=($('#libSearch').value||'').trim().toLowerCase(),player=sel.value,sort=$('#libSort').value;
+  let ids=all.filter(id=>{const g=store.games[id],m=metaOf(g);
+    if(player&&m.pb!==player&&m.pw!==player)return false;
+    if(libTag&&!m.tags.includes(libTag))return false;
+    if(q&&!(g.title||'').toLowerCase().includes(q)&&![m.pb,m.pw,m.gn,m.dt,...m.tags].some(v=>(v||'').toLowerCase().includes(q)))return false;
+    return true});
+  ids.sort(sort==='date'?(a,b)=>(metaOf(store.games[b]).dt||'').localeCompare(metaOf(store.games[a]).dt||'')||store.games[b].updated-store.games[a].updated:(a,b)=>store.games[b].updated-store.games[a].updated);
+  if(!all.length){el.innerHTML='<div class="empty">'+T('还没有棋谱。')+'</div>';return}
+  if(!ids.length){el.innerHTML='<div class="empty">'+T('没有符合的棋谱。')+'</div>';return}
+  el.innerHTML=ids.map(id=>{const g=store.games[id],m=metaOf(g);const d=new Date(g.updated);
+    const shared=/XS\[/.test(g.sgf||'');
+    return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${shared?'⇄':g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}${m.tags.map(t=>`<span class="tag">${escH(t)}</span>`).join('')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
 }
-function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)})}
+function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)});renderTagsInput()}
+
+/* ===================== 好手 / 恶手（SGF 标准标记） ===================== */
+const ANNO=[{k:'TE',v:'1',sym:'!',zh:'好手',col:'#2E8B57'},{k:'TE',v:'2',sym:'!!',zh:'妙手',col:'#1F7A4A'},
+  {k:'BM',v:'1',sym:'?',zh:'恶手',col:'#C0392B'},{k:'BM',v:'2',sym:'??',zh:'大恶手',col:'#922B21'},
+  {k:'DO',v:'',sym:'?!',zh:'疑问手',col:'#C27C0E'},{k:'IT',v:'',sym:'!?',zh:'有趣',col:'#2E6FA8'}];
+function annoOf(node){for(const a of ANNO){const v=node.props[a.k];if(!v)continue;const val=(v[0]||'').trim();
+  if(a.k==='TE'||a.k==='BM'){if((val==='2')===(a.v==='2'))return a}else return a}return null}
+const annoHtml=node=>{const a=annoOf(node);return a?`<span class="an" style="color:${a.col}">${a.sym}</span>`:''};
+function renderAnno(){
+  const row=$('#annoRow');if(!row._built){row._built=true;row.insertAdjacentHTML('beforeend',ANNO.map((a,i)=>`<button data-i="${i}" title=""><b>${a.sym}</b><span></span></button>`).join(''))}
+  const cura=annoOf(cur);row.querySelector('span').textContent=T('评价这一手');
+  row.querySelectorAll('button').forEach(b=>{const a=ANNO[+b.dataset.i];b.querySelector('span').textContent=T(a.zh);
+    const on=a===cura;b.setAttribute('aria-pressed',on);b.style.background=on?a.col:'';b.disabled=!moveOf(cur)});
+}
+function setAnno(a){
+  if(!moveOf(cur))return;if(Shared.isShared()&&!me())return flash(T('共享棋谱请先在「我是」选名字，才能写评论、摆变化'));
+  snap();const was=annoOf(cur);for(const k of['TE','BM','DO','IT'])delete cur.props[k];
+  if(a&&a!==was)cur.props[a.k]=[a.v];if(Shared.isShared())cur.props.XM=[me()];
+  changed();render();
+}
+
+/* ===================== 自动播放 ===================== */
+let playT=null;
+function stopPlay(){if(!playT)return;clearTimeout(playT);playT=null;$('#bPlay').classList.remove('playing');$('#bPlay').innerHTML='<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>'}
+function startPlay(){
+  if(!cur.children.length){cur=root();render()}
+  $('#bPlay').classList.add('playing');$('#bPlay').innerHTML='<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+  const tick=()=>{playT=setTimeout(()=>{
+    if(!cur.children.length){stopPlay();flash(T('已播放到最后一手'));return}
+    fwd(1);
+    const hasNote=(cur.props.C&&cur.props.C[0].trim())||annoOf(cur);
+    if(hasNote){stopPlay();flash(T('这一手有评论，已暂停'));return}
+    tick()},+$('#playSpeed').value)};
+  playT=1;tick();
+}
+
+/* ===================== 棋谱库：搜索、按棋手筛选、标签 ===================== */
+let libTag='';
+function metaOf(rec){
+  const sgf=rec.sgf||'';if(rec._mk===sgf.length&&rec._meta)return rec._meta;
+  const head=sgf.slice(0,sgf.search(/;\s*[BW]\[/)>0?sgf.search(/;\s*[BW]\[/):2000);
+  const one=k=>{const m=head.match(new RegExp('(?:^|[^A-Z])'+k+'\\[((?:\\\\\\]|[^\\]])*)\\]'));return m?m[1].replace(/\\\]/g,']'):''};
+  const tm=head.match(/XT((?:\[[^\]]*\])+)/);const tags=tm?[...tm[1].matchAll(/\[([^\]]*)\]/g)].map(x=>x[1].trim()).filter(Boolean):[];
+  const meta={pb:one('PB'),pw:one('PW'),dt:one('DT'),gn:one('GN'),tags};
+  Object.defineProperty(rec,'_meta',{value:meta,enumerable:false,writable:true,configurable:true});
+  Object.defineProperty(rec,'_mk',{value:sgf.length,enumerable:false,writable:true,configurable:true});
+  return meta;
+}
+function renderTagsInput(){const i=$('#iTags');if(document.activeElement!==i)i.value=(root().props.XT||[]).join(', ')}
+
+/* ===================== 猜下一手 ===================== */
+let train=null; // {color, path, idx, tries, first, total, wrong:[], hint:false, reveal:false, done}
+function trainNext(){return train.path[train.idx+1]||null}
+function trainIsMine(node){const m=moveOf(node);return m&&(train.color==='both'||m[0]===train.color)}
+function startTrain(color){
+  stopPlay();if(scoring)stopScoring();
+  const path=lineFrom(cur).slice(pathTo(cur).length-1);
+  const nx=path[1];const c=color||(nx&&moveOf(nx)?moveOf(nx)[0]:'B');
+  train={color:c,path,idx:0,tries:0,first:0,total:0,wrong:[],hint:false,reveal:false,done:false};
+  document.body.classList.add('is-training');$('#trainBox').hidden=false;$('#trainToggle').setAttribute('aria-pressed','true');
+  trainAuto();render();$('#trainBox').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function stopTrain(){train=null;document.body.classList.remove('is-training');$('#trainBox').hidden=true;$('#trainToggle').setAttribute('aria-pressed','false');render()}
+function trainStep(){ // 前进一手
+  train.idx++;cur=train.path[train.idx];if(cur.parent)cur.parent._sel=cur.parent.children.indexOf(cur);
+  train.tries=0;train.wrong=[];train.hint=false;train.reveal=false;soundFor(cur);
+}
+function trainAuto(){ // 不是要猜的那一方：自动走
+  while(trainNext()&&!trainIsMine(trainNext()))trainStep();
+  if(!trainNext())train.done=true;
+  renderTrain();
+}
+function trainClick(x,y){
+  if(train.done||train.busy)return;
+  if(train.reveal){train.total++;trainStep();train.busy=true;setTimeout(()=>{if(train){train.busy=false;trainAuto();render()}},350);render();return}
+  const nx=trainNext();const m=moveOf(nx);const xy=ptToXY(m[1],sizeOf(root()));
+  if(computeState(cur,sizeOf(root())).g[y][x])return; // 已经有子的地方不算
+  if(xy&&xy[0]===x&&xy[1]===y){
+    train.total++;if(train.tries===0&&!train.hint)train.first++;
+    trainStep();train.msg={ok:true};train.busy=true;render();setTimeout(()=>{if(train){train.busy=false;train.msg=null;trainAuto();render()}},450);return}
+  train.tries++;train.wrong.push([x,y]);
+  if(train.tries>=3)train.reveal=true;
+  renderTrain();render();
+}
+function renderTrain(){
+  if(!train)return;
+  document.querySelectorAll('#trainSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===train.color));
+  const pct=train.total?Math.round(train.first/train.total*100):0;
+  const msg=$('#trainMsg');msg.className='big';
+  if(train.done){msg.textContent=T('练习完成！共猜 {0} 手，一次猜中 {1} 手（{2}%）',train.total,train.first,pct);msg.classList.add('ok')}
+  else if(train.msg&&train.msg.ok){msg.textContent=T('猜对了！');msg.classList.add('ok')}
+  else if(train.reveal){msg.textContent=T('答案在绿色圆圈，点棋盘任何地方继续');msg.classList.add('no')}
+  else if(train.hint)msg.textContent=T('提示：答案在亮起来的这一块');
+  else if(train.tries){msg.textContent=T('不对，再试一次（还有 {0} 次机会）',3-train.tries);msg.classList.add('no')}
+  else{const m=trainNext()&&moveOf(trainNext());msg.textContent=m?T('轮到你猜：{0}下在哪里？',m[0]==='B'?T('黑'):T('白')):''}
+  $('#trainStats').textContent=T('已猜 {0} 手 · 一次猜中 {1} 手 · 正确率 {2}%',train.total,train.first,pct);
+  $('#trainHint').disabled=$('#trainShow').disabled=train.done||train.reveal;
+}
+
+/* ===================== 存成图片 ===================== */
+let imgMode='now',imgBlob=null,imgUrl=null;
+function nodeAtMove(mn){const line=lineFrom(cur);let c=0,t=line[0];for(const nd of line){if(moveOf(nd))c++;if(c<=mn)t=nd;else break}return t}
+function boardSvgFor(node,range,nums,coords){ // 借用 render() 画出棋盘，再还原
+  const keep={cur,showNums,numRange,hideCoords};
+  cur=node;showNums=nums;numRange=range;hideCoords=!coords;exporting=true;
+  try{render();return $('#board').outerHTML}finally{cur=keep.cur;showNums=keep.showNums;numRange=keep.numRange;hideCoords=keep.hideCoords;exporting=false;render()}
+}
+function svgToImage(svgStr,size){return new Promise((res,rej)=>{
+  let s2=svgStr.replace(/var\(--wood\)/g,'#DDB66D').replace(/var\(--grid\)/g,'#3A2A14').replace(/<svg /,`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" `);
+  const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error('svg'));im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s2)})}
+async function makeImage(){
+  const st0=computeState(cur,sizeOf(root()));const total=lineFrom(cur).filter(moveOf).length;
+  let node=cur,range=null,cap;
+  if(imgMode==='range'){let a=Math.max(1,parseInt($('#imgFrom').value)||1),b=Math.min(total,parseInt($('#imgTo').value)||st0.mn);if(a>b)[a,b]=[b,a];
+    node=nodeAtMove(b);range=[a,b];cap=T('第 {0}–{1} 手',a,b)}
+  else cap=T('第 {0} 手',st0.mn);
+  const svg=boardSvgFor(node,range,imgMode==='range'?true:$('#imgNums').checked,$('#imgCoords').checked);
+  const S=1000,PADX=40,HEAD=130,FOOT=44,Wc=S+PADX*2,Hc=S+HEAD+FOOT;
+  const cv=document.createElement('canvas');cv.width=Wc;cv.height=Hc;const ctx=cv.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,Wc,Hc);
+  const r=root(),font='"Noto Serif SC","Songti SC","SimSun",serif',sans='system-ui,"PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle='#1C2326';ctx.textBaseline='alphabetic';ctx.font=`700 34px ${font}`;
+  ctx.fillText((prop(r,'PB')||T('黑方'))+'  vs  '+(prop(r,'PW')||T('白方')),PADX,56);
+  ctx.font=`22px ${sans}`;ctx.fillStyle='#5B666B';
+  ctx.fillText([prop(r,'DT'),cap,resultText(prop(r,'RE'))!=='—'?resultText(prop(r,'RE')):''].filter(Boolean).join('   ·   '),PADX,98);
+  const im=await svgToImage(svg,S);ctx.drawImage(im,PADX,HEAD,S,S);
+  ctx.font=`18px ${sans}`;ctx.fillStyle='#93A1A7';ctx.textAlign='right';ctx.fillText(T('由 围棋复盘本 制作'),Wc-PADX,Hc-14);
+  imgBlob=await new Promise(res=>cv.toBlob(res,'image/png'));
+  if(imgUrl)URL.revokeObjectURL(imgUrl);imgUrl=URL.createObjectURL(imgBlob);$('#imgPreview').src=imgUrl;
+  return{name:fileName().replace(/\.sgf$/,'')+'_'+cap.replace(/\s+/g,'')+'.png'};
+}
+async function refreshImg(){
+  document.querySelectorAll('#imgMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===imgMode));
+  $('#imgRange').hidden=imgMode!=='range';$('#imgNums').closest('label').hidden=imgMode==='range';
+  try{const r=await makeImage();$('#imgSave')._name=r.name;$('#imgStatus').textContent='';
+    const can=navigator.canShare&&navigator.canShare({files:[new File([imgBlob],r.name,{type:'image/png'})]});$('#imgShare').hidden=!can}
+  catch(e){$('#imgStatus').textContent=T('做图片时出错：{0}',e.message)}
+}
+function openImg(){
+  stopPlay();const st0=computeState(cur,sizeOf(root()));
+  $('#imgTo').value=Math.max(1,st0.mn);$('#imgFrom').value=Math.max(1,st0.mn-19);
+  $('#imgBox').hidden=false;$('#imgToggle').setAttribute('aria-pressed','true');refreshImg();
+  $('#imgBox').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function closeImg(){$('#imgBox').hidden=true;$('#imgToggle').setAttribute('aria-pressed','false')}
 
 /* ===================== 操作 ===================== */
 function go(node){if(!node)return;cur=node;if(node.parent)node.parent._sel=node.parent.children.indexOf(node);render()}
-function fwd(k=1){let n=cur;for(let i=0;i<k&&n.children.length;i++)n=n.children[n._sel||0]||n.children[0];const moved=n!==cur;go(n);if(k===1&&moved)soundFor(n)}
-function back(k=1){let n=cur;for(let i=0;i<k&&n.parent;i++)n=n.parent;cur=n;render()}
-function toEnd(){let n=cur;while(n.children.length)n=n.children[n._sel||0]||n.children[0];go(n)}
-function jumpTo(mn){const line=lineFrom(cur);let c=0,target=line[0];for(const n of line){if(moveOf(n))c++;if(c<=mn)target=n;else break}cur=target;render()}
+function trainBlock(){if(train){flash(T('练习中，先结束练习再翻棋谱'));return true}return false}
+function fwd(k=1){if(trainBlock())return;let n=cur;for(let i=0;i<k&&n.children.length;i++)n=n.children[n._sel||0]||n.children[0];const moved=n!==cur;go(n);if(k===1&&moved)soundFor(n)}
+function back(k=1){if(trainBlock())return;let n=cur;for(let i=0;i<k&&n.parent;i++)n=n.parent;cur=n;render()}
+function toEnd(){if(trainBlock())return;let n=cur;while(n.children.length)n=n.children[n._sel||0]||n.children[0];go(n)}
+function jumpTo(mn){if(trainBlock()){render();return}const line=lineFrom(cur);let c=0,target=line[0];for(const n of line){if(moveOf(n))c++;if(c<=mn)target=n;else break}cur=target;render()}
 
 function boardClick(ev){
   const svg=$('#board');const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
   const p=pt.matrixTransform(svg.getScreenCTM().inverse());const n=sizeOf(root());
   const x=Math.round((p.x-PAD)/U),y=Math.round((p.y-PAD)/U);if(x<0||y<0||x>=n||y>=n)return;
   const pt2=xyToPt(x,y);
+  if(train){trainClick(x,y);return}
   if(scoring){ // 点棋子：整块标成死子 / 取消
     const st=computeState(cur,n);if(!st.g[y][x])return;
     const grp=groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);const isDead=scoring.dead.has(y*n+x);
@@ -1013,7 +2950,7 @@ $('#board').addEventListener('click',boardClick);
 // 鼠标滚轮：往下滚 = 下一手，往上滚 = 上一手；滚得快就走得快
 let wheelAcc=0,wheelT=null;
 $('#board').addEventListener('wheel',e=>{
-  e.preventDefault();
+  e.preventDefault();if(train)return;
   let d=e.deltaY||e.deltaX;if(e.deltaMode===1)d*=40;else if(e.deltaMode===2)d*=400;
   wheelAcc+=d;clearTimeout(wheelT);wheelT=setTimeout(()=>{wheelAcc=0},250);
   const STEP=100;let k=0; // 滚轮一格 = 一手；按住 Shift 一格 = 十手
@@ -1032,11 +2969,15 @@ document.addEventListener('keydown',e=>{
   if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
   if(mod&&e.key.toLowerCase()==='z'&&!e.shiftKey){e.preventDefault();undo();return}
   if(mod&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))){e.preventDefault();redo();return}
+  if(e.key===' '){e.preventDefault();playT?stopPlay():startPlay();return}
+  if(playT&&/Arrow|Home|End/.test(e.key))stopPlay();
+  if(e.key==='Escape'&&train){stopTrain();return}
   if(e.key==='Escape'&&scoring){stopScoring();return}
   if(e.key==='ArrowRight'){fwd(e.shiftKey?10:1);e.preventDefault()}else if(e.key==='ArrowLeft'){back(e.shiftKey?10:1);e.preventDefault()}
   else if(e.key==='Home'){cur=root();render()}else if(e.key==='End')toEnd();
   else if(e.key==='ArrowUp'||e.key==='ArrowDown'){if(cur.parent&&cur.parent.children.length>1){const sib=cur.parent.children;const i=sib.indexOf(cur)+(e.key==='ArrowDown'?1:-1);if(sib[i])go(sib[i]);e.preventDefault()}}});
 document.querySelectorAll('.tool[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('.tool[data-tool]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('#judgeToggle').onclick=()=>{judging=!judging;$('#judgeToggle').setAttribute('aria-pressed',judging);if(judging&&scoring)stopScoring();render()};
 $('#scoreToggle').onclick=()=>scoring?stopScoring():startScoring();
 $('#scoreExit').onclick=stopScoring;
 $('#scoreClear').onclick=()=>{if(scoring){scoring.dead=new Set();render()}};
@@ -1062,6 +3003,30 @@ const addName=()=>{const v=$('#whoName').value.trim();if(!v)return;if(/[【】\n
 $('#whoOk').onclick=addName;$('#whoName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addName()}else if(e.key==='Escape')$('#whoAdd').hidden=true});
 $('#whoCancel').onclick=()=>{$('#whoAdd').hidden=true};
 $('#whoDel').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{prefs.authors=(prefs.authors||[]).filter(x=>x!==me());prefs.me='';savePrefs();renderWho();render()});
+$('#imgToggle').onclick=()=>$('#imgBox').hidden?openImg():closeImg();
+$('#imgClose').onclick=closeImg;
+$('#imgMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;imgMode=b.dataset.m;refreshImg()};
+['imgFrom','imgTo','imgNums','imgCoords'].forEach(id=>$('#'+id).addEventListener('change',refreshImg));
+$('#imgSave').onclick=async()=>{if(!imgBlob)return;const name=$('#imgSave')._name||'go.png';
+  let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
+  if(dl){try{await dl.save({filename:name,data:imgBlob});$('#imgStatus').textContent=T('图片已下载')}catch(e){$('#imgStatus').textContent=e.code==='declined'?T('已取消下载'):e.message}return}
+  const a=document.createElement('a');a.href=imgUrl;a.download=name;document.body.appendChild(a);a.click();a.remove();$('#imgStatus').textContent=T('图片已下载')};
+$('#imgShare').onclick=()=>{const name=$('#imgSave')._name||'go.png';navigator.share({files:[new File([imgBlob],name,{type:'image/png'})],title:titleOf(root())}).catch(()=>{})};
+$('#trainToggle').onclick=()=>train?stopTrain():startTrain();
+$('#trainExit').onclick=stopTrain;
+$('#trainRestart').onclick=()=>{const c=train&&train.color;cur=train.path[train.idx];train=null;startTrain(c)};
+$('#trainSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!train)return;const start=train.path[0];cur=start;train=null;startTrain(b.dataset.c)};
+$('#trainHint').onclick=()=>{if(!train||train.done)return;train.hint=true;renderTrain();render()};
+$('#trainShow').onclick=()=>{if(!train||train.done)return;train.reveal=true;renderTrain();render()};
+$('#annoRow').onclick=e=>{const b=e.target.closest('button');if(b)setAnno(ANNO[+b.dataset.i])};
+$('#bPlay').onclick=()=>playT?stopPlay():startPlay();
+// 手动操作时停止自动播放
+document.addEventListener('pointerdown',e=>{if(playT&&!e.target.closest('#bPlay,#playSpeed'))stopPlay()},true);
+$('#libSearch').addEventListener('input',renderLib);$('#libPlayer').onchange=renderLib;$('#libSort').onchange=renderLib;
+$('#libTags').onclick=e=>{const b=e.target.closest('button');if(!b)return;libTag=b.dataset.t;renderLib()};
+$('#iTags').addEventListener('focus',()=>snap());
+$('#iTags').addEventListener('input',e=>{markInfo();const t=e.target.value.split(/[,，、;；]/).map(x=>x.trim()).filter(Boolean);
+  if(t.length)root().props.XT=[...new Set(t)];else delete root().props.XT;changed(false)});
 $('#noteFilter').onclick=e=>{const b=e.target.closest('button');if(!b)return;noteFilter=b.dataset.a;renderNotes()};
 $('#noteList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const it=$('#noteList')._items[+b.dataset.i];let n=it.node;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=it.node;render()};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t.dataset.tab)});
@@ -1275,7 +3240,7 @@ const FIREBASE_CONFIG={
   appId:"1:563457614711:web:0e10d761d8c5b65ff1f772"
 };
 // 资料结构：games/{gid} = {base: 建立时的整盘棋}；games/{gid}/layers/{名字} = 这个人写的评论、摆的变化（各写各的，不会互相覆盖）
-const MARKS=['TR','CR','SQ','MA','LB'],INFO_KEYS=['PB','PW','BR','WR','DT','RE','KM','GN','RU','HA'];
+const MARKS=['TR','CR','SQ','MA','LB','TE','BM','DO','IT'],INFO_KEYS=['PB','PW','BR','WR','DT','RE','KM','GN','RU','HA','XT'];
 function cloneNode(n,parent){const c={props:{},children:[],parent};for(const k in n.props)c.props[k]=n.props[k].slice();c.children=n.children.map(ch=>cloneNode(ch,c));return c}
 function sameMove(a,b){const x=moveOf(a),y=moveOf(b);return!!(x&&y&&x[0]===y[0]&&x[1]===y[1])}
 function stripAuthor(n,X){ // 先拿掉 X 在底稿里的评论、标记；X 摆的变化先标成"待删"，X 的最新版本会再加回来
@@ -1420,13 +3385,21 @@ function saveNow(){
   else flash(ok?T('已保存在本机（连接 Google Drive 可同步到其他设备）'):T('无法保存，请用「导出」'));
 }
 $('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;$('#saveBtn').onclick=saveNow;
-$('#tree').addEventListener('click',e=>{const r=e.target.closest('.tr');if(!r||!r._node)return;const t=r._node;let n=t;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=t;render()});
+$('#tree').addEventListener('click',e=>{if(train)return;const r=e.target.closest('.tr');if(!r||!r._node)return;const t=r._node;let n=t;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=t;render()});
 $('#promoteBtn').onclick=()=>{const p=cur.parent;if(!p)return;const i=p.children.indexOf(cur);if(i<1)return;snap();p.children.splice(i,1);p.children.unshift(cur);
   for(let n=cur;n.parent;n=n.parent){const q=n.parent;const k=q.children.indexOf(n);if(k>0){q.children.splice(k,1);q.children.unshift(n)}q._sel=0}
   changed();render();flash(T('已设为主线'))};
 document.querySelectorAll('[data-pref]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setPref(g.dataset.pref,b.dataset.v)}));
 syncPrefUI();
 collectStatic();applyStatic();
+// 装到桌面（PWA）：只在你自己的网址上启用
+if('serviceWorker' in navigator&&/github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname)){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  let deferred=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('#installBtn').hidden=false});
+  $('#installBtn').onclick=async()=>{if(!deferred)return;deferred.prompt();try{await deferred.userChoice}catch(e){}deferred=null;$('#installBtn').hidden=true};
+  window.addEventListener('appinstalled',()=>{$('#installBtn').hidden=true;flash(T('已安装，可以从桌面打开'))});
+}
 (function boot(){
   Drive.init();
   // 从下载工具传来的棋谱：网址 #sgf=...

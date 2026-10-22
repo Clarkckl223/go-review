@@ -1,0 +1,16 @@
+{
+  "name": "围棋复盘本",
+  "short_name": "复盘本",
+  "description": "围棋复盘：逐手评论、变化图、形势判断、数子数目、师生共享棋谱",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EBEEEE",
+  "theme_color": "#2F6B5A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
