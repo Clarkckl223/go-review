@@ -61,6 +61,39 @@ h1{font-family:var(--f-display);font-size:1.35rem;margin:0;letter-spacing:.04em}
 .vh{display:flex;align-items:center;gap:4px}
 .vt{border:1px solid var(--line);background:var(--panel);width:16px;height:16px;border-radius:3px;font-size:12px;line-height:12px;padding:0;color:var(--muted);flex:none;margin-left:-17px}
 .vg.closed>:not(.vh){display:none}
+/* 数子 / 数目 */
+.score{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.score-head{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.score-head b{font-family:var(--f-display);font-size:1rem}
+.score-head span{font-size:.82rem;color:var(--muted)}
+.score-opts{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:.88rem}
+.score-opts label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+.score-opts input{width:5.5em;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--bg);font-family:var(--f-mono)}
+.score-t{border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums;width:100%;max-width:420px}
+.score-t th,.score-t td{padding:4px 10px;border-bottom:1px solid var(--line);text-align:right}
+.score-t th:first-child,.score-t td:first-child{text-align:left;color:var(--muted);font-weight:400}
+.score-t thead th{font-weight:600;color:var(--ink)}
+.score-t tr.tot td{font-weight:600;color:var(--ink);border-bottom:0}
+.score-res{margin:0;font-family:var(--f-display);font-size:1.1rem}
+.score-res small{display:block;font-family:var(--f-body);font-size:.8rem;color:var(--muted);margin-top:2px}
+.tool.scoring[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+/* 笔记人 */
+.who{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;font-size:.88rem}
+.who>label{color:var(--muted)}
+.who select,.who input{height:32px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg);max-width:100%}
+.who input{width:9em}
+.who .btn{height:32px;padding:0 10px;font-size:.85rem}
+.chip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;font-size:.74rem;font-weight:600;color:#fff;white-space:nowrap;line-height:1}
+.others{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.others:empty{display:none}
+.onote{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--bg);font-size:.88rem;line-height:1.55}
+.onote .txt{white-space:pre-wrap;word-break:break-word;margin-top:3px}
+.nfilter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.nfilter:empty{display:none}
+.nfilter button{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:.82rem}
+.nfilter button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.li .chips{display:inline-flex;gap:3px}
+.tr .chip{height:16px;font-size:.68rem;padding:0 5px}
 .prefs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;font-size:.9rem}
 .prefs label{color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
@@ -146,6 +179,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
     <h1>围棋复盘本</h1>
     <span class="save-state" id="saveState">已保存在本机</span>
     <div class="top-actions">
+      <button class="btn" id="langBtn" title="English / 中文">EN</button>
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
       <button class="btn" id="redoBtn" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
       <button class="btn" id="driveTop" hidden>连接 Drive</button>
@@ -186,6 +220,24 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="tool" data-tool="erase" aria-pressed="false">擦除标记</button>
       <span class="sep"></span>
       <button class="tool" id="numToggle" aria-pressed="false">显示手数</button>
+      <span class="sep"></span>
+      <button class="tool scoring" id="scoreToggle" aria-pressed="false">数子 / 数目</button>
+    </div>
+
+    <div class="score" id="scoreBox" hidden>
+      <div class="score-head"><b>数子 / 数目</b><span>点棋盘上的死子把它标出来，再点一次取消。黑白小方块是各自的地。</span></div>
+      <div class="score-opts">
+        <div class="seg" id="ruleSeg"><button data-r="cn">中国数子</button><button data-r="jp">日韩数目</button><button data-r="ing">应氏计点</button></div>
+        <label for="komiIn"><span>贴目</span><input id="komiIn" type="number" step="0.25" inputmode="decimal"></label>
+      </div>
+      <div style="overflow-x:auto"><table class="score-t" id="scoreTable"></table></div>
+      <p class="score-res" id="scoreRes"></p>
+      <div class="row">
+        <button class="btn" id="scoreClear">清除死子标记</button>
+        <button class="btn" id="scoreWrite">把结果写入棋局信息</button>
+        <button class="btn pri" id="scoreExit">完成</button>
+      </div>
+      <p class="note" id="scoreNote" style="margin:0"></p>
     </div>
 
     <div class="vars" id="vars" hidden></div>
@@ -194,6 +246,13 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
   <aside>
     <section class="card">
       <h2>这一手的评论 <span class="here" id="hereLbl">开局</span></h2>
+      <div class="who" id="whoRow">
+        <label for="whoSel">我是</label>
+        <select id="whoSel"></select>
+        <span id="whoAdd" hidden><input id="whoName" maxlength="12" placeholder="名字"> <button class="btn pri" id="whoOk">确定</button> <button class="btn" id="whoCancel">取消</button></span>
+        <button class="btn" id="whoDel" hidden>删除这个名字</button>
+      </div>
+      <div class="others" id="others"></div>
       <textarea id="comment" placeholder="写下这一手的想法，例如：这里应该先补断点。"></textarea>
       <div class="row" style="margin-top:8px;justify-content:space-between;align-items:center">
         <p class="hint" style="margin:0">点棋盘空点可以试下变化，原来的棋谱不会被改掉。电脑上在棋盘上滚动鼠标滚轮可以前进、后退，按住 Shift 一次走 10 手。</p>
@@ -218,7 +277,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <button class="tab" role="tab" data-tab="prefs" aria-selected="false">声音</button>
       </div>
 
-      <div data-panel="notes"><div class="list" id="noteList"></div></div>
+      <div data-panel="notes"><div class="nfilter" id="noteFilter"></div><div class="list" id="noteList"></div></div>
 
       <div data-panel="info" hidden>
         <div class="grid2">
@@ -296,6 +355,122 @@ const ASSETS={"move": "data:audio/wav;base64,UklGRhAiAABXQVZFZm10IBAAAAABAAEAIlY
 const DRIVE_CLIENT_ID = '588966963731-f9t434g7v1rp5kg3ock3clfbgqti9jkm.apps.googleusercontent.com';
 const DRIVE_FOLDER = '围棋复盘';
 
+/* ===================== 中文 / English ===================== */
+const EN={
+'围棋复盘本':'Go Review Notebook','保存':'Save','连接 Drive':'Connect Drive','重新连接 Drive':'Reconnect Drive',
+'↶ 撤销':'↶ Undo','↷ 重做':'↷ Redo','撤销 (Ctrl+Z)':'Undo (Ctrl+Z)','重做 (Ctrl+Y)':'Redo (Ctrl+Y)','保存 (Ctrl+S)':'Save (Ctrl+S)',
+'黑方':'Black','白方':'White','棋盘':'Go board','黑':'Black','白':'White',
+'第一手':'First move','后退10手':'Back 10 moves','上一手 (←)':'Previous move (←)','上一手':'Previous move','下一手 (→)':'Next move (→)','下一手':'Next move','前进10手':'Forward 10 moves','最后一手':'Last move',
+'跳到第几手':'Jump to move','工具':'Tools','落子 / 试下':'Play / try','擦除标记':'Erase marks','显示手数':'Move numbers','数子 / 数目':'Count score',
+'这一手的评论':'Comment on this move','开局':'Start',
+'写下这一手的想法，例如：这里应该先补断点。':'Write your thoughts on this move, e.g. should have defended the cut first.',
+'点棋盘空点可以试下变化，原来的棋谱不会被改掉。电脑上在棋盘上滚动鼠标滚轮可以前进、后退，按住 Shift 一次走 10 手。':'Click an empty point to try a variation; the game record is not changed. On a computer, scroll the mouse wheel over the board to step through moves, hold Shift for 10 at a time.',
+'删除这一手之后':'Delete from this move','棋谱树':'Game tree',
+'缩进的是变化图。点任一手可以跳过去；在变化图第一手按「设为主线」可以把它变成实战。':'Indented lines are variations. Click any move to jump to it. On the first move of a variation, use “Make main line” to promote it.',
+'把这个变化设为主线':'Make this variation the main line',
+'评论列表':'Comments','棋局信息':'Game info','我的棋谱':'My games','导入 / 导出':'Import / Export','声音':'Sound',
+'黑方段位':'Black rank','白方段位':'White rank','日期':'Date','结果':'Result','例如 B+R、W+3.5':'e.g. B+R, W+3.5','贴目':'Komi','标题':'Title',
+'新建空白棋盘':'New empty board','删除当前棋谱':'Delete this game',
+'棋谱保存在这个浏览器里。换设备时，用"导入 / 导出"，或设置 Google Drive 自动同步。':'Games are saved in this browser. To move them to another device, use Import / Export or set up Google Drive sync.',
+'贴上 SGF（下载工具会自动把棋谱复制好，直接粘贴即可）':'Paste SGF (the download tool copies it for you, so just paste)',
+'打开这盘棋':'Open this game','或打开 SGF 文件':'Or open an SGF file','复制 SGF':'Copy SGF','下载 SGF':'Download SGF','SGF 文本':'SGF text',
+'开':'On','关':'Off','落子、提子音效取自 MultiGo 4。提子少和提子多是两种不同的声音。':'Stone and capture sounds come from MultiGo 4. Small and large captures have different sounds.',
+'设置好之后，棋谱和评论会自动存到你 Google Drive 里的「围棋复盘」文件夹，电脑、Android、iPhone 登录同一个账号就能接着看。':'Once set up, games and comments are saved to the “围棋复盘” folder in your Google Drive, so any computer, Android or iPhone signed in to the same account can continue.',
+'需要先把这个网页放到 GitHub Pages，并在代码里填入 Google 登录 ID（DRIVE_CLIENT_ID）。':'This needs the page hosted on GitHub Pages with a Google client ID (DRIVE_CLIENT_ID) filled in.',
+'连接 Google Drive':'Connect Google Drive','立即同步全部':'Sync all now','改动后自动同步':'Sync automatically after changes',
+'连接后，「我的棋谱」里的每盘棋都会和 Drive 双向同步：新载入的棋谱、评论、变化图、棋局信息都会上传；在另一台设备改过的会自动下载。网页切回前台时，以及每分钟，都会检查一次。':'Once connected, every game in My games syncs both ways with Drive: new games, comments, variations and game info are uploaded, and changes made on another device are downloaded. It checks when you return to the page and every minute.',
+'点棋盘上的死子把它标出来，再点一次取消。黑白小方块是各自的地。':'Click dead stones to mark them; click again to unmark. Small black and white squares show each side’s territory.',
+'中国数子':'Chinese (area)','日韩数目':'Japanese / Korean (territory)','应氏计点':'Ing (SST)',
+'清除死子标记':'Clear dead marks','把结果写入棋局信息':'Save result to game info','完成':'Done',
+'这不是 SGF 棋谱（找不到"("）':'This is not an SGF record (no “(” found)','SGF 里没有任何内容':'The SGF is empty',
+'这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）':'This game is already in My games. Opened it with your earlier comments.',
+'保存中…':'Saving…','无法保存（浏览器不允许本机储存，请用「导出」保存）':'Can’t save: this browser blocks local storage. Use Export instead.',
+'已保存 · Google Drive 同步中':'Saved · syncing with Google Drive','已保存在本机 · 未连接 Drive':'Saved on this device · Drive not connected','已保存在本机':'Saved on this device',
+'已撤销':'Undone','已重做':'Redone','（空）':'(empty)','评':'note','展开 / 收起':'Expand / collapse','展开或收起这个变化':'Expand or collapse this variation',
+'{0} 个变化':'{0} variations','提子 {0}':'Captures {0}','第 {0} / {1} 手':'Move {0} / {1}','第 {0} 手':'Move {0}','第 {0} 手 {1} {2}':'Move {0} · {1} {2}',
+'和棋':'Draw','{0}中盘胜':'{0} wins by resignation','{0}超时胜':'{0} wins on time','{0}胜':'{0} wins','{0}胜 {1}':'{0} wins by {1}','停一手':'Pass',
+'下一手有 {0} 种走法：':'{0} options for the next move:',' · 实战':' · game',
+'还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。':'No comments yet. Go to any move and write in the box above; it will show up here.',
+'变化':'variation','还没有棋谱。':'No games yet.','未命名':'Untitled','这里是禁着点（自杀）':'Illegal move (suicide)',
+'再点一次确认删除':'Click again to delete','开局不能删除':'The start can’t be deleted','这盘棋读不出来：':'Can’t read this game: ',
+'先把 SGF 粘贴到框里':'Paste the SGF into the box first','已打开':'Opened','已打开粘贴的棋谱':'Opened the pasted game','已打开 {0}':'Opened {0}',
+'请按 Ctrl+C（手机：长按 → 复制）复制上面的文字':'Press Ctrl+C (on a phone: long-press → Copy) to copy the text above','已复制 SGF，可以粘贴到其他软件':'SGF copied. Paste it into any Go program.',
+'已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱':'Downloaded. Remove “.txt” from the end of the file name to get the .sgf.','已取消下载':'Download cancelled','下载不可用，请改用「复制 SGF」':'Download isn’t available here. Use Copy SGF instead.','如果没有开始下载，请改用「复制 SGF」':'If the download didn’t start, use Copy SGF instead.',
+'无法载入 Google 登录，请检查网络':'Couldn’t load Google sign-in. Check your connection.','登录窗口被关闭了':'The sign-in window was closed','登录失败（可能被浏览器拦截了弹窗）':'Sign-in failed (the browser may have blocked the pop-up)',
+'连接已过期，请点「连接 Drive」':'The connection expired. Click “Connect Drive”.','Drive 错误 {0}':'Drive error {0}','同步中…':'Syncing…',
+'下载 {0} 盘':'downloaded {0}','上传 {0} 盘':'uploaded {0}','移除 {0} 盘':'removed {0}','已同步 · {0}':'Synced · {0}','已和 Google Drive 同步：{0}':'Synced with Google Drive: {0}','、':', ',
+'同步失败：{0}':'Sync failed: {0}','已连接':'Connected','未连接。每次打开网页后点「连接 Drive」，就会自动同步。':'Not connected. Click “Connect Drive” each time you open the page and it will sync.',
+'正在连接…':'Connecting…','连接失败：{0}':'Connection failed: {0}',
+'已保存，正在同步到 Google Drive':'Saved. Syncing to Google Drive.','已保存在本机（连接 Google Drive 可同步到其他设备）':'Saved on this device. Connect Google Drive to sync to other devices.','无法保存，请用「导出」':'Can’t save. Use Export.',
+'已设为主线':'Made main line','棋谱读取失败：{0}':'Couldn’t read the game: {0}',
+// 笔记人
+'我是':'I am','名字':'Name','确定':'OK','取消':'Cancel','删除这个名字':'Remove this name','（未选择）':'(not chosen)','+ 新增名字…':'+ Add a name…',
+'（未署名）':'(unsigned)','以「{0}」的身份写评论…':'Writing as {0}…','全部':'All','名字不能有【】或换行，最多 12 个字':'Names can’t contain 【】 or line breaks, 12 characters max',
+'已切换为「{0}」':'Now writing as {0}','{0} 摆的变化':'variation by {0}',
+// 数子 / 数目
+'活子':'Stones on board','地':'Territory','公气（各算一半）':'Dame (half each)','还子（让子棋）':'Handicap return','合计':'Total','提子':'Prisoners','死子':'Dead stones','贴目（白）':'Komi (White)',
+'黑 {0} 子，白 {1} 子':'Black {0} stones, White {1} stones','黑 {0} 目，白 {1} 目':'Black {0} points, White {1} points','黑 {0} 点，白 {1} 点':'Black {0} points, White {1} points',
+'黑胜 {0} 子':'Black wins by {0} stones','白胜 {0} 子':'White wins by {0} stones','黑胜 {0} 目':'Black wins by {0} points','白胜 {0} 目':'White wins by {0} points','黑胜 {0} 点':'Black wins by {0} points','白胜 {0} 点':'White wins by {0} points',
+'和棋（平局）':'Jigo (draw)','平分，应氏规则判黑胜':'Tied: Black wins under Ing rules','平分，让子棋判白胜':'Tied: White wins in a handicap game',
+'黑需要 {0} 子才胜（贴 {1} 子）。':'Black needs {0} stones to win (komi {1} stones).',
+'中国规则：活子加围住的空点；公气各算一半。让子棋黑方要还子。':'Chinese rules: stones on board plus surrounded points; dame split evenly. Black returns half a stone per handicap stone.',
+'日韩规则：围住的空点加提子和死子。双活里的眼不算地，这里没有自动排除，遇到双活请自己核对。':'Japanese/Korean rules: surrounded points plus prisoners and dead stones. Eyes inside seki don’t count; this tool doesn’t exclude them, so check seki by hand.',
+'应氏规则：和中国规则一样数活子和地，白贴 8 点；平分时黑胜（让子棋白胜）。':'Ing rules: count stones and territory like Chinese rules, White gets 8 points; ties go to Black (White in handicap games).',
+'结果已写入：{0}':'Result saved: {0}',
+'还没标出任何死子。如果棋局还没下完，数出来的结果会不准。':'No dead stones marked yet. If the game isn’t finished, the count won’t be accurate.',
+};
+let LANG='zh';try{const v=JSON.parse(localStorage.getItem('goReview.prefs')||'{}');if(v.lang==='en')LANG='en'}catch(e){}
+function T(zh,...a){let s=LANG==='en'&&EN[zh]!==undefined?EN[zh]:zh;a.forEach((v,i)=>{s=s.split('{'+i+'}').join(v)});return s}
+const STATIC_I18N={texts:[],attrs:[]};
+function collectStatic(){
+  const app=document.querySelector('.app');if(!app)return;
+  const w=document.createTreeWalker(app,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())){const k=n.nodeValue.trim();if(k&&EN[k]!==undefined)STATIC_I18N.texts.push({n,k,raw:n.nodeValue})}
+  app.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>['placeholder','title','aria-label'].forEach(a=>{const v=el.getAttribute(a);if(v&&EN[v]!==undefined)STATIC_I18N.attrs.push({el,a,k:v})}));
+}
+function applyStatic(){
+  for(const t of STATIC_I18N.texts)t.n.nodeValue=LANG==='en'?t.raw.replace(t.k,EN[t.k]):t.raw;
+  for(const t of STATIC_I18N.attrs)t.el.setAttribute(t.a,LANG==='en'?EN[t.k]:t.k);
+  document.documentElement.lang=LANG==='en'?'en':'zh-CN';
+  document.title=T('围棋复盘本');
+  const b=document.getElementById('langBtn');if(b)b.textContent=LANG==='en'?'中文':'EN';
+}
+
+/* ===================== 数子 / 数目 ===================== */
+// g: 盘面（0 空、1 黑、2 白）；dead: 死子的位置集合（y*n+x）
+function scoreBoard(g,dead,n){
+  const b=g.map(r=>r.slice());let deadB=0,deadW=0;
+  for(const k of dead){const x=k%n,y=(k/n)|0;if(b[y][x]===1)deadB++;else if(b[y][x]===2)deadW++;b[y][x]=0}
+  const own=Array.from({length:n},()=>Array(n).fill(0));const seen=new Uint8Array(n*n);
+  let tB=0,tW=0,dame=0,aB=0,aW=0;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    if(b[y][x]===1){aB++;continue}if(b[y][x]===2){aW++;continue}
+    if(seen[y*n+x])continue;
+    const pts=[],st=[[x,y]];let touchB=false,touchW=false;seen[y*n+x]=1;
+    while(st.length){const[p,q]=st.pop();pts.push([p,q]);
+      for(const[u,v]of nbrs(p,q,n)){const c=b[v][u];if(c===1)touchB=true;else if(c===2)touchW=true;else if(!seen[v*n+u]){seen[v*n+u]=1;st.push([u,v])}}}
+    const o=touchB&&!touchW?1:touchW&&!touchB?2:0;
+    for(const[p,q]of pts)own[q][p]=o;
+    if(o===1)tB+=pts.length;else if(o===2)tW+=pts.length;else dame+=pts.length;
+  }
+  return{own,tB,tW,dame,aB,aW,deadB,deadW};
+}
+// rule: cn 中国数子 / jp 日韩数目 / ing 应氏计点；komi 以「目 / 点」计
+function scoreResult(sb,rule,komi,capB,capW,ha,n){
+  const H=ha>=2?ha:0;
+  if(rule==='jp'){
+    const B=sb.tB+capB+sb.deadW,W=sb.tW+capW+sb.deadB+komi;
+    return{rule,B,W,diff:B-W,rows:[['地',sb.tB,sb.tW],['提子',capB,capW],['死子',sb.deadW,sb.deadB],['贴目（白）','',komi]]};
+  }
+  let B=sb.aB+sb.tB+sb.dame/2,W=sb.aW+sb.tW+sb.dame/2;
+  const rows=[['活子',sb.aB,sb.aW],['地',sb.tB,sb.tW]];
+  if(sb.dame)rows.push(['公气（各算一半）',sb.dame/2,sb.dame/2]);
+  if(H){B-=H/2;W+=H/2;rows.push(['还子（让子棋）',-H/2,H/2])}
+  return{rule,B,W,diff:B-W-komi,rows,half:n*n/2,H};
+}
+function fmtQ(v){const neg=v<0;v=Math.abs(v);const i=Math.floor(v+1e-9),f=Math.round((v-i)*4);const fr=['','¼','½','¾'][f]||'';return(neg?'-':'')+(i||!fr?i:'')+fr}
+
+
 /* == SGF == */
 function parseSGF(s){
   s=String(s); let i=0;
@@ -325,9 +500,9 @@ function parseSGF(s){
     return first;
   }
   const start=s.indexOf('(');
-  if(start<0) throw new Error('这不是 SGF 棋谱（找不到"("）');
+  if(start<0) throw new Error(T('这不是 SGF 棋谱（找不到"("）'));
   i=start; const root=tree(null);
-  if(!root) throw new Error('SGF 里没有任何内容');
+  if(!root) throw new Error(T('SGF 里没有任何内容'));
   return root;
 }
 function escV(v){return String(v).replace(/\\/g,'\\\\').replace(/]/g,'\\]')}
@@ -393,6 +568,7 @@ function gameKey(r){return[prop(r,'DT'),prop(r,'PB'),prop(r,'PW'),mainLine(r)].j
 let G=null;   // {id, root}
 let cur=null; // 当前节点
 let tool='play', showNums=false;
+let scoring=null; // 数子模式：{node, dead:Set, rule, komi}
 const root=()=>G.root;
 
 function fixFoxSgf(t){
@@ -406,11 +582,11 @@ function openRoot(r,{id=null,driveId=null}={}){
     if(hit){ // 同一盘棋已经存在：打开旧的（保留之前写的评论）
       id=hit[0]; r=parseSGF(hit[1].sgf);
       if(driveId&&!hit[1].driveId)hit[1].driveId=driveId;
-      flash('这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）');
+      flash(T('这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）'));
     }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; setTimeout(()=>Drive.autoSync(),0); }
   }
   G={id,root:r}; store.lastId=id; lsSet(store);
-  cur=r; undoStack=[];redoStack=[];undoUI(); renderTree(); render(); renderLib(); renderInfo();
+  cur=r; undoStack=[];redoStack=[];undoUI(); renderWho(); renderTree(); render(); renderLib(); renderInfo();
 }
 function importText(t,opts){const r=parseSGF(fixFoxSgf(t));openRoot(r,opts);return r}
 
@@ -419,15 +595,15 @@ function changed(structural=true){
   if(structural)renderTree();
   const rec=store.games[G.id]||(store.games[G.id]={});
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
-  clearTimeout(saveT);$('#saveState').textContent='保存中…';
-  saveT=setTimeout(()=>{const ok=lsSet(store);$('#saveState').textContent=ok?savedText():'无法保存（浏览器不允许本机储存，请用「导出」保存）';renderLib();Drive.autoSync()},400);
+  clearTimeout(saveT);$('#saveState').textContent=T('保存中…');
+  saveT=setTimeout(()=>{const ok=lsSet(store);$('#saveState').textContent=ok?savedText():T('无法保存（浏览器不允许本机储存，请用「导出」保存）');renderLib();Drive.autoSync()},400);
 }
-const savedText=()=>Drive.connected()?'已保存 · Google Drive 同步中':(Drive.available?'已保存在本机 · 未连接 Drive':'已保存在本机');
+const savedText=()=>Drive.connected()?T('已保存 · Google Drive 同步中'):(Drive.available?T('已保存在本机 · 未连接 Drive'):T('已保存在本机'));
 
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
 let prefs={sound:'on'};
-try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound}catch(e){}
+try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors}catch(e){}
 function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}syncPrefUI();render()}
 function syncPrefUI(){document.querySelectorAll('[data-pref]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===prefs[g.dataset.pref])))}
 const SND={};
@@ -447,18 +623,62 @@ function nodeAt(r,idx){let n=r;for(const i of idx){if(!n.children[i])break;n=n.c
 function snapshot(){return{sgf:toSGF(G.root),path:pathIdx(cur)}}
 function snap(){undoStack.push(snapshot());if(undoStack.length>200)undoStack.shift();redoStack=[];undoUI()}
 function restore(st){G.root=parseSGF(st.sgf);cur=nodeAt(G.root,st.path);let n=cur;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);render();renderInfo();changed()}
-function undo(){if(!undoStack.length)return;redoStack.push(snapshot());restore(undoStack.pop());undoUI();flash('已撤销')}
-function redo(){if(!redoStack.length)return;undoStack.push(snapshot());restore(redoStack.pop());undoUI();flash('已重做')}
+function undo(){if(!undoStack.length)return;redoStack.push(snapshot());restore(undoStack.pop());undoUI();flash(T('已撤销'))}
+function redo(){if(!redoStack.length)return;undoStack.push(snapshot());restore(redoStack.pop());undoUI();flash(T('已重做'))}
 function undoUI(){const u=$('#undoBtn'),r=$('#redoBtn');if(u)u.disabled=!undoStack.length;if(r)r.disabled=!redoStack.length}
+
+/* ===================== 笔记人（不同人的评论和变化图） ===================== */
+// 评论按人分段存在 SGF 的 C[] 里：「【爸爸】……」，其他围棋软件也看得到是谁写的。
+// 谁摆的变化图记在自定义属性 XA[名字]。
+const AUTHOR_COLORS=['#2F6B5A','#B5542E','#3C5FA8','#8A4FA0','#9A7417','#2B7F8A','#A23B5A','#5C6B2E'];
+function authorColor(name){let h=0;for(const ch of name)h=(h*31+ch.codePointAt(0))>>>0;return AUTHOR_COLORS[h%AUTHOR_COLORS.length]}
+const chip=(name)=>`<span class="chip" style="background:${authorColor(name)}">${escH(name)}</span>`;
+function parseC(text){
+  const out=[];let curS={author:'',lines:[]};out.push(curS);
+  for(const line of String(text||'').split('\n')){
+    const m=line.match(/^【([^】\n]{1,20})】(.*)$/);
+    if(m){curS={author:m[1],lines:[m[2]]};out.push(curS)}else curS.lines.push(line);
+  }
+  return out.map(x=>({author:x.author,text:x.lines.join('\n').replace(/^\n+|\s+$/g,'')})).filter(x=>x.text||x.author);
+}
+function buildC(secs){
+  const s=secs.filter(x=>x.text.trim());
+  s.sort((a,b)=>(a.author?1:0)-(b.author?1:0)); // 未署名的放最前
+  return s.map(x=>x.author?`【${x.author}】${x.text}`:x.text).join('\n\n');
+}
+const secsOf=node=>node.props.C?parseC(node.props.C[0]):[];
+function me(){return prefs.me||''}
+function knownAuthors(){
+  const set=new Set(prefs.authors||[]);
+  if(G)(function walk(n){for(const x of secsOf(n))if(x.author)set.add(x.author);if(n.props.XA)set.add(n.props.XA[0]);n.children.forEach(walk)})(root());
+  return [...set].sort((a,b)=>a.localeCompare(b,'zh'));
+}
+function savePrefs(){try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}}
+function renderWho(){
+  const sel=$('#whoSel');const names=knownAuthors();const m=me();
+  sel.innerHTML=`<option value="">${escH(T('（未选择）'))}</option>`+names.map(n=>`<option value="${escH(n)}"${n===m?' selected':''}>${escH(n)}</option>`).join('')+`<option value="__add">${escH(T('+ 新增名字…'))}</option>`;
+  sel.value=m;sel.style.borderColor=m?authorColor(m):'';
+  $('#whoDel').hidden=!m||!(prefs.authors||[]).includes(m);
+  $('#comment').placeholder=m?T('以「{0}」的身份写评论…',m):T('写下这一手的想法，例如：这里应该先补断点。');
+}
+function setMe(name){prefs.me=name;if(name){prefs.authors=[...new Set([...(prefs.authors||[]),name])]}savePrefs();renderWho();render();renderTree();if(name)flash(T('已切换为「{0}」',name))}
+function renderComment(){
+  const secs=secsOf(cur),m=me();
+  const mine=secs.find(x=>x.author===m);
+  $('#others').innerHTML=secs.filter(x=>x.author!==m).map(x=>`<div class="onote">${x.author?chip(x.author):`<span class="chip" style="background:var(--muted)">${escH(T('（未署名）'))}</span>`}<div class="txt">${escH(x.text)}</div></div>`).join('');
+  const box=$('#comment');const v=mine?mine.text:'';if(document.activeElement!==box)box.value=v;
+}
 
 /* ===================== 棋谱树 ===================== */
 let rowOf=new WeakMap(),treeOn=null;
 function treeRow(node,mn){
   const b=document.createElement('button');b.className='tr';b._node=node;
   const m=moveOf(node);
-  if(!m){b.innerHTML=`<span class="n"></span><span class="s r"></span><span>${node===root()?'棋局信息':'（空）'}</span>`}
+  if(!m){b.innerHTML=`<span class="n"></span><span class="s r"></span><span>${node===root()?T('棋局信息'):T('（空）')}</span>`}
   else b.innerHTML=`<span class="n">${mn}</span><span class="s ${m[0]==='B'?'b':'w'}"></span><span>${coordName(m,sizeOf(root()))}</span>`;
-  if(node.props.C&&node.props.C[0].trim())b.insertAdjacentHTML('beforeend','<span class="c">评</span>');
+  const xa=node.props.XA&&node.props.XA[0];
+  if(xa&&!(node.parent&&node.parent.props.XA&&node.parent.props.XA[0]===xa))b.insertAdjacentHTML('beforeend',chip(xa));
+  if(node.props.C&&node.props.C[0].trim())b.insertAdjacentHTML('beforeend','<span class="c">'+T('评')+'</span>');
   rowOf.set(node,b);return b;
 }
 function renderTree(){
@@ -474,15 +694,15 @@ function renderTree(){
         const ch=n.children[i];
         const g=document.createElement('div');g.className='vg'+(ch._closed?' closed':'');
         const h=document.createElement('div');h.className='vh';
-        const t=document.createElement('button');t.className='vt';t.textContent=ch._closed?'+':'−';t.title='展开 / 收起';t.setAttribute('aria-label','展开或收起这个变化');
-        t.onclick=e=>{e.stopPropagation();ch._closed=!ch._closed;g.classList.toggle('closed',ch._closed);t.textContent=ch._closed?'+':'−'};
-        h.appendChild(t);g.appendChild(h);parentEl.appendChild(g);
+        const tg=document.createElement('button');tg.className='vt';tg.textContent=ch._closed?'+':'−';tg.title=T('展开 / 收起');tg.setAttribute('aria-label',T('展开或收起这个变化'));
+        tg.onclick=e=>{e.stopPropagation();ch._closed=!ch._closed;g.classList.toggle('closed',ch._closed);tg.textContent=ch._closed?'+':'−'};
+        h.appendChild(tg);g.appendChild(h);parentEl.appendChild(g);
         line(ch,mn,g,h);
       }
     }
   }
   line(root(),0,box,null);
-  $('#treeCount').textContent=vars?`${vars} 个变化`:'';
+  $('#treeCount').textContent=vars?T('{0} 个变化',vars):'';
   box.scrollTop=keep;treeHighlight();
 }
 function treeHighlight(){
@@ -497,7 +717,7 @@ function treeHighlight(){
   const isVarStart=cur.parent&&cur.parent.children.indexOf(cur)>0;
   $('#promoteBtn').hidden=!isVarStart;
 }
-function markRow(node){const r=rowOf.get(node);if(!r)return;const c=r.querySelector('.c');const has=node.props.C&&node.props.C[0].trim();if(has&&!c)r.insertAdjacentHTML('beforeend','<span class="c">评</span>');if(!has&&c)c.remove()}
+function markRow(node){const r=rowOf.get(node);if(!r)return;const c=r.querySelector('.c');const has=node.props.C&&node.props.C[0].trim();if(has&&!c)r.insertAdjacentHTML('beforeend','<span class="c">'+T('评')+'</span>');if(!has&&c)c.remove()}
 
 /* ===================== 绘制 ===================== */
 const $=s=>document.querySelector(s);
@@ -527,8 +747,16 @@ function render(){
     o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.48}" fill="url(#${c===1?'gB':'gW'})" ${c===2?'stroke="#8f8b84" stroke-width="1"':''}/>`;
     if(showNums&&st.nums.has(y*n+x)){const num=st.nums.get(y*n+x);o+=`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-size="${num>99?13:16}" fill="${c===1?'#f2f2f2':'#1a1a1a'}">${num}</text>`}
   }
+  // 数子：死子变淡，各方的地画小方块
+  if(scoring){
+    if(scoring.node!==cur){scoring.node=cur;scoring.dead=new Set()}
+    const sb=scoreBoard(st.g,scoring.dead,n);scoring.sb=sb;scoring.st=st;
+    for(const k of scoring.dead){const x=k%n,y=(k/n)|0;if(st.g[y][x])o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.49}" fill="${BF()}" opacity=".6"/>`}
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){const ow=sb.own[y][x];if(!ow||(st.g[y][x]&&!scoring.dead.has(y*n+x)))continue;
+      const s2=U*0.34;o+=`<rect x="${X(x)-s2/2}" y="${X(y)-s2/2}" width="${s2}" height="${s2}" fill="${ow===1?'#151515':'#fafafa'}" stroke="${ow===1?'#000':'#6b6b6b'}" stroke-width="1"/>`}
+  }
   // 最后一手
-  if(st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
+  if(!scoring&&st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
   // 标记
   const ink=(x,y)=>st.g[y][x]===1?'#ffffff':'#1d1d1d';
   const pad=(x,y)=>st.g[y][x]===0?`<rect x="${X(x)-U*.36}" y="${X(y)-U*.36}" width="${U*.72}" height="${U*.72}" fill="${BF()}"/>`:'';
@@ -544,25 +772,62 @@ function render(){
   svg.innerHTML=o;
 
   // 双方信息
-  $('#pbName').textContent=prop(r,'PB')||'黑方';$('#pwName').textContent=prop(r,'PW')||'白方';
-  $('#pbSub').textContent=[prop(r,'BR'),`提子 ${st.capB}`].filter(Boolean).join(' · ');
-  $('#pwSub').textContent=[prop(r,'WR'),`提子 ${st.capW}`].filter(Boolean).join(' · ');
+  $('#pbName').textContent=prop(r,'PB')||T('黑方');$('#pwName').textContent=prop(r,'PW')||T('白方');
+  $('#pbSub').textContent=[prop(r,'BR'),T('提子 {0}',st.capB)].filter(Boolean).join(' · ');
+  $('#pwSub').textContent=[prop(r,'WR'),T('提子 {0}',st.capW)].filter(Boolean).join(' · ');
   $('#resultTag').textContent=resultText(prop(r,'RE'));
   // 手数 / 滑杆
   const line=lineFrom(cur);const total=line.filter(moveOf).length;
   $('#slider').max=total;$('#slider').value=st.mn;
-  $('#mno').innerHTML=`第 <b>${st.mn}</b> / ${total} 手`;
+  $('#mno').innerHTML=T('第 {0} / {1} 手',`<b>${st.mn}</b>`,total);
   $('#hereLbl').textContent=hereLabel(cur,st);
-  const box=$('#comment');const c=(cur.props.C||[''])[0];if(document.activeElement!==box||box.value!==c)box.value=c;
+  renderComment();
   $('#bPrev').disabled=$('#bStart').disabled=$('#bBack10').disabled=!cur.parent;
   $('#bNext').disabled=$('#bEnd').disabled=$('#bFwd10').disabled=!cur.children.length;
   renderVars();renderNotes();treeHighlight();
+  if(scoring)renderScore();
 }
+const RULE_KOMI={cn:7.5,jp:6.5,ing:8};
+function guessRule(){const ru=(prop(root(),'RU')||'').toLowerCase();if(/japan|korea|jp|kr/.test(ru))return'jp';if(/ing|goe/.test(ru))return'ing';return'cn'}
+function startScoring(){
+  const km=parseFloat(prop(root(),'KM'));const rule=guessRule();
+  scoring={node:cur,dead:new Set(),rule,komi:rule==='cn'&&isFinite(km)&&km>0&&km<50?km:RULE_KOMI[rule]};
+  $('#scoreBox').hidden=false;$('#scoreToggle').setAttribute('aria-pressed','true');render();
+  $('#scoreBox').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function stopScoring(){scoring=null;$('#scoreBox').hidden=true;$('#scoreToggle').setAttribute('aria-pressed','false');render()}
+function renderScore(){
+  const n=sizeOf(root()),ha=parseInt(prop(root(),'HA')||'0',10)||0;
+  const res=scoreResult(scoring.sb,scoring.rule,scoring.komi,scoring.st.capB,scoring.st.capW,ha,n);scoring.res=res;
+  document.querySelectorAll('#ruleSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.r===scoring.rule));
+  const ki=$('#komiIn');if(document.activeElement!==ki)ki.value=scoring.komi;
+  const unit=scoring.rule==='cn'?'子':scoring.rule==='jp'?'目':'点';
+  const rows=res.rows.map(r=>`<tr><td>${T(r[0])}</td><td>${r[1]===''?'':fmtQ(r[1])}</td><td>${r[2]===''?'':fmtQ(r[2])}</td></tr>`).join('');
+  const totB=scoring.rule==='jp'?res.B:res.B,totW=scoring.rule==='jp'?res.W:res.W;
+  $('#scoreTable').innerHTML=`<thead><tr><th></th><th>${T('黑')}</th><th>${T('白')}</th></tr></thead><tbody>${rows}<tr class="tot"><td>${T('合计')}</td><td>${fmtQ(totB)}</td><td>${fmtQ(totW)}</td></tr></tbody>`;
+  // 结果文字
+  let line='',sub='',d=res.diff;
+  if(scoring.rule==='cn'){
+    const need=res.half+scoring.komi/2;line=T('黑 {0} 子，白 {1} 子',fmtQ(res.B),fmtQ(res.W));
+    sub=T('黑需要 {0} 子才胜（贴 {1} 子）。',fmtQ(need),fmtQ(scoring.komi/2));
+    const v=fmtQ(Math.abs(d)/2);line+=' → '+(d>0?T('黑胜 {0} 子',v):d<0?T('白胜 {0} 子',v):T('和棋（平局）'));
+  }else if(scoring.rule==='jp'){
+    line=T('黑 {0} 目，白 {1} 目',fmtQ(res.B),fmtQ(res.W))+' → '+(d>0?T('黑胜 {0} 目',fmtQ(d)):d<0?T('白胜 {0} 目',fmtQ(-d)):T('和棋（平局）'));
+  }else{
+    line=T('黑 {0} 点，白 {1} 点',fmtQ(res.B),fmtQ(res.W))+' → '+(d>0?T('黑胜 {0} 点',fmtQ(d)):d<0?T('白胜 {0} 点',fmtQ(-d)):(res.H?T('平分，让子棋判白胜'):T('平分，应氏规则判黑胜')));
+  }
+  if(!scoring.dead.size)sub=(sub?sub+' ':'')+T('还没标出任何死子。如果棋局还没下完，数出来的结果会不准。');
+  $('#scoreRes').innerHTML=escH(line)+(sub?`<small>${escH(sub)}</small>`:'');
+  $('#scoreNote').textContent=T(scoring.rule==='cn'?'中国规则：活子加围住的空点；公气各算一半。让子棋黑方要还子。':scoring.rule==='jp'?'日韩规则：围住的空点加提子和死子。双活里的眼不算地，这里没有自动排除，遇到双活请自己核对。':'应氏规则：和中国规则一样数活子和地，白贴 8 点；平分时黑胜（让子棋白胜）。');
+}
+function scoreRE(){const r=scoring.res;let d=r.diff;
+  if(d===0){if(scoring.rule==='ing')return r.H?'W+0':'B+0';return'0'}
+  return(d>0?'B+':'W+')+String(Math.abs(d))}
 function escH(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function resultText(re){if(!re)return'—';const m=re.match(/^([BW])\+(.*)$/i);if(!m)return re==='0'||/^d/i.test(re)?'和棋':re;
-  const who=m[1].toUpperCase()==='B'?'黑':'白';const how=m[2];if(/^R/i.test(how))return who+'中盘胜';if(/^T/i.test(how))return who+'超时胜';if(!how)return who+'胜';return who+'胜 '+how}
-function coordName(m,n){const xy=ptToXY(m[1],n);if(!xy||(m[1]==='tt'&&n<=19))return'停一手';return COLS[xy[0]]+(n-xy[1])}
-function hereLabel(node,st){const m=moveOf(node);if(!m)return node===root()?'开局':`第 ${st.mn} 手`;return`第 ${st.mn} 手 ${m[0]==='B'?'黑':'白'} ${coordName(m,sizeOf(root()))}`}
+function resultText(re){if(!re)return'—';const m=re.match(/^([BW])\+(.*)$/i);if(!m)return re==='0'||/^d/i.test(re)?T('和棋'):re;
+  const who=m[1].toUpperCase()==='B'?T('黑'):T('白');const how=m[2];if(/^R/i.test(how))return T('{0}中盘胜',who);if(/^T/i.test(how))return T('{0}超时胜',who);if(!how)return T('{0}胜',who);return T('{0}胜 {1}',who,how)}
+function coordName(m,n){const xy=ptToXY(m[1],n);if(!xy||(m[1]==='tt'&&n<=19))return T('停一手');return COLS[xy[0]]+(n-xy[1])}
+function hereLabel(node,st){const m=moveOf(node);if(!m)return node===root()?T('开局'):T('第 {0} 手',st.mn);return T('第 {0} 手 {1} {2}',st.mn,m[0]==='B'?T('黑'):T('白'),coordName(m,sizeOf(root())))}
 function lineFrom(node){const p=pathTo(node);let n=node;while(n.children.length){n=n.children[n._sel||0]||n.children[0];p.push(n)}return p}
 function onMainLine(node){for(let n=node;n.parent;n=n.parent)if(n.parent.children[0]!==n)return false;return true}
 
@@ -570,20 +835,27 @@ function renderVars(){
   const v=$('#vars');const kids=cur.children;
   if(kids.length<2){v.hidden=true;v.innerHTML='';return}
   v.hidden=false;const n=sizeOf(root());
-  v.innerHTML='<span>下一手有 '+kids.length+' 种走法：</span>'+kids.map((ch,i)=>{const m=moveOf(ch);return`<button data-i="${i}" aria-current="${(cur._sel||0)===i}">${String.fromCharCode(65+i)}${m?' '+coordName(m,n):''}${i===0?' · 实战':''}</button>`}).join('');
+  v.innerHTML='<span>'+T('下一手有 {0} 种走法：',kids.length)+'</span>'+kids.map((ch,i)=>{const m=moveOf(ch);return`<button data-i="${i}" aria-current="${(cur._sel||0)===i}">${String.fromCharCode(65+i)}${m?' '+coordName(m,n):''}${i===0?T(' · 实战'):''}</button>`}).join('');
 }
+let noteFilter='';
 function renderNotes(){
-  const out=[];const n=sizeOf(root());
-  (function walk(node,mn){const m=moveOf(node);if(m)mn++;if(node.props.C&&node.props.C[0].trim())out.push({node,mn,m,main:onMainLine(node)});node.children.forEach(c=>walk(c,mn))})(root(),0);
+  const out=[];const authors=new Set();
+  (function walk(node,mn){const m=moveOf(node);if(m)mn++;const secs=secsOf(node);secs.forEach(x=>x.author&&authors.add(x.author));
+    const pick=noteFilter?secs.filter(x=>x.author===noteFilter):secs;
+    if(pick.length)out.push({node,mn,m,main:onMainLine(node),secs:pick});node.children.forEach(c=>walk(c,mn))})(root(),0);
+  if(noteFilter&&!authors.has(noteFilter))noteFilter='';
+  const fl=$('#noteFilter');
+  fl.innerHTML=authors.size?[`<button data-a="" aria-pressed="${!noteFilter}">${escH(T('全部'))}</button>`].concat([...authors].map(a=>`<button data-a="${escH(a)}" aria-pressed="${noteFilter===a}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${authorColor(a)};margin-right:5px"></span>${escH(a)}</button>`)).join(''):'';
   const el=$('#noteList');
-  if(!out.length){el.innerHTML='<div class="empty">还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。</div>';return}
-  el.innerHTML=out.map((o,i)=>`<button class="li${o.node===cur?' on':''}" data-i="${i}"><span class="k">${o.m?(o.m[0]==='B'?'●':'○')+' '+o.mn:'开局'}</span><span class="t">${escH(o.node.props.C[0].trim().split('\n')[0])}</span><span class="x">${o.main?'':'变化'}</span></button>`).join('');
+  if(!out.length){el.innerHTML='<div class="empty">'+T('还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。')+'</div>';el._items=[];return}
+  el.innerHTML=out.map((o,i)=>{const first=o.secs[0];const names=[...new Set(o.secs.map(x=>x.author).filter(Boolean))];
+    return`<button class="li${o.node===cur?' on':''}" data-i="${i}"><span class="k">${o.m?(o.m[0]==='B'?'●':'○')+' '+o.mn:T('开局')}</span><span class="t">${names.length?`<span class="chips">${names.map(chip).join('')}</span> `:''}${escH(first.text.split('\n')[0])}</span><span class="x">${o.main?'':T('变化')}</span></button>`}).join('');
   el._items=out;
 }
 function renderLib(){
   const el=$('#libList');const ids=Object.keys(store.games).sort((a,b)=>store.games[b].updated-store.games[a].updated);
-  if(!ids.length){el.innerHTML='<div class="empty">还没有棋谱。</div>';return}
-  el.innerHTML=ids.map(id=>{const g=store.games[id];const d=new Date(g.updated);return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||'未命名')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
+  if(!ids.length){el.innerHTML='<div class="empty">'+T('还没有棋谱。')+'</div>';return}
+  el.innerHTML=ids.map(id=>{const g=store.games[id];const d=new Date(g.updated);return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
 }
 function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)})}
 
@@ -599,13 +871,19 @@ function boardClick(ev){
   const p=pt.matrixTransform(svg.getScreenCTM().inverse());const n=sizeOf(root());
   const x=Math.round((p.x-PAD)/U),y=Math.round((p.y-PAD)/U);if(x<0||y<0||x>=n||y>=n)return;
   const pt2=xyToPt(x,y);
+  if(scoring){ // 点棋子：整块标成死子 / 取消
+    const st=computeState(cur,n);if(!st.g[y][x])return;
+    const grp=groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);const isDead=scoring.dead.has(y*n+x);
+    for(const k of grp)isDead?scoring.dead.delete(k):scoring.dead.add(k);
+    render();return;
+  }
   if(tool==='play'){
     const color=nextColor(cur);
     const hit=cur.children.find(c=>{const m=moveOf(c);return m&&m[1]===pt2});
     if(hit){go(hit);return}
     const st=computeState(cur,n);if(st.g[y][x])return;
-    const test=st.g.map(r=>r.slice());const res=place(test,x,y,color==='B'?1:2,n);if(res.suicide)return flash('这里是禁着点（自杀）');
-    snap();const node={props:{[color]:[pt2]},children:[],parent:cur};cur.children.push(node);cur=node;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();soundFor(node);return;
+    const test=st.g.map(r=>r.slice());const res=place(test,x,y,color==='B'?1:2,n);if(res.suicide)return flash(T('这里是禁着点（自杀）'));
+    snap();const node={props:{[color]:[pt2]},children:[],parent:cur};if(me())node.props.XA=[me()];cur.children.push(node);cur=node;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();soundFor(node);return;
   }
   snap();const P=cur.props;const marks=['TR','CR','SQ','MA'];
   const has=k=>(P[k]||[]).includes(pt2);const del=k=>{if(!P[k])return;P[k]=P[k].filter(v=>v!==pt2);if(!P[k].length)delete P[k]};
@@ -646,38 +924,57 @@ document.addEventListener('keydown',e=>{
   if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;
   if(mod&&e.key.toLowerCase()==='z'&&!e.shiftKey){e.preventDefault();undo();return}
   if(mod&&(e.key.toLowerCase()==='y'||(e.key.toLowerCase()==='z'&&e.shiftKey))){e.preventDefault();redo();return}
+  if(e.key==='Escape'&&scoring){stopScoring();return}
   if(e.key==='ArrowRight'){fwd(e.shiftKey?10:1);e.preventDefault()}else if(e.key==='ArrowLeft'){back(e.shiftKey?10:1);e.preventDefault()}
   else if(e.key==='Home'){cur=root();render()}else if(e.key==='End')toEnd();
   else if(e.key==='ArrowUp'||e.key==='ArrowDown'){if(cur.parent&&cur.parent.children.length>1){const sib=cur.parent.children;const i=sib.indexOf(cur)+(e.key==='ArrowDown'?1:-1);if(sib[i])go(sib[i]);e.preventDefault()}}});
 document.querySelectorAll('.tool[data-tool]').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('.tool[data-tool]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('#scoreToggle').onclick=()=>scoring?stopScoring():startScoring();
+$('#scoreExit').onclick=stopScoring;
+$('#scoreClear').onclick=()=>{if(scoring){scoring.dead=new Set();render()}};
+$('#ruleSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!scoring)return;scoring.rule=b.dataset.r;scoring.komi=RULE_KOMI[b.dataset.r];render()};
+$('#komiIn').addEventListener('input',e=>{const v=parseFloat(e.target.value);if(scoring&&isFinite(v)){scoring.komi=v;renderScore()}});
+$('#scoreWrite').onclick=()=>{if(!scoring)return;snap();const re=scoreRE();root().props.RE=[re];
+  const ru={cn:'Chinese',jp:'Japanese',ing:'Ing'}[scoring.rule];root().props.RU=[ru];root().props.KM=[String(scoring.komi)];
+  renderInfo();changed(false);render();flash(T('结果已写入：{0}',resultText(re)))};
+$('#langBtn').onclick=()=>{LANG=LANG==='en'?'zh':'en';prefs.lang=LANG;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}applyStatic();renderWho();renderTree();render();renderLib();Drive.ui()};
 $('#numToggle').onclick=e=>{showNums=!showNums;e.currentTarget.setAttribute('aria-pressed',showNums);render()};
 $('#vars').onclick=e=>{const b=e.target.closest('button');if(!b)return;cur._sel=+b.dataset.i;go(cur.children[+b.dataset.i])};
 let cmtSnapT=null,cmtSnapped=false;
 $('#comment').addEventListener('input',e=>{
   if(!cmtSnapped){snap();cmtSnapped=true}clearTimeout(cmtSnapT);cmtSnapT=setTimeout(()=>{cmtSnapped=false},1500); // 连续打字算一次撤销
-  const v=e.target.value;if(v.trim())cur.props.C=[v];else delete cur.props.C;changed(false);renderNotes();markRow(cur)});
+  const v=e.target.value,m=me();const secs=secsOf(cur);const mine=secs.find(x=>x.author===m);
+  if(mine)mine.text=v;else secs.push({author:m,text:v});
+  const c=buildC(secs);if(c.trim())cur.props.C=[c];else delete cur.props.C;
+  changed(false);renderNotes();markRow(cur)});
 $('#comment').addEventListener('blur',()=>{cmtSnapped=false});
-$('#delBtn').onclick=e=>{if(!cur.parent)return flash('开局不能删除');armed(e.currentTarget,'再点一次确认删除',()=>{snap();const p=cur.parent;p.children.splice(p.children.indexOf(cur),1);p._sel=0;cur=p;render();changed()})};
+$('#delBtn').onclick=e=>{if(!cur.parent)return flash(T('开局不能删除'));armed(e.currentTarget,T('再点一次确认删除'),()=>{snap();const p=cur.parent;p.children.splice(p.children.indexOf(cur),1);p._sel=0;cur=p;render();changed()})};
+$('#whoSel').onchange=e=>{const v=e.target.value;if(v==='__add'){e.target.value=me();$('#whoAdd').hidden=false;$('#whoName').value='';$('#whoName').focus();return}setMe(v)};
+const addName=()=>{const v=$('#whoName').value.trim();if(!v)return;if(/[【】\n]/.test(v)||v.length>12)return flash(T('名字不能有【】或换行，最多 12 个字'));$('#whoAdd').hidden=true;setMe(v)};
+$('#whoOk').onclick=addName;$('#whoName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addName()}else if(e.key==='Escape')$('#whoAdd').hidden=true});
+$('#whoCancel').onclick=()=>{$('#whoAdd').hidden=true};
+$('#whoDel').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{prefs.authors=(prefs.authors||[]).filter(x=>x!==me());prefs.me='';savePrefs();renderWho();render()});
+$('#noteFilter').onclick=e=>{const b=e.target.closest('button');if(!b)return;noteFilter=b.dataset.a;renderNotes()};
 $('#noteList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const it=$('#noteList')._items[+b.dataset.i];let n=it.node;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=it.node;render()};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t.dataset.tab)});
 document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('focus',()=>snap()));
 document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
-$('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash('这盘棋读不出来：'+err.message)}};
+$('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash(T('这盘棋读不出来：')+err.message)}};
 $('#newBlank').onclick=()=>{const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
-$('#delGame').onclick=e=>armed(e.currentTarget,'再点一次确认删除',()=>{Drive.trash(store.games[G.id]);delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
-$('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io('先把 SGF 粘贴到框里',true);try{importText(t);$('#pasteBox').value='';io('已打开')}catch(err){io(err.message,true)}};
-$('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io('已打开粘贴的棋谱')}catch(err){io(err.message,true)}}});
-$('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{importText(rd.result);io('已打开 '+f.name)}catch(err){io(err.message,true)}e.target.value=''};rd.readAsText(f)};
+$('#delGame').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{Drive.trash(store.games[G.id]);delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
+$('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io(T('先把 SGF 粘贴到框里'),true);try{importText(t);$('#pasteBox').value='';io(T('已打开'))}catch(err){io(err.message,true)}};
+$('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io(T('已打开粘贴的棋谱'))}catch(err){io(err.message,true)}}});
+$('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{importText(rd.result);io(T('已打开 {0}',f.name))}catch(err){io(err.message,true)}e.target.value=''};rd.readAsText(f)};
 function fileName(){const r=root();return(titleOf(r)+(prop(r,'RE')?' '+prop(r,'RE'):'')).replace(/[\\/:*?"<>|·]/g,' ').replace(/\s+/g,' ').trim()+'.sgf'}
 $('#copyBtn').onclick=()=>{const t=toSGF(root());const box=$('#exportBox');box.value=t;
-  const fall=()=>{box.hidden=false;box.focus();box.select();io('请按 Ctrl+C（手机：长按 → 复制）复制上面的文字')};
-  try{navigator.clipboard.writeText(t).then(()=>{box.hidden=true;io('已复制 SGF，可以粘贴到其他软件')},fall)}catch(e){fall()}};
+  const fall=()=>{box.hidden=false;box.focus();box.select();io(T('请按 Ctrl+C（手机：长按 → 复制）复制上面的文字'))};
+  try{navigator.clipboard.writeText(t).then(()=>{box.hidden=true;io(T('已复制 SGF，可以粘贴到其他软件'))},fall)}catch(e){fall()}};
 $('#dlBtn').onclick=async()=>{const t=toSGF(root());
   // 在 Claude 里打开时：经由 Claude 的下载确认（只允许 .txt，下载后把文件名的 .txt 删掉即可）
   let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
-  if(dl){try{await dl.save({filename:fileName()+'.txt',data:t});io('已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱')}catch(e){io(e.code==='declined'?'已取消下载':'下载不可用，请改用「复制 SGF」',e.code!=='declined')}return}
+  if(dl){try{await dl.save({filename:fileName()+'.txt',data:t});io(T('已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱'))}catch(e){io(e.code==='declined'?T('已取消下载'):T('下载不可用，请改用「复制 SGF」'),e.code!=='declined')}return}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/x-go-sgf;charset=utf-8'}));a.download=fileName();document.body.appendChild(a);a.click();a.remove();
-  io('如果没有开始下载，请改用「复制 SGF」')};
+  io(T('如果没有开始下载，请改用「复制 SGF」'))};
 function io(msg,err){const s=$('#ioStatus');s.textContent=msg;s.classList.toggle('err',!!err)}
 
 /* ===================== Google Drive 同步 ===================== */
@@ -690,20 +987,20 @@ const Drive=(()=>{
   const API='https://www.googleapis.com/drive/v3/files',UP='https://www.googleapis.com/upload/drive/v3/files';
   const st=(m,err)=>{const s=$('#driveStatus');if(s){s.textContent=m;s.classList.toggle('err',!!err)}};
   const ok=()=>!!token&&Date.now()<tokenExp-60000;
-  function loadGIS(){return new Promise((res,rej)=>{if(window.google&&google.accounts)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>rej(new Error('无法载入 Google 登录，请检查网络'));document.head.appendChild(s)})}
+  function loadGIS(){return new Promise((res,rej)=>{if(window.google&&google.accounts)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=res;s.onerror=()=>rej(new Error(T('无法载入 Google 登录，请检查网络')));document.head.appendChild(s)})}
   function login(){return new Promise(async(res,rej)=>{
     try{await loadGIS()}catch(e){return rej(e)}
     client=client||google.accounts.oauth2.initTokenClient({client_id:DRIVE_CLIENT_ID,scope:'https://www.googleapis.com/auth/drive.file',callback:()=>{}});
     client.callback=r=>{if(r.error)return rej(new Error(r.error));token=r.access_token;tokenExp=Date.now()+(r.expires_in||3600)*1000;try{localStorage.setItem('goReview.driveOn','1')}catch(e){}res(token)};
-    client.error_callback=e=>rej(new Error(e&&e.type==='popup_closed'?'登录窗口被关闭了':'登录失败（可能被浏览器拦截了弹窗）'));
+    client.error_callback=e=>rej(new Error(e&&e.type==='popup_closed'?T('登录窗口被关闭了'):T('登录失败（可能被浏览器拦截了弹窗）')));
     let was=false;try{was=localStorage.getItem('goReview.driveOn')==='1'}catch(e){}
     client.requestAccessToken({prompt:was?'':'consent'});
   })}
   async function api(url,opt={}){
-    if(!ok()){token=null;ui();throw new Error('连接已过期，请点「连接 Drive」')}
+    if(!ok()){token=null;ui();throw new Error(T('连接已过期，请点「连接 Drive」'))}
     const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+token}});
-    if(r.status===401){token=null;ui();throw new Error('连接已过期，请点「连接 Drive」')}
-    if(!r.ok)throw new Error('Drive 错误 '+r.status);return r}
+    if(r.status===401){token=null;ui();throw new Error(T('连接已过期，请点「连接 Drive」'))}
+    if(!r.ok)throw new Error(T('Drive 错误 {0}',r.status));return r}
   async function folder(){if(folderId)return folderId;
     const q=encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${DRIVE_FOLDER}' and trashed=false`);
     const j=await(await api(`${API}?q=${q}&fields=files(id)`)).json();
@@ -731,7 +1028,7 @@ const Drive=(()=>{
       out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);
     return out.filter(f=>/\.sgf$/i.test(f.name))}
   async function syncAll(){
-    if(!ok())return;if(busy){again=true;return}busy=true;st('同步中…');
+    if(!ok())return;if(busy){again=true;return}busy=true;st(T('同步中…'));
     try{
       // 先处理本机删除的棋谱（移到 Drive 垃圾桶，可在 Drive 里还原）
       for(const fid of (store.trashQueue||[]).slice()){try{await api(`${API}/${fid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:true})})}catch(e){}store.trashQueue=store.trashQueue.filter(x=>x!==fid)}
@@ -757,21 +1054,21 @@ const Drive=(()=>{
       for(const id of Object.keys(store.games))if(!store.games[id].driveId){await upload(id);up++}
       lsSet(store);renderLib();
       if(G&&!store.games[G.id]){const ids=Object.keys(store.games);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]})}
-      const parts=[down&&`下载 ${down} 盘`,up&&`上传 ${up} 盘`,gone&&`移除 ${gone} 盘`].filter(Boolean);
-      st('已同步 · '+new Date().toLocaleTimeString()+(parts.length?'（'+parts.join('、')+'）':''));
-      if(typeof flash==='function'&&parts.length)flash('已和 Google Drive 同步：'+parts.join('、'));
-    }catch(e){st('同步失败：'+e.message,true)}
+      const parts=[down&&T('下载 {0} 盘',down),up&&T('上传 {0} 盘',up),gone&&T('移除 {0} 盘',gone)].filter(Boolean);
+      st(T('已同步 · {0}',new Date().toLocaleTimeString())+(parts.length?' ('+parts.join(T('、'))+')':''));
+      if(typeof flash==='function'&&parts.length)flash(T('已和 Google Drive 同步：{0}',parts.join(T('、'))));
+    }catch(e){st(T('同步失败：{0}',e.message),true)}
     finally{busy=false;ui();if(again){again=false;syncAll()}}
   }
   function ui(){
-    const btn=$('#driveTop');if(btn){btn.hidden=!on||ok();btn.textContent=localStorageGet('goReview.driveOn')?'重新连接 Drive':'连接 Drive'}
-    const c=$('#driveConnect');if(c)c.textContent=ok()?'已连接':'连接 Google Drive';
+    const btn=$('#driveTop');if(btn){btn.hidden=!on||ok();btn.textContent=localStorageGet('goReview.driveOn')?T('重新连接 Drive'):T('连接 Drive')}
+    const c=$('#driveConnect');if(c)c.textContent=ok()?T('已连接'):T('连接 Google Drive');
     const s=$('#driveSave');if(s)s.hidden=!ok();
-    if(!ok()&&on)st(localStorageGet('goReview.driveOn')?'未连接。每次打开网页后点「连接 Drive」，就会自动同步。':'');
+    if(!ok()&&on)st(localStorageGet('goReview.driveOn')?T('未连接。每次打开网页后点「连接 Drive」，就会自动同步。'):'');
     $('#saveState').textContent=savedText();
   }
   function localStorageGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
-  async function connect(){try{st('正在连接…');await login();ui();await syncAll()}catch(e){st('连接失败：'+e.message,true);ui()}}
+  async function connect(){try{st(T('正在连接…'));await login();ui();await syncAll()}catch(e){st(T('连接失败：{0}',e.message),true);ui()}}
   function init(){
     $('#driveOff').hidden=on;$('#driveOn').hidden=!on;if(!on)return;
     $('#driveTop').onclick=connect;$('#driveConnect').onclick=connect;
@@ -782,7 +1079,7 @@ const Drive=(()=>{
   }
   function autoSync(){if(!on||!ok()||!$('#driveAuto').checked)return;clearTimeout(syncT);syncT=setTimeout(()=>syncAll(),2500)}
   function trash(rec){if(!rec||!rec.driveId)return;(store.trashQueue=store.trashQueue||[]).push(rec.driveId);lsSet(store);if(ok())syncAll()}
-  return{init,autoSync,trash,connected:ok,available:on,saveNow:()=>syncAll()};
+  return{init,autoSync,trash,connected:ok,available:on,ui,saveNow:()=>syncAll()};
 })();
 
 /* ===================== 启动 ===================== */
@@ -792,21 +1089,22 @@ function saveNow(){
   clearTimeout(saveT);const rec=store.games[G.id]||(store.games[G.id]={});
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
   const ok=lsSet(store);renderLib();
-  if(Drive.connected()){Drive.saveNow();flash('已保存，正在同步到 Google Drive')}
-  else flash(ok?'已保存在本机（连接 Google Drive 可同步到其他设备）':'无法保存，请用「导出」');
+  if(Drive.connected()){Drive.saveNow();flash(T('已保存，正在同步到 Google Drive'))}
+  else flash(ok?T('已保存在本机（连接 Google Drive 可同步到其他设备）'):T('无法保存，请用「导出」'));
 }
 $('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;$('#saveBtn').onclick=saveNow;
 $('#tree').addEventListener('click',e=>{const r=e.target.closest('.tr');if(!r||!r._node)return;const t=r._node;let n=t;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=t;render()});
 $('#promoteBtn').onclick=()=>{const p=cur.parent;if(!p)return;const i=p.children.indexOf(cur);if(i<1)return;snap();p.children.splice(i,1);p.children.unshift(cur);
   for(let n=cur;n.parent;n=n.parent){const q=n.parent;const k=q.children.indexOf(n);if(k>0){q.children.splice(k,1);q.children.unshift(n)}q._sel=0}
-  changed();render();flash('已设为主线')};
+  changed();render();flash(T('已设为主线'))};
 document.querySelectorAll('[data-pref]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(b)setPref(g.dataset.pref,b.dataset.v)}));
 syncPrefUI();
+collectStatic();applyStatic();
 (function boot(){
   Drive.init();
   // 从下载工具传来的棋谱：网址 #sgf=...
   const h=location.hash;
-  if(h.startsWith('#sgf=')){try{importText(decodeURIComponent(h.slice(5)));history.replaceState(null,'',location.pathname+location.search);return}catch(e){flash('棋谱读取失败：'+e.message)}}
+  if(h.startsWith('#sgf=')){try{importText(decodeURIComponent(h.slice(5)));history.replaceState(null,'',location.pathname+location.search);return}catch(e){flash(T('棋谱读取失败：{0}',e.message))}}
   const id=store.lastId&&store.games[store.lastId]?store.lastId:Object.keys(store.games)[0];
   if(id){try{openRoot(parseSGF(store.games[id].sgf),{id});return}catch(e){}}
   importText(SAMPLE);
