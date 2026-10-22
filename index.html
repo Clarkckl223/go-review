@@ -578,7 +578,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
             <tr><td>电脑有独立显卡（如 RTX 3060 Ti）</td><td>多步分析用 b10（显卡每秒算几百次）；要最准的形势、死活判断用 b18</td></tr>
           </tbody>
         </table>
-        <p class="note">b10：12 MB，有显卡时很快。b18：约 41 MB，新一代网络，判断准很多，但只用 CPU，每秒约算 2–5 次。每台设备各自记住选择。</p>
+        <p class="note">b10：12 MB，有显卡时很快。b18：约 41 MB，新一代网络，判断准很多，但只用 CPU（19 路每秒约 1–2 次，9 路约 5 次），适合形势、死活和对局；长时间多步分析用 b10 较快。每台设备各自记住选择。</p>
         <p class="note">落子、提子音效取自 MultiGo 4。</p>
       </div>
 
@@ -710,10 +710,10 @@ const EN={
 '搜索棋手、标题、标签':'Search players, titles, tags','搜索棋谱':'Search games','按棋手筛选':'Filter by player','排序':'Sort',
 '最近修改':'Recently edited','对局日期':'Game date','全部棋手':'All players','没有符合的棋谱。':'No matching games.',
 // AI 网络
-'设置':'Settings','AI 网络':'AI network','自动':'Auto','轻量 b10':'Light b10','强力 b18':'Strong b18','设备':'Device','建议':'Suggested',
+'下载不完整，请重试':'Download incomplete, please try again','设置':'Settings','AI 网络':'AI network','自动':'Auto','轻量 b10':'Light b10','强力 b18':'Strong b18','设备':'Device','建议':'Suggested',
 '手机、iPad':'Phone, iPad','电脑 4 核以下':'Computer, 4 cores or fewer','电脑 6–8 核以上（没有独立显卡）':'Computer, 6–8+ cores (no dedicated GPU)','电脑有独立显卡（如 RTX 3060 Ti）':'Computer with a dedicated GPU (e.g. RTX 3060 Ti)',
 '多步分析用 b10（显卡每秒算几百次）；要最准的形势、死活判断用 b18':'b10 for deep analysis (the GPU does hundreds of visits a second); b18 for the most accurate estimates and life-and-death',
-'b10：12 MB，有显卡时很快。b18：约 41 MB，新一代网络，判断准很多，但只用 CPU，每秒约算 2–5 次。每台设备各自记住选择。':'b10: 12 MB, fast with a GPU. b18: about 41 MB, a newer network that judges far better but runs on the CPU only, about 2–5 visits a second. Each device remembers its own choice.',
+'b10：12 MB，有显卡时很快。b18：约 41 MB，新一代网络，判断准很多，但只用 CPU（19 路每秒约 1–2 次，9 路约 5 次），适合形势、死活和对局；长时间多步分析用 b10 较快。每台设备各自记住选择。':'b10: 12 MB, fast with a GPU. b18: about 41 MB, a newer network that judges far better but runs on the CPU only (about 1–2 visits a second on 19×19, 5 on 9×9). Use it for estimates, life-and-death and games; b10 is faster for long deep analysis. Each device remembers its own choice.',
 '落子、提子音效取自 MultiGo 4。':'Move and capture sounds are from MultiGo 4.',
 '这台设备：{0}，{1} 核{2}。「自动」会用：{3}。':'This device: {0}, {1} cores{2}. “Auto” uses: {3}.','手机 / 平板':'phone / tablet','电脑':'computer','，有独立显卡':', dedicated GPU','现在用的是：{0}（{1}）。':'Now using: {0} ({1}).','显卡':'GPU',
 'AI 下载中（约 {1} MB，只需下载一次）… {0}%':'Downloading the AI (about {1} MB, only once)… {0}%',
@@ -3107,7 +3107,7 @@ const TFJS_URL='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min
 const ORT_BASE='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
 const AI_NETS={
   b10:{id:'b10',name:'轻量 b10',file:'katago/model.json',mb:12,kind:'tfjs'},
-  b18:{id:'b18',name:'强力 b18',file:'katago/b18c384nbt.part1.bin',parts:['katago/b18c384nbt.part1.bin','katago/b18c384nbt.part2.bin'],mb:41,kind:'onnx'}}; // 分成两半：GitHub 网页上传每个文件不能超过 25 MB
+  b18:{id:'b18',name:'强力 b18',file:'katago/b18c384nbt.part1.bin',parts:['katago/b18c384nbt.part1.bin','katago/b18c384nbt.part2.bin'],partSize:15244606,mb:41,kind:'onnx'}}; // 分成两半：GitHub 网页上传每个文件不能超过 25 MB
 const AI_URLS=f=>[...new Set([new URL(f,location.href).href,SHARE_BASE+f])];
 const AI_OUT=['swa_model/ownership_output','swa_model/policy_output','swa_model/miscvalues_output','swa_model/value_output'];
 let aiDevC=null;
@@ -3143,13 +3143,15 @@ const AI=(()=>{
   let model=null,sess=null,net=null,loading=null,prog=0,status='off',err='',queue=Promise.resolve();
   let cache=new WeakMap();const subs=[];const emit=()=>subs.forEach(f=>{try{f()}catch(e){}});
   const script=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(T('网络不通，无法下载 AI')));document.head.appendChild(s)});
-  async function fetchBuf(urls,k=0,K=1){ // 下载并显示进度（第 k 个，共 K 个）
+  async function fetchBuf(urls,k=0,K=1,size=0){ // 下载并显示进度（第 k 个，共 K 个）；GitHub 会压缩传送，所以不能照 content-length 开缓冲区
     let last=null;
     for(const u of urls){try{const r=await fetch(u);if(!r.ok)throw new Error(r.status+' '+u);
-      const total=+r.headers.get('content-length')||0;if(!r.body||!total){const b=await r.arrayBuffer();prog=(k+1)/K;emit();return b}
-      const rd=r.body.getReader(),buf=new Uint8Array(total);let got=0;
-      for(;;){const{done,value}=await rd.read();if(done)break;buf.set(value,got);got+=value.length;prog=(k+got/total)/K;emit()}
-      return buf.buffer}catch(e){last=e}}
+      if(!r.body){const b=await r.arrayBuffer();prog=(k+1)/K;emit();return b}
+      const total=size||+r.headers.get('content-length')||0,rd=r.body.getReader(),chunks=[];let got=0;
+      for(;;){const{done,value}=await rd.read();if(done)break;chunks.push(value);got+=value.length;if(total){prog=(k+Math.min(0.99,got/total))/K;emit()}}
+      const buf=new Uint8Array(got);let o=0;for(const c of chunks){buf.set(c,o);o+=c.length}
+      if(size&&got!==size)throw new Error(T('下载不完整，请重试'));
+      prog=(k+1)/K;emit();return buf.buffer}catch(e){last=e}}
     throw last||new Error('model');
   }
   function load(){
@@ -3167,7 +3169,7 @@ const AI=(()=>{
       }else{
         if(!window.ort)await script(ORT_BASE+'ort.wasm.min.js');
         ort.env.wasm.wasmPaths=ORT_BASE;ort.env.wasm.numThreads=self.crossOriginIsolated?Math.min(8,navigator.hardwareConcurrency||1):1;
-        const bufs=[];for(let i=0;i<my.parts.length;i++){const b=await fetchBuf(AI_URLS(my.parts[i]),i,my.parts.length);bufs.push(new Uint8Array(b))}
+        const bufs=[];for(let i=0;i<my.parts.length;i++){const b=await fetchBuf(AI_URLS(my.parts[i]),i,my.parts.length,my.partSize);bufs.push(new Uint8Array(b))}
         const all=new Uint8Array(bufs.reduce((a,b)=>a+b.length,0));let o=0;for(const b of bufs){all.set(b,o);o+=b.length}const buf=all.buffer;
         status='warm';emit();
         sess=await ort.InferenceSession.create(buf,{executionProviders:['wasm'],graphOptimizationLevel:'all'});
