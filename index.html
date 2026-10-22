@@ -160,6 +160,20 @@ body.is-training #tree,body.is-training #vars{visibility:hidden}
 .imgopts label{display:flex;gap:6px;align-items:center;color:var(--muted)}
 .imgopts input[type=number]{width:4.5em;height:32px;border:1px solid var(--line);border-radius:6px;padding:0 6px;background:var(--bg);font-family:var(--f-mono)}
 #imgPreview{max-width:min(100%,420px);border:1px solid var(--line);border-radius:8px;display:block}
+/* AI 提示 / 新对局 / 和 AI 下 */
+.aibar{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;margin:0 auto 8px;max-width:min(100%,calc(100vh - 150px));background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.86rem;font-variant-numeric:tabular-nums}
+.aibar.dim .wr,.aibar.dim .num{opacity:.45}
+.aibar .wr{flex:1 1 140px;height:14px;border-radius:7px;background:#f4f2ee;border:1px solid #8f8b84;overflow:hidden;position:relative;min-width:110px}
+.aibar .wr i{position:absolute;left:0;top:0;bottom:0;width:50%;background:#1a1a1a;transition:width .3s}
+.aibar .wr::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px dashed #C0392B}
+.aibar .num{font-weight:600;white-space:nowrap}
+.aibar .lead{font-family:var(--f-display);font-weight:700;white-space:nowrap}
+.aibar .msg{color:var(--muted);flex-basis:100%;font-size:.8rem}
+.aibar .msg:empty{display:none}
+.tool.ai[aria-pressed="true"],#vsHint[aria-pressed="true"]{background:#2E6FA8;border-color:#2E6FA8;color:#fff}
+.score select{height:32px;border:1px solid var(--line);border-radius:6px;padding:0 6px;background:var(--bg)}
+.score .big{font-family:var(--f-display);font-size:1.1rem;margin:0}
+.score .big.ok{color:#2E8B57}.score .big.no{color:#C0392B}
 .prefs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;font-size:.9rem}
 .prefs label{color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
@@ -269,6 +283,11 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <div class="side w"><b><span id="jW">0</span><span class="dot w" style="margin:0 0 0 4px"></span></b><span id="jWcap"></span></div>
     </div>
 
+    <div class="aibar" id="aiBar" hidden>
+      <span class="num" id="aiB">黑</span><div class="wr" aria-hidden="true"><i id="aiWrB"></i></div><span class="num" id="aiW">白</span>
+      <span class="lead" id="aiLead"></span><span class="msg" id="aiMsg"></span>
+    </div>
+
     <div class="board-wrap"><svg id="board" viewBox="0 0 800 800" role="img" aria-label="棋盘"></svg></div>
 
     <div class="nav">
@@ -297,6 +316,9 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="tool" data-tool="erase" aria-pressed="false">擦除标记</button>
       <span class="sep"></span>
       <button class="tool" id="numToggle" aria-pressed="false">显示手数</button>
+      <span class="sep"></span>
+      <button class="tool" id="newToggle" aria-pressed="false">新对局</button>
+      <button class="tool ai" id="aiToggle" aria-pressed="false">AI 提示</button>
       <span class="sep"></span>
       <button class="tool" id="imgToggle" aria-pressed="false">存成图片</button>
       <button class="tool training" id="trainToggle" aria-pressed="false">猜下一手</button>
@@ -352,6 +374,9 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>Google Drive</dt><dd>每次打开网页按「连接 Drive」，棋谱库就会在你的电脑、手机、iPad 之间自动同步。</dd>
         <dt>分享</dt><dd>「共享链接」大家打开同一个链接一起写，几秒内互相看到；「快照链接」是一次性的副本。</dd>
         <dt>好手 / 恶手</dt><dd>在评论框上方点 ! !! ? ?? ?! !?，棋盘、棋谱树和评论列表都会显示。</dd>
+        <dt>新对局</dt><dd>选 7、9、13、19 路棋盘、让子和贴目，可以和 AI 下（8 种棋力，从 25 级到最强），也可以自己摆。</dd>
+        <dt>AI 提示</dt><dd>按「AI 提示」，棋盘上用蓝色（最好）和绿色圆圈标出 AI 推荐的点和百分比，上方显示胜率和目数差。AI 是 KataGo 的神经网络，在你自己的手机、电脑上计算；第一次要下载约 12 MB，之后不用再下载。</dd>
+        <dt>和 AI 对局</dt><dd>轮到你就点棋盘。可以停一手、悔棋、看提示、认输。双方都停一手就结束，AI 会先帮你判断死子，再算胜负。</dd>
         <dt>形势</dt><dd>按「形势」看估算的地和目数差，结果显示在棋盘上方。</dd>
         <dt>猜下一手</dt><dd>从目前这一手开始，让学生猜接下来的棋，猜错会提示，最后显示正确率。</dd>
         <dt>自动播放</dt><dd>按 ▶ 或空格键，遇到有评论的那一手会自动停下来。</dd>
@@ -359,6 +384,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>我的棋谱</dt><dd>可以搜索、按棋手筛选；在「棋局信息」加标签（如：比赛、需复习）方便分类。</dd>
         <dt>装到桌面</dt><dd>Android / 电脑 Chrome：按「安装 App」或浏览器菜单的「安装应用」；iPhone / iPad Safari：按分享 → 「添加到主屏幕」。</dd>
       </dl>
+      <p class="note" style="margin:0">AI 使用 KataGo（作者 David J Wu “lightvector”）的 g170e-b10c128 神经网络，依照 KataGo 授权使用。</p>
       <div class="row"><button class="btn" id="helpClose">关闭</button></div>
     </div>
 
@@ -389,6 +415,34 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <button class="btn" id="trainShow">显示答案</button>
         <button class="btn" id="trainRestart">从这一手重新开始</button>
         <button class="btn pri" id="trainExit">结束练习</button>
+      </div>
+    </div>
+
+    <div class="score" id="newBox" hidden>
+      <div class="score-head"><b>新对局</b><span>选棋盘大小和让子，可以和 AI 下，也可以自己摆。</span></div>
+      <div class="score-opts"><span>棋盘</span><span class="seg" id="ngSize"><button data-v="7">7 路</button><button data-v="9">9 路</button><button data-v="13">13 路</button><button data-v="19">19 路</button></span></div>
+      <div class="score-opts">
+        <label for="ngHa"><span>让子</span><select id="ngHa"></select></label>
+        <label for="ngKomi"><span>贴目</span><input id="ngKomi" type="number" step="0.5" inputmode="decimal"></label>
+      </div>
+      <div class="score-opts"><span>对手</span><span class="seg" id="ngOpp"><button data-v="ai">和 AI 下</button><button data-v="self">自己摆</button></span></div>
+      <div class="score-opts" id="ngAiRow">
+        <span>我执</span><span class="seg" id="ngColor"><button data-v="B">黑棋</button><button data-v="W">白棋</button></span>
+        <label for="ngLevel"><span>AI 棋力</span><select id="ngLevel"></select></label>
+      </div>
+      <p class="note" id="ngNote" style="margin:0"></p>
+      <div class="row"><button class="btn pri" id="ngStart">开始</button><button class="btn" id="ngClose">关闭</button></div>
+    </div>
+
+    <div class="score" id="vsBox" hidden>
+      <div class="score-head"><b>和 AI 对局</b><span id="vsSub"></span></div>
+      <p class="big" id="vsMsg"></p>
+      <div class="row">
+        <button class="btn" id="vsPass">停一手</button>
+        <button class="btn" id="vsUndo">悔棋</button>
+        <button class="btn" id="vsHint" aria-pressed="false">提示</button>
+        <button class="btn warn" id="vsResign">认输</button>
+        <button class="btn pri" id="vsExit">结束对局</button>
       </div>
     </div>
 
@@ -568,7 +622,7 @@ const EN={
 '下一手有 {0} 种走法：':'{0} options for the next move:',' · 实战':' · game',
 '还没有评论。走到任何一手，在上面的框里写下想法，就会出现在这里。':'No comments yet. Go to any move and write in the box above; it will show up here.',
 '变化':'variation','还没有棋谱。':'No games yet.','未命名':'Untitled','这里是禁着点（自杀）':'Illegal move (suicide)',
-'再点一次确认删除':'Click again to delete','开局不能删除':'The start can’t be deleted','这盘棋读不出来：':'Can’t read this game: ',
+'再点一次确认删除':'Click again to delete','再点一次确认认输':'Click again to resign','开局不能删除':'The start can’t be deleted','这盘棋读不出来：':'Can’t read this game: ',
 '先把 SGF 粘贴到框里':'Paste the SGF into the box first','已打开':'Opened','已打开粘贴的棋谱':'Opened the pasted game','已打开 {0}':'Opened {0}',
 '请按 Ctrl+C（手机：长按 → 复制）复制上面的文字':'Press Ctrl+C (on a phone: long-press → Copy) to copy the text above','已复制 SGF，可以粘贴到其他软件':'SGF copied. Paste it into any Go program.',
 '已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱':'Downloaded. Remove “.txt” from the end of the file name to get the .sgf.','已取消下载':'Download cancelled','下载不可用，请改用「复制 SGF」':'Download isn’t available here. Use Copy SGF instead.','如果没有开始下载，请改用「复制 SGF」':'If the download didn’t start, use Copy SGF instead.',
@@ -629,6 +683,23 @@ const EN={
 '标签':'Tags','用逗号分开，例如：比赛, 需复习':'Separate with commas, e.g. tournament, review',
 '搜索棋手、标题、标签':'Search players, titles, tags','搜索棋谱':'Search games','按棋手筛选':'Filter by player','排序':'Sort',
 '最近修改':'Recently edited','对局日期':'Game date','全部棋手':'All players','没有符合的棋谱。':'No matching games.',
+// AI / 新对局
+'AI 提示':'AI hints','新对局':'New game','选棋盘大小和让子，可以和 AI 下，也可以自己摆。':'Choose the board size and handicap. Play the AI, or set up a board yourself.',
+'棋盘':'Board','7 路':'7×7','9 路':'9×9','13 路':'13×13','19 路':'19×19','{0} 路':'{0}×{0}','让子':'Handicap','对手':'Opponent','和 AI 下':'Play the AI','自己摆':'No AI','我执':'I play','黑棋':'Black','白棋':'White','AI 棋力':'AI strength','开始':'Start',
+'不让子':'None','让先（不贴目）':'No komi, Black first','让 {0} 子':'{0} stones',
+'25 级':'25 kyu','20 级':'20 kyu','15 级':'15 kyu','10 级':'10 kyu','5 级':'5 kyu','1 级':'1 kyu','业余 2 段':'Amateur 2 dan','最强':'Strongest','（多算一步）':' (looks one move ahead)',
+'AI 在这台设备上计算，第一次要下载约 12 MB。棋力是大约的，可以随时换。':'The AI runs on this device; the first time it downloads about 12 MB. Strength levels are approximate.',
+'空白棋盘，自己摆谱或两人对下。':'An empty board to set up positions or play another person.',
+'我':'Me','AI（{0}）':'AI ({0})','{0} 路对局':'{0}×{0} game','和 AI 对局':'Game vs AI','停一手':'Pass','悔棋':'Take back','认输':'Resign','结束对局':'Leave game',
+'AI 棋力：{0}':'AI: {0}','贴 {0} 目':'komi {0}','轮到你下（{0}）':'Your move ({0})','轮到 AI':'AI to move','AI 思考中…':'AI is thinking…','你停一手':'You passed',
+'AI 停一手。你也停一手的话，对局就结束。':'The AI passed. If you pass too, the game ends.','AI 认输，你赢了！':'The AI resigns. You win!','你认输了。':'You resigned.','{0}胜':'{0} wins',
+'双方停一手，对局结束。确认死子后，按「把结果写入棋局信息」。':'Both passed: game over. Check the dead stones, then press “Write result to game info”.',
+'AI 下载中（约 12 MB，只需下载一次）… {0}%':'Downloading the AI (about 12 MB, only once)… {0}%','AI 准备中…':'Getting the AI ready…','AI 无法载入：{0}':'Couldn’t load the AI: {0}','AI 计算中…':'AI is calculating…',
+'网络不通，无法下载 AI':'No connection: can’t download the AI','AI 建议停一手':'AI suggests passing','黑 {0}%':'Black {0}%','白 {0}%':'White {0}%',
+'按「AI 提示」，棋盘上用蓝色（最好）和绿色圆圈标出 AI 推荐的点和百分比，上方显示胜率和目数差。AI 是 KataGo 的神经网络，在你自己的手机、电脑上计算；第一次要下载约 12 MB，之后不用再下载。':'Press “AI hints” to see the AI’s suggested moves (blue = best, green = others) with percentages, plus win rate and score lead above the board. The AI is a KataGo neural network that runs on your own phone or computer; it downloads about 12 MB the first time only.',
+'选 7、9、13、19 路棋盘、让子和贴目，可以和 AI 下（8 种棋力，从 25 级到最强），也可以自己摆。':'Pick a 7×7, 9×9, 13×13 or 19×19 board, handicap and komi. Play the AI (8 levels from 25 kyu to strongest) or set up the board yourself.',
+'轮到你就点棋盘。可以停一手、悔棋、看提示、认输。双方都停一手就结束，AI 会先帮你判断死子，再算胜负。':'Click the board on your turn. You can pass, take back, ask for a hint or resign. When both players pass, the AI marks the dead stones and the game is scored.',
+'AI 使用 KataGo（作者 David J Wu “lightvector”）的 g170e-b10c128 神经网络，依照 KataGo 授权使用。':'The AI uses KataGo’s g170e-b10c128 neural network (by David J Wu, “lightvector”) under the KataGo license.',
 // 猜下一手
 '猜下一手':'Guess the next move','从这一手开始，在棋盘上点你认为的下一手。':'Starting from this move, click where you think the next move goes.',
 '猜黑棋':'Guess Black','猜白棋':'Guess White','双方都猜':'Guess both','提示':'Hint','显示答案':'Show answer','从这一手重新开始':'Restart from here','结束练习':'End practice',
@@ -2427,6 +2498,7 @@ function openRoot(r,{id=null,driveId=null}={}){
       flash(T('这盘棋已经在「我的棋谱」里，已打开（之前的评论都在）'));
     }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; setTimeout(()=>Drive.autoSync(),0); }
   }
+  if(vs&&vs.id!==id)vsStop();
   G={id,root:r}; store.lastId=id; lsSet(store);
   cur=r; undoStack=[];redoStack=[];undoUI(); renderWho(); renderTree(); render(); renderLib(); renderInfo();
   Shared.sync();
@@ -2569,7 +2641,9 @@ const $=s=>document.querySelector(s);
 const U=40, PAD=50; // 每格 40，四周留 50 给坐标（坐标字不会被边上的棋子挡住）
 const COLS='ABCDEFGHJKLMNOPQRSTUVWXYZ';
 const BF=()=>'var(--wood)';
-function starPts(n){if(n===19)return[3,9,15];if(n===13)return[3,6,9];if(n===9)return[2,4,6];if(n>=15)return[3,Math.floor(n/2),n-4];return[]}
+function starXY(n){ // 星位：19 路九个；13、9、7 路四角加天元
+  if(n>=15){const a=[3,Math.floor(n/2),n-4];return a.flatMap(x=>a.map(y=>[x,y]))}
+  const d=n>=12?3:n>=7?2:-1;if(d<0)return[];const c=(n-1)/2,b=n-1-d;const r=[[d,d],[d,b],[b,d],[b,b]];if(n%2)r.push([c,c]);return r}
 function render(){
   const r=root(),n=sizeOf(r),st=computeState(cur,n);
   const W=PAD*2+U*(n-1);
@@ -2586,7 +2660,7 @@ function render(){
   o+=`</g><g stroke="var(--grid)" stroke-width="1.2">`;
   for(let i=0;i<n;i++){o+=`<line x1="${X(0)}" y1="${X(i)}" x2="${X(n-1)}" y2="${X(i)}"/><line x1="${X(i)}" y1="${X(0)}" x2="${X(i)}" y2="${X(n-1)}"/>`}
   o+=`<rect x="${X(0)}" y="${X(0)}" width="${U*(n-1)}" height="${U*(n-1)}" fill="none" stroke-width="2"/></g>`;
-  const sp=starPts(n);for(const a of sp)for(const b of sp)o+=`<circle cx="${X(a)}" cy="${X(b)}" r="4" fill="var(--grid)"/>`;
+  for(const[a,b]of starXY(n))o+=`<circle cx="${X(a)}" cy="${X(b)}" r="4" fill="var(--grid)"/>`;
   // 棋子
   for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=st.g[y][x];if(!c)continue;
     o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.48}" fill="url(#${c===1?'gB':'gW'})" ${c===2?'stroke="#8f8b84" stroke-width="1"':''}/>`;
@@ -2607,6 +2681,8 @@ function render(){
       if(st.g[y][x]&&!e.dead.has(p))continue;
       o+=`<rect x="${X(x)-sq/2}" y="${X(y)-sq/2}" width="${sq}" height="${sq}" fill="${ow>0?'#151515':'#fafafa'}" stroke="${ow>0?'#000':'#6b6b6b'}" stroke-width="1"/>`}
   }
+  // AI 提示
+  if(aiHint&&!train&&!scoring&&!exporting)o+=aiOverlay(n,X);
   // 最后一手
   if(!scoring&&!judging&&st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
   // 好手 / 恶手：在这一手的棋子右上角画小标
@@ -2649,7 +2725,7 @@ function render(){
   $('#bNext').disabled=$('#bEnd').disabled=$('#bFwd10').disabled=!cur.children.length;
   renderVars();renderNotes();treeHighlight();renderAnno();renderTrain();
   if(scoring)renderScore();
-  renderJudge(st);
+  renderJudge(st);renderAiBar();if(vs)renderVs();
 }
 function renderJudge(st){
   const bar=$('#judgeBar');if(!judging||scoring){bar.hidden=true;return}bar.hidden=false;
@@ -2852,6 +2928,321 @@ function renderTrain(){
   $('#trainHint').disabled=$('#trainShow').disabled=train.done||train.reveal;
 }
 
+/* ===================== 内建 AI（KataGo 神经网络，在本机计算） =====================
+   网络：KataGo 官方 g170e-b10c128-s1141046784-d204142634（TensorFlow.js 格式，由 Yuji Ichikawa 转换）
+   KataGo © David J Wu ("lightvector")，MIT 式授权，见 katago/LICENSE.txt
+   输入特征照 KataGo 的 NNInputs::fillRowV7 编写（22 个平面 + 19 个全局特征）。 */
+
+// ---- 小棋盘工具（用一维数组，0 空 1 黑 2 白） ----
+function aiNbrs(n){const nb=[];for(let p=0;p<n*n;p++){const x=p%n,y=(p/n)|0,a=[];if(x>0)a.push(p-1);if(x<n-1)a.push(p+1);if(y>0)a.push(p-n);if(y<n-1)a.push(p+n);nb.push(a)}return nb}
+const AI_NB={};
+function aiGroup(b,n,p){
+  const nb=AI_NB[n]||(AI_NB[n]=aiNbrs(n));const c=b[p];if(!c)return null;
+  const seen=new Uint8Array(n*n),st=[p],stones=[],libs=new Set();seen[p]=1;
+  while(st.length){const q=st.pop();stones.push(q);for(const r of nb[q]){if(!b[r])libs.add(r);else if(b[r]===c&&!seen[r]){seen[r]=1;st.push(r)}}}
+  return{stones,libs};
+}
+// 下一手，回传 {b, captured:[...], ko}，不合法回传 null（有子 / 自杀 / 打劫）
+function aiPlay(b,n,p,c,ko){
+  if(b[p]||p===ko)return null;const nb=AI_NB[n]||(AI_NB[n]=aiNbrs(n));
+  const nbd=b.slice();nbd[p]=c;const o=3-c;let cap=[];
+  for(const r of nb[p])if(nbd[r]===o){const g=aiGroup(nbd,n,r);if(g.libs.size===0){for(const s of g.stones)nbd[s]=0;cap=cap.concat(g.stones)}}
+  const me=aiGroup(nbd,n,p);if(me.libs.size===0)return null;
+  let nko=-1;if(cap.length===1&&me.stones.length===1&&me.libs.size===1)nko=cap[0];
+  return{b:nbd,captured:cap,ko:nko};
+}
+
+// ---- 征子判断（照 KataGo 的规则：防守方有劫就算逃得掉；搜寻有上限） ----
+function aiLadderSearch(b,n,loc,defenderFirst,budget){
+  const pla=b[loc],opp=3-pla;const maxDepth=Math.floor(n*n*3/2);
+  function rec(bd,ko,depth,isDef){
+    if(++budget.n>budget.max)throw budget;
+    if(depth>=maxDepth)return true;
+    const g=aiGroup(bd,n,loc);if(!g)return true;
+    const libs=g.libs.size;
+    if(!isDef){
+      if(libs<=1)return true;if(libs>=3)return false;
+      for(const m of g.libs){const r=aiPlay(bd,n,m,opp,ko);if(r&&rec(r.b,r.ko,depth+1,true))return true}
+      return false;
+    }
+    if(libs>=2)return false;
+    if(ko>=0)return false;
+    const moves=[];const nb=AI_NB[n];
+    for(const s of g.stones)for(const r of nb[s])if(bd[r]===opp){const og=aiGroup(bd,n,r);if(og.libs.size===1)for(const l of og.libs)if(!moves.includes(l))moves.push(l)}
+    for(const l of g.libs)if(!moves.includes(l))moves.push(l);
+    for(const m of moves){const r=aiPlay(bd,n,m,pla,ko);if(!r)continue;if(!rec(r.b,r.ko,depth+1,false))return false}
+    return true;
+  }
+  try{return rec(b,-1,0,defenderFirst)}catch(e){if(e===budget)return false;throw e}
+}
+// 对每个 1 或 2 气的棋块判断是否会被征吃；f(棋子位置, 有用的征子手)
+function aiIterLadders(b,n,f){
+  const solved=new Map();
+  for(let p=0;p<n*n;p++){if(!b[p])continue;const g=aiGroup(b,n,p);const libs=g.libs.size;if(libs!==1&&libs!==2)continue;
+    const head=Math.min(...g.stones);
+    if(!solved.has(head)){
+      let laddered=false,working=[];const budget={n:0,max:4000};
+      if(libs===1)laddered=aiLadderSearch(b,n,p,true,budget);
+      else{for(const m of g.libs){const r=aiPlay(b,n,m,3-b[p],-1);if(r&&aiLadderSearch(r.b,n,p,true,{n:0,max:4000}))working.push(m)}laddered=working.length>0}
+      solved.set(head,{laddered,working});
+    }
+    const s=solved.get(head);if(s.laddered)f(p,s.working,libs);
+  }
+}
+
+// ---- 特征编码：网络固定 19×19；小棋盘放在左上角，棋盘外的点特征 0 = 0（遮罩） ----
+// boards: [{board, color(1/2 刚下的那方), move(-1 停一手, undefined = 摆子/开局), ko}] 由旧到新；最后一个 = 目前局面
+const AI_S=19;
+function aiEncode(n,boards,pla,komi,handicapBonus){
+  const N=n*n,M=p=>((p/n)|0)*AI_S+(p%n),bin=new Float32Array(AI_S*AI_S*22),glob=new Float32Array(19),opp=3-pla;
+  const set=(p,f)=>{bin[M(p)*22+f]=1};
+  const cur=boards[boards.length-1],b=cur.board;
+  for(let p=0;p<N;p++){set(p,0);const c=b[p];if(c===pla)set(p,1);else if(c===opp)set(p,2)}
+  const done=new Uint8Array(N);
+  for(let p=0;p<N;p++){if(!b[p]||done[p])continue;const g=aiGroup(b,n,p);const L=g.libs.size;
+    for(const s of g.stones){done[s]=1;if(L===1)set(s,3);else if(L===2)set(s,4);else if(L===3)set(s,5)}}
+  if(cur.ko>=0)set(cur.ko,6);
+  // 前 5 手（要黑白交替；遇到摆子就停）
+  let included=0;const want=[opp,pla,opp,pla,opp];
+  for(let i=0;i<5;i++){const h=boards[boards.length-1-i];if(!h||h.move===undefined||h.color!==want[i])break;
+    if(h.move<0)glob[i]=1;else set(h.move,9+i);included=i+1}
+  // 征子
+  aiIterLadders(b,n,(p,working)=>{set(p,14);if(b[p]===opp&&aiGroup(b,n,p).libs.size>1)for(const m of working)set(m,17)});
+  const prev1=included>=1?boards[boards.length-2]:cur,prev2=included>=2?boards[boards.length-3]:prev1;
+  aiIterLadders(prev1.board,n,p=>set(p,15));
+  aiIterLadders(prev2.board,n,p=>set(p,16));
+  // 全局：贴目（以下一手那方来看）、上一手停一手、贴目奇偶波形
+  let selfKomi=pla===2?komi+handicapBonus:-(komi+handicapBonus);
+  selfKomi=Math.max(-N-20,Math.min(N+20,selfKomi));glob[5]=selfKomi/20;
+  if(cur.move===-1)glob[14]=1;
+  const even=N%2===0;const kf=even?Math.floor(selfKomi/2)*2:Math.floor((selfKomi-1)/2)*2+1;
+  const d=Math.max(0,Math.min(2,selfKomi-kf));glob[18]=d<0.5?d:d<1.5?1-d:d-2;
+  return{bin,glob};
+}
+// 网络输出 → 以「黑方」来看的结果；policy 只留合法的点再归一
+function aiDecode(n,b,ko,pla,outs,i){
+  const [own,pol,misc,val]=outs,N=n*n,M=p=>((p/n)|0)*AI_S+(p%n);
+  const P=new Float32Array(N+1);let mx=-1e9;const legal=new Uint8Array(N+1);legal[N]=1;
+  for(let p=0;p<N;p++)legal[p]=aiPlay(b,n,p,pla,ko)?1:0;
+  const pOff=i*2*362;
+  for(let p=0;p<=N;p++){if(!legal[p])continue;const v=pol[pOff+(p===N?361:M(p))];if(v>mx)mx=v}
+  let sum=0;for(let p=0;p<=N;p++){if(!legal[p])continue;const e=Math.exp(pol[pOff+(p===N?361:M(p))]-mx);P[p]=e;sum+=e}
+  for(let p=0;p<=N;p++)P[p]/=sum;
+  const v0=val[i*3],v1=val[i*3+1],v2=val[i*3+2],vm=Math.max(v0,v1,v2);
+  const e0=Math.exp(v0-vm),e1=Math.exp(v1-vm),e2=Math.exp(v2-vm);const win=(e0+0.5*e2)/(e0+e1+e2);
+  const lead=misc[i*10+2]*20,sgn=pla===1?1:-1;
+  const O=new Float32Array(N);for(let p=0;p<N;p++)O[p]=sgn*Math.tanh(own[i*361+M(p)]);
+  return{policy:P,winB:pla===1?win:1-win,leadB:sgn*lead,ownB:O,pla};
+}
+
+/* ---- 载入与计算（TensorFlow.js：有显卡用 WebGL，没有就用 CPU） ---- */
+const TFJS_URL='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js';
+const AI_MODEL_URLS=()=>[...new Set([new URL('katago/model.json',location.href).href,SHARE_BASE+'katago/model.json'])];
+const AI_OUT=['swa_model/ownership_output','swa_model/policy_output','swa_model/miscvalues_output','swa_model/value_output'];
+function isPassNode(node,n){const m=moveOf(node);return!!m&&(!m[1]||(m[1]==='tt'&&n<=19))}
+function aiHistory(node,n){ // 从开局走到这一手，留下最后 6 个局面
+  const boards=[];let b=new Int8Array(n*n);boards.push({board:b,ko:-1});
+  for(const nd of pathTo(node)){
+    if(nd.props.AB||nd.props.AW||nd.props.AE){b=b.slice();
+      for(const[x,y]of expandPts(nd.props.AE,n))b[y*n+x]=0;for(const[x,y]of expandPts(nd.props.AB,n))b[y*n+x]=1;for(const[x,y]of expandPts(nd.props.AW,n))b[y*n+x]=2;
+      boards.push({board:b,ko:-1})}
+    const m=moveOf(nd);if(!m)continue;const c=m[0]==='B'?1:2;
+    if(isPassNode(nd,n)){boards.push({board:b,ko:-1,move:-1,color:c});continue}
+    const xy=ptToXY(m[1],n);if(!xy)continue;const p=xy[1]*n+xy[0];
+    const r=aiPlay(b,n,p,c,-1);let ko=-1;
+    if(r){b=r.b;ko=r.ko}else{b=b.slice();b[p]=c}
+    boards.push({board:b,ko,move:p,color:c});
+    if(boards.length>8)boards.shift();
+  }
+  return boards.slice(-6);
+}
+function aiKomi(){const r=root(),ha=parseInt(prop(r,'HA')||'0',10)||0;let km=parseFloat(prop(r,'KM'));
+  if(!isFinite(km)||Math.abs(km)>150)km=ha>=2?0.5:7.5;return{komi:km,hb:ha>=2&&guessRule()!=='jp'?ha:0}}
+const AI=(()=>{
+  let model=null,loading=null,prog=0,status='off',err='',queue=Promise.resolve();
+  const cache=new WeakMap(),subs=[];const emit=()=>subs.forEach(f=>{try{f()}catch(e){}});
+  const script=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(T('网络不通，无法下载 AI')));document.head.appendChild(s)});
+  function load(){
+    if(model&&status==='ready')return Promise.resolve();if(loading)return loading;
+    status='loading';prog=0;emit();
+    loading=(async()=>{
+      if(!window.tf)await script(TFJS_URL);
+      try{if(!(await tf.setBackend('webgl')))throw 0;await tf.ready()}catch(e){await tf.setBackend('cpu');await tf.ready()}
+      let last=null;
+      for(const u of AI_MODEL_URLS()){try{model=await tf.loadGraphModel(u,{onProgress:f=>{prog=f;emit()}});break}catch(e){last=e}}
+      if(!model)throw last||new Error('model');
+      status='warm';emit();
+      await run([{n:19,boards:[{board:new Int8Array(361),ko:-1}],pla:1,komi:7.5,hb:0}]); // 先算一次（WebGL 第一次比较慢）
+      status='ready';emit();
+    })().catch(e=>{status='error';err=(e&&e.message)||String(e);loading=null;model=null;emit();throw e});
+    return loading;
+  }
+  function run(items){
+    const B=items.length,bin=new Float32Array(B*361*22),glob=new Float32Array(B*19);
+    items.forEach((it,i)=>{const e=aiEncode(it.n,it.boards,it.pla,it.komi,it.hb);bin.set(e.bin,i*361*22);glob.set(e.glob,i*19)});
+    const job=queue.then(async()=>{
+      const xb=tf.tensor(bin,[B,361,22]),xg=tf.tensor(glob,[B,19]);
+      let outs;try{outs=await model.executeAsync({'swa_model/bin_inputs':xb,'swa_model/global_inputs':xg},AI_OUT)}finally{xb.dispose();xg.dispose()}
+      const arr=await Promise.all(outs.map(t=>t.data()));outs.forEach(t=>t.dispose());
+      return items.map((it,i)=>{const c=it.boards[it.boards.length-1];return aiDecode(it.n,c.board,c.ko,it.pla,arr,i)});
+    });
+    queue=job.catch(()=>{});return job;
+  }
+  function itemFor(node){const n=sizeOf(root());return{n,boards:aiHistory(node,n),pla:nextColor(node)==='B'?1:2,...aiKomi()}}
+  const keyOf=node=>{const k=aiKomi();return k.komi+'|'+k.hb+'|'+nextColor(node)+'|'+sizeOf(root())};
+  function cached(node){const c=cache.get(node);return c&&c.k===keyOf(node)?c:null}
+  async function analyze(node){await load();const c=cached(node);if(c)return c;const[res]=await run([itemFor(node)]);res.k=keyOf(node);cache.set(node,res);return res}
+  return{load,run,analyze,cached,itemFor,on:f=>subs.push(f),status:()=>status,prog:()=>prog,err:()=>err};
+})();
+
+/* ---- AI 提示：棋盘上标出推荐的点，上方显示胜率 ---- */
+let aiHint=false,aiT=null;
+function aiTop(res,k){const N=res.policy.length-1,a=[];for(let p=0;p<N;p++)if(res.policy[p]>0)a.push([p,res.policy[p]]);a.sort((x,y)=>y[1]-x[1]);return a.slice(0,k).filter((m,i)=>i===0||m[1]>=0.02)}
+function aiRequest(node){clearTimeout(aiT);aiT=setTimeout(()=>{if(cur!==node)return;AI.analyze(node).then(()=>{if(cur===node)render()}).catch(()=>renderAiBar())},120)}
+function aiOverlay(n,X){
+  const res=AI.cached(cur);if(!res){aiRequest(cur);return''}
+  let o='';const pct=v=>v>=0.995?'99':v>=0.01?String(Math.round(v*100)):'<1';
+  aiTop(res,5).forEach(([p,v],i)=>{const x=p%n,y=(p/n)|0,col=i===0?'#2E6FA8':'#3F8F63';
+    o+=`<circle cx="${X(x)}" cy="${X(y)}" r="${U*0.44}" fill="${col}" opacity="${i===0?0.95:(0.55+0.4*Math.min(1,v*4)).toFixed(2)}" stroke="#fff" stroke-width="1.5"/>`;
+    o+=`<text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-weight="700" font-size="${U*0.36}" fill="#fff">${pct(v)}</text>`});
+  return o;
+}
+function renderAiBar(){
+  const bar=$('#aiBar');if(!bar)return;const show=aiHint&&!train&&!scoring;bar.hidden=!show;if(!show)return;
+  const st=AI.status(),res=AI.cached(cur),msg=$('#aiMsg');
+  bar.classList.toggle('dim',!res);
+  if(st==='loading')msg.textContent=T('AI 下载中（约 12 MB，只需下载一次）… {0}%',Math.round(AI.prog()*100));
+  else if(st==='warm')msg.textContent=T('AI 准备中…');
+  else if(st==='error')msg.textContent=T('AI 无法载入：{0}',AI.err());
+  else if(!res)msg.textContent=T('AI 计算中…');
+  else{const N=res.policy.length-1,top=aiTop(res,1)[0];msg.textContent=res.policy[N]>(top?top[1]:0)?T('AI 建议停一手'):''}
+  if(!res)return;
+  const wb=Math.round(res.winB*1000)/10;$('#aiWrB').style.width=wb+'%';
+  $('#aiB').textContent=T('黑 {0}%',wb.toFixed(1));$('#aiW').textContent=T('白 {0}%',(100-wb).toFixed(1));
+  const l=res.leadB;$('#aiLead').textContent=Math.abs(l)<0.05?T('双方相同'):l>0?T('黑领先 {0} 目',l.toFixed(1)):T('白领先 {0} 目',(-l).toFixed(1));
+}
+function setAiHint(on){aiHint=on;$('#aiToggle').setAttribute('aria-pressed',on);if(on)AI.load().catch(()=>{});render()}
+AI.on(()=>{renderAiBar();if(typeof renderVs==='function')renderVs()});
+
+/* ---- 新对局：棋盘大小、让子、贴目、和 AI 下 ---- */
+const MAX_HA={7:5,9:9,13:9,19:9},KOMI_DEF={7:9,9:7,13:7.5,19:7.5};
+const AI_LEVELS=[
+  {id:'25k',name:'25 级',k:40,t:2.5,b:.30},{id:'20k',name:'20 级',k:30,t:2,b:.20},{id:'15k',name:'15 级',k:20,t:1.5,b:.12},
+  {id:'10k',name:'10 级',k:12,t:1.1,b:.06},{id:'5k',name:'5 级',k:8,t:.8,b:.03},{id:'1k',name:'1 级',k:5,t:.5,b:.01},
+  {id:'2d',name:'业余 2 段',k:3,t:.2,b:0},{id:'max',name:'最强',search:true}];
+function handicapPts(n,h){const d=n>=13?3:2,a=d,b=n-1-d,c=(n-1)/2,pts=[];
+  if(h>=2)pts.push([b,a],[a,b]);if(h>=3)pts.push([b,b]);if(h>=4)pts.push([a,a]);
+  if(h===5||h===7||h===9)pts.push([c,c]);if(h>=6)pts.push([a,c],[b,c]);if(h>=8)pts.push([c,a],[c,b]);return pts}
+let ng={size:19,ha:0,komi:7.5,opp:'ai',color:'B',level:'10k'};
+try{const v=JSON.parse(localStorage.getItem('goReview.newgame')||'null');if(v)ng={...ng,...v}}catch(e){}
+function ngSave(){try{localStorage.setItem('goReview.newgame',JSON.stringify(ng))}catch(e){}}
+function ngDefaultKomi(){return ng.ha>=1?0.5:KOMI_DEF[ng.size]}
+function renderNew(){
+  document.querySelectorAll('#ngSize button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===ng.size));
+  document.querySelectorAll('#ngOpp button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ng.opp));
+  document.querySelectorAll('#ngColor button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ng.color));
+  const ha=$('#ngHa');const mx=MAX_HA[ng.size];if(ng.ha>mx)ng.ha=mx;
+  ha.innerHTML=[0,1,...Array.from({length:mx-1},(_,i)=>i+2)].map(h=>`<option value="${h}"${h===ng.ha?' selected':''}>${h===0?T('不让子'):h===1?T('让先（不贴目）'):T('让 {0} 子',h)}</option>`).join('');
+  $('#ngLevel').innerHTML=AI_LEVELS.map(l=>`<option value="${l.id}"${l.id===ng.level?' selected':''}>${T(l.name)}${l.search?T('（多算一步）'):''}</option>`).join('');
+  if(document.activeElement!==$('#ngKomi'))$('#ngKomi').value=ng.komi;
+  $('#ngAiRow').hidden=ng.opp!=='ai';
+  $('#ngNote').textContent=ng.opp==='ai'?T('AI 在这台设备上计算，第一次要下载约 12 MB。棋力是大约的，可以随时换。'):T('空白棋盘，自己摆谱或两人对下。');
+}
+function openNew(){stopPlay();$('#newBox').hidden=false;$('#newToggle').setAttribute('aria-pressed','true');renderNew();$('#newBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
+function closeNew(){$('#newBox').hidden=true;$('#newToggle').setAttribute('aria-pressed','false')}
+function startNewGame(){
+  const n=ng.size,h=ng.ha>=2?ng.ha:0,km=parseFloat($('#ngKomi').value);ng.komi=isFinite(km)?km:ngDefaultKomi();ngSave();
+  const lv=AI_LEVELS.find(l=>l.id===ng.level)||AI_LEVELS[3],dt=new Date().toISOString().slice(0,10);
+  const my=me()||T('我'),ai=T('AI（{0}）',T(lv.name));
+  const esc=s=>String(s).replace(/([\]\\])/g,'\\$1');
+  let PB=T('黑方'),PW=T('白方'),gn=T('{0} 路对局',n);
+  if(ng.opp==='ai'){PB=ng.color==='B'?my:ai;PW=ng.color==='B'?ai:my;gn=T('和 AI 对局')}
+  let s=`(;GM[1]FF[4]CA[UTF-8]SZ[${n}]KM[${ng.komi}]RU[Chinese]DT[${dt}]GN[${esc(gn)}]PB[${esc(PB)}]PW[${esc(PW)}]`;
+  if(h)s+=`HA[${h}]AB`+handicapPts(n,h).map(([x,y])=>`[${xyToPt(x,y)}]`).join('')+'PL[W]';
+  s+=')';
+  const r=parseSGF(s);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};
+  if(scoring)stopScoring();if(train)stopTrain();
+  openRoot(r,{id});closeNew();
+  if(ng.opp==='ai'){vs={id,ai:ng.color==='B'?2:1,level:lv,low:0,over:false,thinking:false,msg:'',endMsg:''};tool='play';
+    document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool==='play'));
+    $('#vsBox').hidden=false;AI.load().catch(()=>{});renderVs();vsAiMove();$('#vsBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
+}
+
+/* ---- 和 AI 对局 ---- */
+var vs=null; // {id, ai:1 黑/2 白, level, low, over, thinking, msg, endMsg}
+const vsAiCol=()=>vs.ai===1?'B':'W';
+function pickW(pool,w){let s=w.reduce((a,b)=>a+b,0),r=Math.random()*s;for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i][0]}return pool[0][0]}
+async function aiChoose(node,res,lv){
+  const n=sizeOf(root()),N=n*n,P=res.policy,it=AI.itemFor(node),last=it.boards[it.boards.length-1],b=last.board,pla=it.pla;
+  const myLead=pla===1?res.leadB:-res.leadB;
+  if(isPassNode(node,n)&&(myLead>0||P[N]>0.15))return -1; // 对方停一手：领先或已经没棋可下就跟着停
+  if(moveNo(node)>N*2)return -1;
+  const nb=AI_NB[n]||(AI_NB[n]=aiNbrs(n));
+  const cand=[];for(let p=0;p<N;p++)if(P[p]>0&&!nb[p].every(q=>b[q]===pla))cand.push([p,P[p]]); // 不填自己的眼
+  cand.sort((x,y)=>y[1]-x[1]);
+  if(!cand.length||P[N]>cand[0][1])return -1;
+  if(lv.search){ // 最强：前几个点各下一手，再看哪个胜率最高
+    const top=cand.slice(0,8).filter((c,i)=>i<2||c[1]>0.01);
+    const items=top.map(([p])=>{const r=aiPlay(b,n,p,pla,last.ko);return{n,boards:it.boards.concat({board:r.b,ko:r.ko,move:p,color:pla}).slice(-6),pla:3-pla,komi:it.komi,hb:it.hb}});
+    const outs=await AI.run(items);let best=top[0][0],bs=-1e9;
+    outs.forEach((o,i)=>{const w=pla===1?o.winB:1-o.winB,l=pla===1?o.leadB:-o.leadB,s=w+0.01*Math.max(-30,Math.min(30,l))+0.1*top[i][1];if(s>bs){bs=s;best=top[i][0]}});
+    return best;
+  }
+  if(Math.random()<lv.b){const pool=cand.filter(c=>c[1]>0.001).slice(0,60);if(pool.length)return pickW(pool,pool.map(c=>Math.pow(c[1],0.25)))}
+  const pool=cand.slice(0,lv.k);return pickW(pool,pool.map(c=>Math.pow(c[1],1/lv.t)));
+}
+function vsAddMove(col,pt){const nd={props:{[col]:[pt]},children:[],parent:cur};cur.children.push(nd);cur=nd;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();if(pt)soundFor(nd);return nd}
+async function vsAiMove(){
+  if(!vs||vs.over||vs.thinking)return;const node=cur,col=vsAiCol();if(nextColor(node)!==col){renderVs();return}
+  vs.thinking=true;vs.msg='';renderVs();const t0=Date.now();
+  try{
+    const res=await AI.analyze(node);if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}
+    const n=sizeOf(root()),N=n*n,myWin=vs.ai===1?res.winB:1-res.winB,myLead=vs.ai===1?res.leadB:-res.leadB;
+    vs.low=myWin<0.03&&myLead<-Math.max(8,N*0.1)?vs.low+1:0;
+    if(vs.low>=3&&moveNo(node)>N/3){vs.thinking=false;vsResult((vs.ai===1?'W':'B')+'+R',T('AI 认输，你赢了！'));return}
+    const p=await aiChoose(node,res,vs.level);
+    await new Promise(r=>setTimeout(r,Math.max(0,450-(Date.now()-t0))));
+    if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}
+    vs.thinking=false;
+    vsAddMove(col,p<0?'':xyToPt(p%n,(p/n)|0));
+    if(p<0){if(isPassNode(node,n)){vsEnd();return}vs.msg=T('AI 停一手。你也停一手的话，对局就结束。')}
+  }catch(e){if(vs){vs.thinking=false;vs.msg=T('AI 无法载入：{0}',(e&&e.message)||e)}}
+  renderVs();
+}
+function vsUserPass(){if(!vs||vs.over||vs.thinking)return;const n=sizeOf(root());if(nextColor(cur)===vsAiCol())return vsAiMove();
+  const prev=cur;snap();vsAddMove(vs.ai===1?'W':'B','');flash(T('你停一手'));if(isPassNode(prev,n))vsEnd();else vsAiMove()}
+function vsResult(re,msg){vs.over=true;vs.endMsg=msg;root().props.RE=[re];changed(false);renderInfo();renderVs();render()}
+function vsEnd(){ // 双方停一手：用 AI 判断死子，进入数子
+  vs.over=true;vs.endMsg=T('双方停一手，对局结束。确认死子后，按「把结果写入棋局信息」。');renderVs();
+  const node=cur;startScoring();
+  AI.analyze(node).then(res=>{if(!scoring||cur!==node)return;const n=sizeOf(root()),st=computeState(node,n),dead=new Set();
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=st.g[y][x],o=res.ownB[y*n+x];if((c===1&&o<-0.2)||(c===2&&o>0.2))dead.add(y*n+x)}
+    scoring.node=node;scoring.dead=dead;render()}).catch(()=>{});
+}
+function vsUndo(){ // 悔棋：拿掉 AI 的一手和自己的一手
+  if(!vs||vs.thinking)return;const user=vs.ai===1?'W':'B';let a=cur;const rm=nd=>{const p=nd.parent;if(!p||nd.children.length)return false;p.children.splice(p.children.indexOf(nd),1);p._sel=0;cur=p;return true};
+  snap();const m=moveOf(a);if(m&&m[0]!==user){if(!rm(a))return;a=cur}
+  const m2=moveOf(a);if(m2&&m2[0]===user)rm(a);
+  vs.over=false;vs.endMsg='';vs.msg='';vs.low=0;if(scoring)stopScoring();changed();render();renderVs();
+}
+function vsStop(){vs=null;$('#vsBox').hidden=true}
+function renderVs(){
+  if(!vs){return}const box=$('#vsBox');box.hidden=false;
+  const r=root(),n=sizeOf(r),ha=parseInt(prop(r,'HA')||'0',10)||0,user=vs.ai===1?'W':'B';
+  $('#vsSub').textContent=[T('AI 棋力：{0}',T(vs.level.name)),T('{0} 路',n),ha>=2?T('让 {0} 子',ha):'',T('贴 {0} 目',prop(r,'KM')||'0')].filter(Boolean).join(' · ');
+  const st=AI.status(),msg=$('#vsMsg');let t='';msg.className='big';
+  if(vs.over){t=vs.endMsg;msg.classList.add('ok')}
+  else if(st==='loading')t=T('AI 下载中（约 12 MB，只需下载一次）… {0}%',Math.round(AI.prog()*100));
+  else if(st==='warm')t=T('AI 准备中…');
+  else if(st==='error'){t=T('AI 无法载入：{0}',AI.err());msg.classList.add('no')}
+  else if(vs.thinking)t=T('AI 思考中…');
+  else if(vs.msg)t=vs.msg;
+  else t=nextColor(cur)===user?T('轮到你下（{0}）',user==='B'?T('黑棋'):T('白棋')):T('轮到 AI');
+  msg.textContent=t;
+  $('#vsPass').disabled=$('#vsResign').disabled=vs.over||vs.thinking;$('#vsUndo').disabled=vs.thinking;
+  $('#vsHint').setAttribute('aria-pressed',aiHint);
+}
+
 /* ===================== 存成图片 ===================== */
 let imgMode='now',imgBlob=null,imgUrl=null;
 function nodeAtMove(mn){const line=lineFrom(cur);let c=0,t=line[0];for(const nd of line){if(moveOf(nd))c++;if(c<=mn)t=nd;else break}return t}
@@ -2921,13 +3312,14 @@ function boardClick(ev){
   }
   const needName=Shared.isShared()&&!me();
   if(tool==='play'){
+    if(vs&&!vs.over){if(vs.thinking)return;if(nextColor(cur)===vsAiCol()){vsAiMove();return}}
     const color=nextColor(cur);
     const hit=cur.children.find(c=>{const m=moveOf(c);return m&&m[1]===pt2});
-    if(hit){go(hit);return}
+    if(hit){go(hit);if(vs)vsAiMove();return}
     const st=computeState(cur,n);if(st.g[y][x])return;
     if(needName)return flash(T('共享棋谱请先在「我是」选名字，才能写评论、摆变化'));
     const test=st.g.map(r=>r.slice());const res=place(test,x,y,color==='B'?1:2,n);if(res.suicide)return flash(T('这里是禁着点（自杀）'));
-    snap();const node={props:{[color]:[pt2]},children:[],parent:cur};if(me())node.props.XA=[me()];cur.children.push(node);cur=node;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();soundFor(node);return;
+    snap();const node={props:{[color]:[pt2]},children:[],parent:cur};if(me())node.props.XA=[me()];cur.children.push(node);cur=node;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();soundFor(node);if(vs){vs.msg='';vsAiMove()}return;
   }
   if(needName)return flash(T('共享棋谱请先在「我是」选名字，才能写评论、摆变化'));
   snap();const P=cur.props;const marks=['TR','CR','SQ','MA'];if(Shared.isShared())P.XM=[me()];
@@ -3034,7 +3426,20 @@ document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('focus',(
 const markInfo=()=>{const r=store.games[G.id];if(r)r.infoMine=true};
 document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{markInfo();const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
 $('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash(T('这盘棋读不出来：')+err.message)}};
-$('#newBlank').onclick=()=>{const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
+$('#newToggle').onclick=()=>$('#newBox').hidden?openNew():closeNew();
+$('#ngClose').onclick=closeNew;$('#ngStart').onclick=startNewGame;
+$('#ngSize').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.size=+b.dataset.v;ng.komi=ngDefaultKomi();renderNew()};
+$('#ngHa').onchange=e=>{ng.ha=+e.target.value;ng.komi=ngDefaultKomi();renderNew()};
+$('#ngKomi').onchange=e=>{const v=parseFloat(e.target.value);if(isFinite(v))ng.komi=v};
+$('#ngOpp').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.opp=b.dataset.v;renderNew()};
+$('#ngColor').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.color=b.dataset.v;renderNew()};
+$('#ngLevel').onchange=e=>{ng.level=e.target.value;if(vs){vs.level=AI_LEVELS.find(l=>l.id===ng.level)||vs.level;renderVs()}};
+$('#aiToggle').onclick=()=>setAiHint(!aiHint);
+$('#vsHint').onclick=()=>setAiHint(!aiHint);
+$('#vsPass').onclick=vsUserPass;$('#vsUndo').onclick=vsUndo;
+$('#vsResign').onclick=e=>armed(e.currentTarget,T('再点一次确认认输'),()=>{if(vs&&!vs.over)vsResult((vs.ai===1?'B':'W')+'+R',T('你认输了。'))});
+$('#vsExit').onclick=vsStop;
+$('#newBlank').onclick=()=>{openNew();return;const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
 $('#delGame').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{Drive.trash(store.games[G.id]);delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
 $('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io(T('先把 SGF 粘贴到框里'),true);try{importText(t);$('#pasteBox').value='';io(T('已打开'))}catch(err){io(err.message,true)}};
 $('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io(T('已打开粘贴的棋谱'))}catch(err){io(err.message,true)}}});

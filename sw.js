@@ -1,5 +1,6 @@
 // 围棋复盘本：离线可用。网页本身「先上网拿最新，没网才用缓存」，所以你上传新版后会自动更新。
 const CACHE = 'go-review-v1';
+const AI_CACHE = 'go-review-ai-v1'; // AI 模型和 TensorFlow.js：下载一次就一直用
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -8,7 +9,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== AI_CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -16,6 +17,14 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  const isAi = (url.origin === location.origin && url.pathname.includes('/katago/')) || req.url.startsWith('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@');
+  if (isAi) {
+    e.respondWith(caches.open(AI_CACHE).then(c => c.match(req).then(r => r || fetch(req).then(res => {
+      if (res.ok) c.put(req, res.clone());
+      return res;
+    }))));
+    return;
+  }
   if (url.origin === location.origin) {
     e.respondWith(
       fetch(req).then(res => {
