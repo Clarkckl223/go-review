@@ -30,6 +30,7 @@
   --accent:#6DB59D; --accent-ink:#0E1A16; --accent-soft:#1F3A31;
   --wood:#C49A55; --wood-edge:#A87F3C; --grid:#2A1D0C; --danger:#E0745F; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 32px}
 button,input,textarea,select{font:inherit;color:inherit}
@@ -41,7 +42,7 @@ button{cursor:pointer}
 header.top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
 h1{font-family:var(--f-display);font-size:1.35rem;margin:0;letter-spacing:.04em}
 .save-state{font-size:.8rem;color:var(--muted)}
-.top-actions{margin-left:auto;display:flex;gap:6px}
+.top-actions{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:100%}
 .top-actions .btn{height:34px;padding:0 12px;font-size:.88rem}
 .btn:disabled{opacity:.4;cursor:default}
 /* 棋谱树 */
@@ -94,6 +95,19 @@ h1{font-family:var(--f-display);font-size:1.35rem;margin:0;letter-spacing:.04em}
 .nfilter button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .li .chips{display:inline-flex;gap:3px}
 .tr .chip{height:16px;font-size:.68rem;padding:0 5px}
+/* 分享 */
+.share{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.share b{font-family:var(--f-display);font-size:1rem}
+.share input{width:100%;height:38px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg);font-family:var(--f-mono);font-size:.8rem}
+.share ol{margin:0;padding-left:1.3em;font-size:.86rem;line-height:1.6;color:var(--muted)}
+.share .warnbox{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:6px;padding:8px 10px;font-size:.86rem;line-height:1.55}
+.help dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0;font-size:.87rem;line-height:1.55}
+.help dt{font-weight:600;white-space:nowrap}
+.help dd{margin:0;color:var(--muted)}
+@media (max-width:480px){.help dl{grid-template-columns:minmax(0,1fr)}.help dd{margin-bottom:6px}}
+.share hr{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
+.share .sub{font-size:.95rem}
+.share a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 .prefs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;font-size:.9rem}
 .prefs label{color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
@@ -180,6 +194,8 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
     <span class="save-state" id="saveState">已保存在本机</span>
     <div class="top-actions">
       <button class="btn" id="langBtn" title="English / 中文">EN</button>
+      <button class="btn" id="shareBtn">分享</button>
+      <button class="btn" id="helpBtn">说明</button>
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
       <button class="btn" id="redoBtn" title="重做 (Ctrl+Y)" disabled>↷ 重做</button>
       <button class="btn" id="driveTop" hidden>连接 Drive</button>
@@ -222,6 +238,57 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="tool" id="numToggle" aria-pressed="false">显示手数</button>
       <span class="sep"></span>
       <button class="tool scoring" id="scoreToggle" aria-pressed="false">数子 / 数目</button>
+    </div>
+
+    <div class="share" id="shareBox" hidden>
+      <b>分享这盘棋</b>
+      <div id="liveBlock" class="stack" hidden>
+        <b class="sub">共享链接（大家一起写）</b>
+        <p class="note" style="margin:0">建立后，这盘棋有一个固定的链接。老师、学生打开同一个链接，在「我是」选名字就能直接写评论、摆变化，几秒内互相看到，不用再来回发链接。</p>
+        <div class="row" id="liveCreateRow"><button class="btn pri" id="liveCreate">建立共享链接</button></div>
+        <div id="liveOn" class="stack" hidden>
+          <input id="liveUrl" readonly aria-label="共享链接">
+          <div class="row">
+            <button class="btn pri" id="liveCopy">复制共享链接</button>
+            <a class="btn" id="liveWa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+          </div>
+          <p class="note" style="margin:0">这个链接不会变。拿到链接的人都能看、也都能写，所以只发给你的老师和学生。每个人只能删除自己写的评论和自己摆的变化。</p>
+        </div>
+        <div class="status" id="liveStatus"></div>
+        <hr>
+        <b class="sub">快照链接（一次性副本）</b>
+      </div>
+      <input id="shareUrl" readonly aria-label="分享链接">
+      <div class="row">
+        <button class="btn pri" id="shareCopy">复制链接</button>
+        <button class="btn" id="shareNative" hidden>用手机分享…</button>
+        <a class="btn" id="shareWa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+        <button class="btn" id="shareClose">关闭</button>
+      </div>
+      <ol>
+        <li>把链接发给学生。学生打开后就能看到整盘棋、你的评论和变化图。</li>
+        <li>学生在「我是」选自己的名字，写评论、摆变化，然后也按「分享」，把新链接发回给你。</li>
+        <li>你打开学生发回的链接，他的评论和变化图会自动合并进你这盘棋，你写的不会被盖掉。</li>
+      </ol>
+      <div class="warnbox">这个链接是按「分享」那一刻的副本，不会像 Google Drive 那样自动更新。分享之后再改的评论和变化，对方看不到；改完要再按一次「分享」，发新的链接。</div>
+      <p class="note" style="margin:0">链接里就是整盘棋和所有评论，拿到链接的人都看得到。</p>
+      <div class="status" id="shareStatus"></div>
+    </div>
+
+    <div class="share help" id="helpBox" hidden>
+      <b>使用说明</b>
+      <dl>
+        <dt>载入棋谱</dt><dd>在野狐分享页按「复盘」，或在「导入 / 导出」贴上 SGF、打开 SGF 文件。</dd>
+        <dt>翻棋谱</dt><dd>按 ← →，或在棋盘上滚动鼠标滚轮；按住 Shift 一次走 10 手。点棋谱树任一手可直接跳过去。</dd>
+        <dt>写评论</dt><dd>先在「我是」选自己的名字，再在评论框写。别人的评论显示在框上方。</dd>
+        <dt>试下变化</dt><dd>点棋盘空点落子，会自动存成变化图。在变化的第一手可以「设为主线」。</dd>
+        <dt>标记</dt><dd>用 △ ○ □ ✕ A 在棋盘上做记号，「擦除标记」可去掉。</dd>
+        <dt>数子 / 数目</dt><dd>选规则，点死子把它标出来，就会算出胜负。</dd>
+        <dt>保存</dt><dd>改动会自动保存在这台设备。撤销、重做：Ctrl+Z、Ctrl+Y。</dd>
+        <dt>Google Drive</dt><dd>每次打开网页按「连接 Drive」，棋谱库就会在你的电脑、手机、iPad 之间自动同步。</dd>
+        <dt>分享</dt><dd>生成这盘棋的链接给别人。链接不会自动更新；对方改完发回新链接，你打开后会自动合并。</dd>
+      </dl>
+      <div class="row"><button class="btn" id="helpClose">关闭</button></div>
     </div>
 
     <div class="score" id="scoreBox" hidden>
@@ -407,6 +474,41 @@ const EN={
 '我是':'I am','名字':'Name','确定':'OK','取消':'Cancel','删除这个名字':'Remove this name','（未选择）':'(not chosen)','+ 新增名字…':'+ Add a name…',
 '（未署名）':'(unsigned)','以「{0}」的身份写评论…':'Writing as {0}…','全部':'All','名字不能有【】或换行，最多 12 个字':'Names can’t contain 【】 or line breaks, 12 characters max',
 '已切换为「{0}」':'Now writing as {0}','{0} 摆的变化':'variation by {0}',
+// 分享
+'分享':'Share','分享这盘棋':'Share this game','分享链接':'Share link','复制链接':'Copy link','用手机分享…':'Share from phone…','关闭':'Close',
+'把链接发给学生。学生打开后就能看到整盘棋、你的评论和变化图。':'Send the link to your student. They’ll see the whole game with your comments and variations.',
+'学生在「我是」选自己的名字，写评论、摆变化，然后也按「分享」，把新链接发回给你。':'The student picks their name under “I am”, writes comments and tries variations, then taps Share and sends the new link back.',
+'你打开学生发回的链接，他的评论和变化图会自动合并进你这盘棋，你写的不会被盖掉。':'When you open the link they send back, their comments and variations merge into your copy. Yours are never overwritten.',
+'链接里就是整盘棋和所有评论，拿到链接的人都看得到。':'The link contains the whole game and all comments, so anyone with it can see them.',
+'链接已复制，可以贴到 WhatsApp、微信或电邮':'Link copied. Paste it into WhatsApp, WeChat or email.','请长按上面的链接复制':'Long-press the link above to copy it',
+'正在生成链接…':'Making the link…','已打开分享的棋谱':'Opened the shared game',
+'已合并：{0}':'Merged: {0}','{0} 条评论':'{0} comments','{0} 个变化':'{0} variations','这个链接里没有新的内容':'Nothing new in this link',
+'链接里的棋谱读不出来，可能复制时少了一段':'Couldn’t read the game in this link. Part of it may be missing.',
+'说明':'Help','使用说明':'How to use',
+'这个链接是按「分享」那一刻的副本，不会像 Google Drive 那样自动更新。分享之后再改的评论和变化，对方看不到；改完要再按一次「分享」，发新的链接。':'This link is a copy of the game at the moment you tapped Share. It does not update automatically like Google Drive. Comments or variations you add afterwards won’t reach the other person; tap Share again and send the new link.',
+'链接已复制。之后再改的内容不会自动更新到这个链接，改完要重新分享。':'Link copied. Later changes won’t appear in this link; share again after editing.',
+'载入棋谱':'Load a game','在野狐分享页按「复盘」，或在「导入 / 导出」贴上 SGF、打开 SGF 文件。':'Tap “复盘” on a Fox share page, or paste SGF / open an SGF file under Import / Export.',
+'翻棋谱':'Step through','按 ← →，或在棋盘上滚动鼠标滚轮；按住 Shift 一次走 10 手。点棋谱树任一手可直接跳过去。':'Use ← →, or scroll the mouse wheel over the board; hold Shift for 10 moves. Click any move in the game tree to jump to it.',
+'写评论':'Comments','先在「我是」选自己的名字，再在评论框写。别人的评论显示在框上方。':'Pick your name under “I am”, then write in the box. Other people’s comments show above it.',
+'试下变化':'Variations','点棋盘空点落子，会自动存成变化图。在变化的第一手可以「设为主线」。':'Play on an empty point and it’s saved as a variation. On a variation’s first move you can make it the main line.',
+'标记':'Marks','用 △ ○ □ ✕ A 在棋盘上做记号，「擦除标记」可去掉。':'Use △ ○ □ ✕ A to mark the board; Erase marks removes them.',
+'选规则，点死子把它标出来，就会算出胜负。':'Pick a rule set and click dead stones; the result is worked out for you.',
+'改动会自动保存在这台设备。撤销、重做：Ctrl+Z、Ctrl+Y。':'Changes save automatically on this device. Undo / redo: Ctrl+Z / Ctrl+Y.',
+'每次打开网页按「连接 Drive」，棋谱库就会在你的电脑、手机、iPad 之间自动同步。':'Tap “Connect Drive” each time you open the page and your games sync across your computer, phone and iPad.',
+'生成这盘棋的链接给别人。链接不会自动更新；对方改完发回新链接，你打开后会自动合并。':'Makes a link to this game. The link doesn’t update itself; when the other person sends a new link back, opening it merges their changes.',
+// 共享棋谱
+'共享链接（大家一起写）':'Shared link (everyone writes together)',
+'建立后，这盘棋有一个固定的链接。老师、学生打开同一个链接，在「我是」选名字就能直接写评论、摆变化，几秒内互相看到，不用再来回发链接。':'Creates one fixed link for this game. Teachers and students open the same link, pick their name under “I am”, and write comments or try variations directly. Everyone sees changes within seconds, no more sending links back and forth.',
+'建立共享链接':'Create shared link','复制共享链接':'Copy shared link','共享链接':'Shared link',
+'这个链接不会变。拿到链接的人都能看、也都能写，所以只发给你的老师和学生。每个人只能删除自己写的评论和自己摆的变化。':'This link never changes. Anyone with it can read and write, so only send it to your teachers and students. Each person can only delete their own comments and variations.',
+'快照链接（一次性副本）':'Snapshot link (one-off copy)',
+'共享链接已复制':'Shared link copied','正在建立共享链接…':'Creating the shared link…','共享链接已建立':'Shared link created',
+'共享棋谱 · 已同步':'Shared game · synced','共享棋谱 · 同步中…':'Shared game · syncing…','共享棋谱 · 连接中…':'Shared game · connecting…',
+'共享棋谱请先在「我是」选名字，才能写评论、摆变化':'For a shared game, pick your name under “I am” first, then you can comment and try variations',
+'共享棋谱里只能删除自己摆的变化':'In a shared game you can only delete variations you made',
+'无法连接共享服务，请检查网络':'Couldn’t reach the sharing service. Check your connection.','找不到这个共享棋谱':'This shared game wasn’t found',
+'共享连接出错：{0}':'Sharing error: {0}','共享同步失败：{0}':'Sharing sync failed: {0}','这个网页还没设置共享功能':'Sharing isn’t set up on this page yet',
+'已打开共享棋谱':'Opened the shared game',
 // 数子 / 数目
 '活子':'Stones on board','地':'Territory','公气（各算一半）':'Dame (half each)','还子（让子棋）':'Handicap return','合计':'Total','提子':'Prisoners','死子':'Dead stones','贴目（白）':'Komi (White)',
 '黑 {0} 子，白 {1} 子':'Black {0} stones, White {1} stones','黑 {0} 目，白 {1} 目':'Black {0} points, White {1} points','黑 {0} 点，白 {1} 点':'Black {0} points, White {1} points',
@@ -587,6 +689,7 @@ function openRoot(r,{id=null,driveId=null}={}){
   }
   G={id,root:r}; store.lastId=id; lsSet(store);
   cur=r; undoStack=[];redoStack=[];undoUI(); renderWho(); renderTree(); render(); renderLib(); renderInfo();
+  Shared.sync();
 }
 function importText(t,opts){const r=parseSGF(fixFoxSgf(t));openRoot(r,opts);return r}
 
@@ -597,8 +700,9 @@ function changed(structural=true){
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
   clearTimeout(saveT);$('#saveState').textContent=T('保存中…');
   saveT=setTimeout(()=>{const ok=lsSet(store);$('#saveState').textContent=ok?savedText():T('无法保存（浏览器不允许本机储存，请用「导出」保存）');renderLib();Drive.autoSync()},400);
+  Shared.onLocalChange();
 }
-const savedText=()=>Drive.connected()?T('已保存 · Google Drive 同步中'):(Drive.available?T('已保存在本机 · 未连接 Drive'):T('已保存在本机'));
+const savedText=()=>(typeof Shared!=='undefined'&&Shared.isShared())?(Shared.pending()?T('共享棋谱 · 同步中…'):T('共享棋谱 · 已同步')):Drive.connected()?T('已保存 · Google Drive 同步中'):(Drive.available?T('已保存在本机 · 未连接 Drive'):T('已保存在本机'));
 
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
@@ -649,7 +753,7 @@ function buildC(secs){
 const secsOf=node=>node.props.C?parseC(node.props.C[0]):[];
 function me(){return prefs.me||''}
 function knownAuthors(){
-  const set=new Set(prefs.authors||[]);
+  const set=new Set([...(prefs.authors||[]),...(typeof Shared!=='undefined'?Shared.names():[])]);
   if(G)(function walk(n){for(const x of secsOf(n))if(x.author)set.add(x.author);if(n.props.XA)set.add(n.props.XA[0]);n.children.forEach(walk)})(root());
   return [...set].sort((a,b)=>a.localeCompare(b,'zh'));
 }
@@ -661,12 +765,13 @@ function renderWho(){
   $('#whoDel').hidden=!m||!(prefs.authors||[]).includes(m);
   $('#comment').placeholder=m?T('以「{0}」的身份写评论…',m):T('写下这一手的想法，例如：这里应该先补断点。');
 }
-function setMe(name){prefs.me=name;if(name){prefs.authors=[...new Set([...(prefs.authors||[]),name])]}savePrefs();renderWho();render();renderTree();if(name)flash(T('已切换为「{0}」',name))}
+function setMe(name){prefs.me=name;if(name){prefs.authors=[...new Set([...(prefs.authors||[]),name])]}savePrefs();Shared.meChanged();renderWho();render();renderTree();if(name)flash(T('已切换为「{0}」',name))}
 function renderComment(){
   const secs=secsOf(cur),m=me();
   const mine=secs.find(x=>x.author===m);
   $('#others').innerHTML=secs.filter(x=>x.author!==m).map(x=>`<div class="onote">${x.author?chip(x.author):`<span class="chip" style="background:var(--muted)">${escH(T('（未署名）'))}</span>`}<div class="txt">${escH(x.text)}</div></div>`).join('');
   const box=$('#comment');const v=mine?mine.text:'';if(document.activeElement!==box)box.value=v;
+  const lock=Shared.isShared()&&!m;box.disabled=lock;if(lock)box.placeholder=T('共享棋谱请先在「我是」选名字，才能写评论、摆变化');
 }
 
 /* ===================== 棋谱树 ===================== */
@@ -715,7 +820,7 @@ function treeHighlight(){
   const top=r.offsetTop,bot=top+r.offsetHeight;
   if(top<box.scrollTop+4)box.scrollTop=top-40;else if(bot>box.scrollTop+box.clientHeight-4)box.scrollTop=bot-box.clientHeight+40;
   const isVarStart=cur.parent&&cur.parent.children.indexOf(cur)>0;
-  $('#promoteBtn').hidden=!isVarStart;
+  $('#promoteBtn').hidden=!isVarStart||(typeof Shared!=='undefined'&&Shared.isShared());
 }
 function markRow(node){const r=rowOf.get(node);if(!r)return;const c=r.querySelector('.c');const has=node.props.C&&node.props.C[0].trim();if(has&&!c)r.insertAdjacentHTML('beforeend','<span class="c">'+T('评')+'</span>');if(!has&&c)c.remove()}
 
@@ -877,15 +982,18 @@ function boardClick(ev){
     for(const k of grp)isDead?scoring.dead.delete(k):scoring.dead.add(k);
     render();return;
   }
+  const needName=Shared.isShared()&&!me();
   if(tool==='play'){
     const color=nextColor(cur);
     const hit=cur.children.find(c=>{const m=moveOf(c);return m&&m[1]===pt2});
     if(hit){go(hit);return}
     const st=computeState(cur,n);if(st.g[y][x])return;
+    if(needName)return flash(T('共享棋谱请先在「我是」选名字，才能写评论、摆变化'));
     const test=st.g.map(r=>r.slice());const res=place(test,x,y,color==='B'?1:2,n);if(res.suicide)return flash(T('这里是禁着点（自杀）'));
     snap();const node={props:{[color]:[pt2]},children:[],parent:cur};if(me())node.props.XA=[me()];cur.children.push(node);cur=node;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();soundFor(node);return;
   }
-  snap();const P=cur.props;const marks=['TR','CR','SQ','MA'];
+  if(needName)return flash(T('共享棋谱请先在「我是」选名字，才能写评论、摆变化'));
+  snap();const P=cur.props;const marks=['TR','CR','SQ','MA'];if(Shared.isShared())P.XM=[me()];
   const has=k=>(P[k]||[]).includes(pt2);const del=k=>{if(!P[k])return;P[k]=P[k].filter(v=>v!==pt2);if(!P[k].length)delete P[k]};
   const delLB=()=>{if(!P.LB)return;P.LB=P.LB.filter(v=>v.split(':')[0]!==pt2);if(!P.LB.length)delete P.LB};
   if(tool==='erase'){marks.forEach(del);delLB()}
@@ -894,7 +1002,7 @@ function boardClick(ev){
   else{const on=has(tool);marks.forEach(del);delLB();if(!on)(P[tool]=P[tool]||[]).push(pt2)}
   render();changed(false);
 }
-let flashT=null;function flash(msg){const s=$('#saveState');s.textContent=msg;clearTimeout(flashT);flashT=setTimeout(()=>{s.textContent=savedText()},3500)}
+let flashT=null;function flash(msg){const s=$('#saveState');s.textContent=msg;clearTimeout(flashT);flashT=setTimeout(()=>{flashT=null;s.textContent=savedText()},3500)}
 
 /* 二次确认按钮（这个页面不能用弹窗） */
 function armed(btn,label,run){if(btn._armed){clearTimeout(btn._t);btn._armed=false;btn.classList.remove('armed');btn.textContent=btn._orig;run();return}
@@ -934,10 +1042,10 @@ $('#scoreExit').onclick=stopScoring;
 $('#scoreClear').onclick=()=>{if(scoring){scoring.dead=new Set();render()}};
 $('#ruleSeg').onclick=e=>{const b=e.target.closest('button');if(!b||!scoring)return;scoring.rule=b.dataset.r;scoring.komi=RULE_KOMI[b.dataset.r];render()};
 $('#komiIn').addEventListener('input',e=>{const v=parseFloat(e.target.value);if(scoring&&isFinite(v)){scoring.komi=v;renderScore()}});
-$('#scoreWrite').onclick=()=>{if(!scoring)return;snap();const re=scoreRE();root().props.RE=[re];
+$('#scoreWrite').onclick=()=>{if(!scoring)return;snap();if(typeof markInfo==='function')markInfo();const re=scoreRE();root().props.RE=[re];
   const ru={cn:'Chinese',jp:'Japanese',ing:'Ing'}[scoring.rule];root().props.RU=[ru];root().props.KM=[String(scoring.komi)];
   renderInfo();changed(false);render();flash(T('结果已写入：{0}',resultText(re)))};
-$('#langBtn').onclick=()=>{LANG=LANG==='en'?'zh':'en';prefs.lang=LANG;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}applyStatic();renderWho();renderTree();render();renderLib();Drive.ui()};
+$('#langBtn').onclick=()=>{LANG=LANG==='en'?'zh':'en';prefs.lang=LANG;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}applyStatic();$('#shareStatus').textContent='';renderWho();renderTree();render();renderLib();Drive.ui()};
 $('#numToggle').onclick=e=>{showNums=!showNums;e.currentTarget.setAttribute('aria-pressed',showNums);render()};
 $('#vars').onclick=e=>{const b=e.target.closest('button');if(!b)return;cur._sel=+b.dataset.i;go(cur.children[+b.dataset.i])};
 let cmtSnapT=null,cmtSnapped=false;
@@ -948,9 +1056,9 @@ $('#comment').addEventListener('input',e=>{
   const c=buildC(secs);if(c.trim())cur.props.C=[c];else delete cur.props.C;
   changed(false);renderNotes();markRow(cur)});
 $('#comment').addEventListener('blur',()=>{cmtSnapped=false});
-$('#delBtn').onclick=e=>{if(!cur.parent)return flash(T('开局不能删除'));armed(e.currentTarget,T('再点一次确认删除'),()=>{snap();const p=cur.parent;p.children.splice(p.children.indexOf(cur),1);p._sel=0;cur=p;render();changed()})};
+$('#delBtn').onclick=e=>{if(!cur.parent)return flash(T('开局不能删除'));if(Shared.isShared()&&!(cur.props.XA&&cur.props.XA[0]===me()))return flash(T('共享棋谱里只能删除自己摆的变化'));armed(e.currentTarget,T('再点一次确认删除'),()=>{snap();const p=cur.parent;p.children.splice(p.children.indexOf(cur),1);p._sel=0;cur=p;render();changed()})};
 $('#whoSel').onchange=e=>{const v=e.target.value;if(v==='__add'){e.target.value=me();$('#whoAdd').hidden=false;$('#whoName').value='';$('#whoName').focus();return}setMe(v)};
-const addName=()=>{const v=$('#whoName').value.trim();if(!v)return;if(/[【】\n]/.test(v)||v.length>12)return flash(T('名字不能有【】或换行，最多 12 个字'));$('#whoAdd').hidden=true;setMe(v)};
+const addName=()=>{const v=$('#whoName').value.trim();if(!v)return;if(/[【】\n\/]/.test(v)||v.length>12)return flash(T('名字不能有【】或换行，最多 12 个字'));$('#whoAdd').hidden=true;setMe(v)};
 $('#whoOk').onclick=addName;$('#whoName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addName()}else if(e.key==='Escape')$('#whoAdd').hidden=true});
 $('#whoCancel').onclick=()=>{$('#whoAdd').hidden=true};
 $('#whoDel').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{prefs.authors=(prefs.authors||[]).filter(x=>x!==me());prefs.me='';savePrefs();renderWho();render()});
@@ -958,13 +1066,17 @@ $('#noteFilter').onclick=e=>{const b=e.target.closest('button');if(!b)return;not
 $('#noteList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const it=$('#noteList')._items[+b.dataset.i];let n=it.node;for(;n.parent;n=n.parent)n.parent._sel=n.parent.children.indexOf(n);cur=it.node;render()};
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t.dataset.tab)});
 document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('focus',()=>snap()));
-document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
+const markInfo=()=>{const r=store.games[G.id];if(r)r.infoMine=true};
+document.querySelectorAll('[data-prop]').forEach(i=>i.addEventListener('input',()=>{markInfo();const k=i.dataset.prop;if(i.value.trim())root().props[k]=[i.value];else delete root().props[k];render();changed()}));
 $('#libList').onclick=e=>{const b=e.target.closest('.li');if(!b)return;const g=store.games[b.dataset.id];try{openRoot(parseSGF(g.sgf),{id:b.dataset.id})}catch(err){flash(T('这盘棋读不出来：')+err.message)}};
 $('#newBlank').onclick=()=>{const r=parseSGF(`(;GM[1]FF[4]SZ[19]KM[7.5]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[新棋盘])`);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id})};
 $('#delGame').onclick=e=>armed(e.currentTarget,T('再点一次确认删除'),()=>{Drive.trash(store.games[G.id]);delete store.games[G.id];const ids=Object.keys(store.games);lsSet(store);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]});else $('#newBlank').click()});
 $('#importBtn').onclick=()=>{const t=$('#pasteBox').value.trim();if(!t)return io(T('先把 SGF 粘贴到框里'),true);try{importText(t);$('#pasteBox').value='';io(T('已打开'))}catch(err){io(err.message,true)}};
 $('#pasteBox').addEventListener('paste',e=>{const t=(e.clipboardData||window.clipboardData).getData('text');if(t&&t.trim().startsWith('(')){e.preventDefault();try{importText(t);io(T('已打开粘贴的棋谱'))}catch(err){io(err.message,true)}}});
 $('#fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{importText(rd.result);io(T('已打开 {0}',f.name))}catch(err){io(err.message,true)}e.target.value=''};rd.readAsText(f)};
+// 下载时的文件名：Review_日期_时间_原名.sgf，例如 Review_2026-10-22_11-39_槟州0010 vs 槟州0013 2026-10-19 W+R.sgf
+function reviewFileName(){const d=new Date(),z=v=>String(v).padStart(2,'0');
+  return`Review_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}_`+fileName()}
 function fileName(){const r=root();return(titleOf(r)+(prop(r,'RE')?' '+prop(r,'RE'):'')).replace(/[\\/:*?"<>|·]/g,' ').replace(/\s+/g,' ').trim()+'.sgf'}
 $('#copyBtn').onclick=()=>{const t=toSGF(root());const box=$('#exportBox');box.value=t;
   const fall=()=>{box.hidden=false;box.focus();box.select();io(T('请按 Ctrl+C（手机：长按 → 复制）复制上面的文字'))};
@@ -972,8 +1084,8 @@ $('#copyBtn').onclick=()=>{const t=toSGF(root());const box=$('#exportBox');box.v
 $('#dlBtn').onclick=async()=>{const t=toSGF(root());
   // 在 Claude 里打开时：经由 Claude 的下载确认（只允许 .txt，下载后把文件名的 .txt 删掉即可）
   let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
-  if(dl){try{await dl.save({filename:fileName()+'.txt',data:t});io(T('已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱'))}catch(e){io(e.code==='declined'?T('已取消下载'):T('下载不可用，请改用「复制 SGF」'),e.code!=='declined')}return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/x-go-sgf;charset=utf-8'}));a.download=fileName();document.body.appendChild(a);a.click();a.remove();
+  if(dl){try{await dl.save({filename:reviewFileName()+'.txt',data:t});io(T('已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱'))}catch(e){io(e.code==='declined'?T('已取消下载'):T('下载不可用，请改用「复制 SGF」'),e.code!=='declined')}return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/x-go-sgf;charset=utf-8'}));a.download=reviewFileName();document.body.appendChild(a);a.click();a.remove();
   io(T('如果没有开始下载，请改用「复制 SGF」'))};
 function io(msg,err){const s=$('#ioStatus');s.textContent=msg;s.classList.toggle('err',!!err)}
 
@@ -1082,6 +1194,221 @@ const Drive=(()=>{
   return{init,autoSync,trash,connected:ok,available:on,ui,saveNow:()=>syncAll()};
 })();
 
+/* ===================== 分享链接 ===================== */
+// 整盘棋（含评论、变化图）压缩后放在网址 # 后面：…/go-review/#g=xxxx
+// 不经过任何服务器；打开链接时如果本机已有同一盘棋，就把新的评论和变化合并进去。
+const SHARE_BASE='https://clarkckl223.github.io/go-review/';
+const b64u={enc:u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
+  dec:str=>{str=str.replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';const b=atob(str);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}};
+async function pack(text){
+  const data=new TextEncoder().encode(text);
+  if(typeof CompressionStream==='undefined')return'sgf='+encodeURIComponent(text);
+  const buf=await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer();
+  return'g='+b64u.enc(new Uint8Array(buf));
+}
+async function unpack(h){
+  if(h.startsWith('#sgf='))return decodeURIComponent(h.slice(5));
+  if(h.startsWith('#g=')){const u=b64u.dec(h.slice(3));
+    const buf=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return new TextDecoder().decode(buf)}
+  return null;
+}
+const shareBase=()=>/github\.io$/.test(location.hostname)?location.origin+location.pathname:SHARE_BASE;
+async function openShare(){
+  const box=$('#shareBox');box.hidden=false;Shared.ui();$('#shareStatus').textContent=T('正在生成链接…');
+  const url=shareBase()+'#'+await pack(toSGF(root()));
+  $('#shareUrl').value=url;$('#shareStatus').textContent='';
+  $('#shareWa').href='https://wa.me/?text='+encodeURIComponent(titleOf(root())+'\n'+url);
+  $('#shareNative').hidden=!navigator.share;
+  box.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+// 把 b 合并进 a（同一盘棋）：评论按人合并，新的变化图加进去；本机「我」写的评论以本机为准
+function mergeTree(a,b,stat){
+  const myName=me();
+  // 评论
+  if(b.props.C){
+    const A=secsOf(a),B=secsOf(b);let touched=false;
+    for(const sb of B){const sa=A.find(x=>x.author===sb.author);
+      if(!sa){A.push({...sb});stat.c++;touched=true}
+      else if(sb.author&&sb.author!==myName&&sa.text!==sb.text){sa.text=sb.text;stat.c++;touched=true}}
+    if(touched){const c=buildC(A);if(c.trim())a.props.C=[c]}
+  }
+  // 其他属性：本机没有的才补上（谁摆的、标记、棋局信息）
+  for(const k in b.props){if(k==='C'||k==='B'||k==='W')continue;if(!a.props[k])a.props[k]=b.props[k].slice()}
+  // 子节点
+  for(const cb of b.children){const mb=moveOf(cb);
+    const ca=a.children.find(x=>{const m=moveOf(x);return m&&mb&&m[0]===mb[0]&&m[1]===mb[1]});
+    if(ca)mergeTree(ca,cb,stat);else{cb.parent=a;a.children.push(cb);stat.v++;
+      (function cnt(n){if(n.props.C)stat.c+=secsOf(n).length;n.children.forEach(cnt)})(cb)}}
+}
+function findSameGame(r){
+  const key=gameKey(r);let hit=Object.keys(store.games).find(id=>store.games[id].key===key);if(hit)return hit;
+  // 主线被改过（例如设了新的主线）：用对局双方、日期和前 30 手来认
+  const head=r=>mainLine(r).slice(0,90),sig=r=>[prop(r,'DT'),prop(r,'PB'),prop(r,'PW')].join('|');
+  return Object.keys(store.games).find(id=>{try{const x=parseSGF(store.games[id].sgf);return sig(x)===sig(r)&&head(x)===head(r)&&head(r).length>0}catch(e){return false}});
+}
+function importShared(text){
+  const r=parseSGF(fixFoxSgf(text));const id=findSameGame(r);
+  if(!id){openRoot(r);flash(T('已打开分享的棋谱'));return}
+  const local=parseSGF(store.games[id].sgf);const stat={c:0,v:0};mergeTree(local,r,stat);
+  store.games[id].sgf=toSGF(local);store.games[id].updated=Date.now();
+  openRoot(local,{id});G.id=id;changed();
+  const parts=[stat.c&&T('{0} 条评论',stat.c),stat.v&&T('{0} 个变化',stat.v)].filter(Boolean);
+  setTimeout(()=>flash(parts.length?T('已合并：{0}',parts.join(T('、'))):T('这个链接里没有新的内容')),600);
+}
+$('#shareBtn').onclick=()=>{const b=$('#shareBox');if(!b.hidden){b.hidden=true;return}$('#helpBox').hidden=true;openShare()};
+$('#helpBtn').onclick=()=>{const b=$('#helpBox');b.hidden=!b.hidden;if(!b.hidden){$('#shareBox').hidden=true;b.scrollIntoView({block:'nearest',behavior:'smooth'})}};
+$('#helpClose').onclick=()=>{$('#helpBox').hidden=true};
+$('#shareClose').onclick=()=>{$('#shareBox').hidden=true};
+$('#shareCopy').onclick=()=>{const v=$('#shareUrl').value;const fall=()=>{const i=$('#shareUrl');i.focus();i.select();$('#shareStatus').textContent=T('请长按上面的链接复制')};
+  try{navigator.clipboard.writeText(v).then(()=>{$('#shareStatus').textContent=T('链接已复制。之后再改的内容不会自动更新到这个链接，改完要重新分享。')},fall)}catch(e){fall()}};
+$('#shareNative').onclick=()=>{navigator.share({title:titleOf(root()),url:$('#shareUrl').value}).catch(()=>{})};
+
+/* ===================== 共享棋谱（Firebase） ===================== */
+// 设置好 Firebase 后，把它给的 firebaseConfig 填在这里（见设置文档）。
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyDzpZz5WQAQ4w5WURGIwuQKchGw2aEI7LA",
+  authDomain:"go-review-share.firebaseapp.com",
+  projectId:"go-review-share",
+  storageBucket:"go-review-share.firebasestorage.app",
+  messagingSenderId:"563457614711",
+  appId:"1:563457614711:web:0e10d761d8c5b65ff1f772"
+};
+// 资料结构：games/{gid} = {base: 建立时的整盘棋}；games/{gid}/layers/{名字} = 这个人写的评论、摆的变化（各写各的，不会互相覆盖）
+const MARKS=['TR','CR','SQ','MA','LB'],INFO_KEYS=['PB','PW','BR','WR','DT','RE','KM','GN','RU','HA'];
+function cloneNode(n,parent){const c={props:{},children:[],parent};for(const k in n.props)c.props[k]=n.props[k].slice();c.children=n.children.map(ch=>cloneNode(ch,c));return c}
+function sameMove(a,b){const x=moveOf(a),y=moveOf(b);return!!(x&&y&&x[0]===y[0]&&x[1]===y[1])}
+function stripAuthor(n,X){ // 先拿掉 X 在底稿里的评论、标记；X 摆的变化先标成"待删"，X 的最新版本会再加回来
+  if(n.props.C){const c=buildC(parseC(n.props.C[0]).filter(x=>x.author!==X));if(c.trim())n.props.C=[c];else delete n.props.C}
+  if(n.props.XM&&n.props.XM[0]===X){for(const k of MARKS)delete n.props[k];delete n.props.XM}
+  for(const ch of n.children){if(ch.props.XA&&ch.props.XA[0]===X)ch._gone=true;stripAuthor(ch,X)}
+}
+function applyLayer(a,b,X){
+  a._gone=false;
+  if(b.props.C){const add=parseC(b.props.C[0]).filter(x=>x.author===X&&x.text.trim());if(add.length)a.props.C=[buildC(secsOf(a).filter(x=>x.author!==X).concat(add))]}
+  if(b.props.XM&&b.props.XM[0]===X){for(const k of MARKS){if(b.props[k])a.props[k]=b.props[k].slice();else delete a.props[k]}a.props.XM=[X]}
+  if(b.props.XA&&!a.props.XA)a.props.XA=b.props.XA.slice();
+  for(const cb of b.children){const ca=a.children.find(x=>sameMove(x,cb));
+    if(ca)applyLayer(ca,cb,X);else a.children.push(cloneNode(cb,a))}
+}
+function pruneGone(n){n.children=n.children.filter(c=>!c._gone);n.children.forEach(pruneGone)}
+function combineLayers(baseSgf,layers){
+  const root=parseSGF(baseSgf);delete root.props.XS;
+  const list=Object.entries(layers||{}).filter(([,v])=>v&&v.sgf).sort((a,b)=>(a[1].updated||0)-(b[1].updated||0));
+  for(const[X]of list)stripAuthor(root,X);
+  const parsed=list.map(([X,v])=>{try{return[X,parseSGF(v.sgf)]}catch(e){return null}}).filter(Boolean);
+  // 棋局信息：最后改的人为准；评论和变化：按名字顺序加入，评论的先后才不会跳来跳去
+  for(const[,L]of parsed)if(L.props.XI){for(const k of INFO_KEYS){if(L.props[k])root.props[k]=L.props[k].slice();else delete root.props[k]}}
+  for(const[X,L]of parsed.slice().sort((a,b)=>a[0].localeCompare(b[0],'zh')))applyLayer(root,L,X);
+  pruneGone(root);return root;
+}
+function extractLayer(root,X,withInfo){
+  function ex(n,isRoot){
+    const kids=[];for(const ch of n.children){const k=ex(ch,false);if(k)kids.push(k)}
+    const mine=n.props.C?parseC(n.props.C[0]).filter(x=>x.author===X&&x.text.trim()):[];
+    const own=!!(n.props.XA&&n.props.XA[0]===X),mk=!!(n.props.XM&&n.props.XM[0]===X);
+    if(!isRoot&&!kids.length&&!mine.length&&!own&&!mk)return null;
+    const o={props:{},children:kids,parent:null};kids.forEach(k=>k.parent=o);
+    const m=moveOf(n);if(m)o.props[m[0]]=[m[1]];
+    if(mine.length)o.props.C=[buildC(mine)];if(own)o.props.XA=[X];
+    if(mk){for(const k of MARKS)if(n.props[k])o.props[k]=n.props[k].slice();o.props.XM=[X]}
+    return o}
+  const r=ex(root,true);r.props.SZ=root.props.SZ?root.props.SZ.slice():['19'];
+  if(withInfo){for(const k of INFO_KEYS)if(root.props[k])r.props[k]=root.props[k].slice();r.props.XI=[X]}
+  return toSGF(r);
+}
+function movePath(node){const p=[];for(let n=node;n&&n.parent;n=n.parent){const m=moveOf(n);p.unshift(m?m[0]+m[1]:'')}return p}
+function nodeByPath(r,p){let n=r;for(const k of p){const c=n.children.find(ch=>{const m=moveOf(ch);return(m?m[0]+m[1]:'')===k});if(!c)break;n=c}return n}
+const Shared=(()=>{
+  const allowed=!!FIREBASE_CONFIG&&/github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+  let be=null,gid=null,base=null,layers={},unsub=null,myLocal=null,pushT=null,pending=false,joining=null,connecting=false;
+  const avail=()=>allowed||!!window.__sharedBackend;
+  const curGid=()=>G&&G.root.props.XS?G.root.props.XS[0]:null;
+  function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(T('无法连接共享服务，请检查网络')));document.head.appendChild(s)})}
+  async function backend(){
+    if(window.__sharedBackend)return be=window.__sharedBackend;if(be)return be;
+    const V='https://www.gstatic.com/firebasejs/10.12.0/';
+    await loadScript(V+'firebase-app-compat.js');await loadScript(V+'firebase-auth-compat.js');await loadScript(V+'firebase-firestore-compat.js');
+    if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+    await firebase.auth().signInAnonymously();
+    const db=firebase.firestore(),gdoc=id=>db.collection('games').doc(id);
+    be={create:(id,data)=>gdoc(id).set(data),
+      put:(id,name,data)=>gdoc(id).collection('layers').doc(name).set(data),
+      watch:(id,onGame,onLayers,onErr)=>{const a=gdoc(id).onSnapshot(d=>onGame(d.exists?d.data():null),onErr);
+        const b=gdoc(id).collection('layers').onSnapshot(qs=>{const o={};qs.forEach(d=>{o[d.id]=d.data()});onLayers(o)},onErr);return()=>{a();b()}}};
+    return be;
+  }
+  const status=(m,err)=>{const el=$('#liveStatus');if(el){el.textContent=m||'';el.classList.toggle('err',!!err)}};
+  const linkOf=id=>shareBase()+'#c='+id;
+  const randId=()=>{const a='abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';const u=new Uint8Array(20);crypto.getRandomValues(u);return[...u].map(x=>a[x%a.length]).join('')};
+  const infoMine=()=>!!(G&&store.games[G.id]&&store.games[G.id].infoMine);
+  function persist(){const rec=store.games[G.id]||(store.games[G.id]={});rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();lsSet(store);renderLib();Drive.autoSync()}
+  function recombine(){
+    if(!base)return;
+    if(joining===gid&&curGid()!==gid){ // 第一次打开这个共享链接：在「我的棋谱」里建一份
+      const r=combineLayers(base,layers);r.props.XS=[gid];const lid=newId();
+      store.games[lid]={sgf:toSGF(r),key:gameKey(r),title:titleOf(r),updated:Date.now()};joining=null;openRoot(r,{id:lid});flash(T('已打开共享棋谱'));return}
+    if(curGid()!==gid)return;
+    const L={...layers},X=me();if(X&&myLocal!==null)L[X]={sgf:myLocal,updated:Infinity}; // 自己还没送出的改动以本机为准
+    const r=combineLayers(base,L);r.props.XS=[gid];
+    const path=movePath(cur),keepC=document.activeElement===$('#comment');
+    G.root=r;cur=nodeByPath(r,path);persist();renderWho();renderTree();render();renderInfo();
+    if(keepC)$('#comment').focus();ui();
+  }
+  async function attach(id){
+    if(gid===id&&(unsub||connecting))return;detach();gid=id;if(!avail()){ui();return}
+    connecting=true;ui();
+    try{const b=await backend();if(gid!==id)return;
+      unsub=b.watch(id,d=>{if(gid!==id)return;if(!d){status(T('找不到这个共享棋谱'),true);return}base=d.base;recombine()},
+        o=>{if(gid!==id)return;layers=o||{};recombine()},
+        e=>status(T('共享连接出错：{0}',(e&&e.message)||e),true));
+    }catch(e){status(e.message,true)}finally{connecting=false;ui()}
+  }
+  function detach(){if(unsub)unsub();unsub=null;gid=null;base=null;layers={};myLocal=null;pending=false;clearTimeout(pushT);ui()}
+  function sync(){const id=curGid();if(id)attach(id);else if(gid&&joining!==gid)detach();else ui()}
+  function onLocalChange(){
+    if(!gid||curGid()!==gid)return;const X=me();if(!X)return;
+    myLocal=extractLayer(G.root,X,infoMine());pending=true;clearTimeout(pushT);pushT=setTimeout(push,1200);ui();
+  }
+  async function push(){
+    const X=me();if(!X||!gid||myLocal===null)return;const sgf=myLocal,id=gid;
+    try{const b=await backend();await b.put(id,X,{sgf,name:X,updated:Date.now()});if(myLocal===sgf){myLocal=null;pending=false}status('');ui()}
+    catch(e){status(T('共享同步失败：{0}',(e&&e.message)||e),true)}
+  }
+  async function create(){
+    if(!avail()||!G)return;status(T('正在建立共享链接…'));
+    try{const b=await backend();const id=randId();const r=cloneNode(G.root,null);delete r.props.XS;
+      await b.create(id,{base:toSGF(r),title:titleOf(G.root),created:Date.now()});
+      G.root.props.XS=[id];persist();await attach(id);status(T('共享链接已建立'));ui()}
+    catch(e){status(e.message,true)}
+  }
+  async function join(id){
+    if(!avail()){flash(T('这个网页还没设置共享功能'));return false}
+    const local=Object.keys(store.games).find(k=>((store.games[k].sgf||'').match(/XS\[([^\]]+)\]/)||[])[1]===id);
+    if(local){openRoot(parseSGF(store.games[local].sgf),{id:local});return true}
+    joining=id;await attach(id);return true;
+  }
+  function meChanged(){myLocal=null;pending=false;if(gid)recombine()}
+  function ui(){
+    const blk=$('#liveBlock');if(!blk)return;blk.hidden=!avail();
+    const id=curGid();$('#liveCreateRow').hidden=!!id;$('#liveOn').hidden=!id;
+    if(id){const u=linkOf(id);$('#liveUrl').value=u;$('#liveWa').href='https://wa.me/?text='+encodeURIComponent(titleOf(root())+'\n'+u)}
+    $('#promoteBtn').hidden=!!id||$('#promoteBtn').hidden;
+    if(G&&!flashT)$('#saveState').textContent=savedText();
+  }
+  return{avail,attach,detach,sync,onLocalChange,create,join,meChanged,ui,
+    active:()=>!!(gid&&curGid()===gid),pending:()=>pending||connecting,isShared:()=>!!curGid(),names:()=>Object.keys(layers)};
+})();
+$('#liveCreate').onclick=()=>Shared.create();
+$('#liveCopy').onclick=()=>{const v=$('#liveUrl').value;const fall=()=>{const i=$('#liveUrl');i.focus();i.select()};
+  try{navigator.clipboard.writeText(v).then(()=>{$('#liveStatus').textContent=T('共享链接已复制')},fall)}catch(e){fall()}};
+
+function handleHash(h,onFail){
+  const fromTool=h.startsWith('#sgf=');
+  unpack(h).then(t=>{history.replaceState(null,'',location.pathname+location.search);if(fromTool)importText(t);else importShared(t)})
+    .catch(()=>{history.replaceState(null,'',location.pathname+location.search);onFail();flash(T('链接里的棋谱读不出来，可能复制时少了一段'))});
+}
+
 /* ===================== 启动 ===================== */
 const SAMPLE=`(;GM[1]FF[4]SZ[19]GN[]DT[2026-10-19]PB[槟州0010]PW[槟州0013]BR[25级]WR[25级]KM[7.5]HA[0]RU[Chinese]RE[W+R]AP[foxwq]
 ;B[dp];W[pd];B[qp];W[dd];B[fd];W[cf];B[dc];W[cc];B[eb];W[cb];B[db];W[de];B[qc];W[qd];B[pc];W[oc];B[ob];W[nc];B[nb];W[mc];B[rd];W[re];B[op];W[cq];B[cp];W[dq];B[fq];W[eq];B[ep];W[fr];B[gq];W[gr];B[bq];W[br];B[aq];W[hr];B[hq];W[mb];B[na];W[qf];B[cm];W[di];B[cj];W[ci];B[fl];W[fi];B[ej];W[ei];B[gj];W[gi];B[kq];W[dj];B[dk];W[bj];B[ck];W[pi];B[pm];W[ok];B[ol];W[nk];B[nl];W[ff];B[jk];W[fj];B[fk];W[ii];B[jd];W[jf];B[he];W[hf];B[ie];W[if];B[ee];W[ef];B[me];W[ne];B[le];W[nf];B[lg];W[li];B[mh];W[ni];B[ma];W[rc];B[rb];W[sc];B[pa];W[sb];B[ra];W[sd];B[qb];W[jc];B[kc];W[jb];B[kb];W[ik];B[il];W[hk];B[gk];W[hj];B[hl];W[jj];B[lk];W[kk];B[kl];W[kj];B[jl];W[mj];B[mk];W[mi];B[kf];W[ge];B[gd];W[qk];B[ql];W[rl];B[rm];W[rk];B[pl];W[ar];B[bo];W[cs];B[bk];W[aj];B[ak];W[bh];B[ek];W[da];B[ea];W[ca];B[ed];W[fe];B[lc];W[md];B[ld];W[je];B[ke];W[id];B[hd];W[kd];B[ir];W[jd];B[ic];W[hc];B[og];W[pf];B[ng];W[mf];B[lf];W[ka];B[la];W[ja];B[lb];W[gc];B[mg];W[pg];B[od];W[nd];B[of];W[oe];B[jg];W[ig];B[jh];W[ih];B[ji];W[kh];B[ki];W[kg];B[fc];W[gb];B[oh];W[ph];B[oi];W[oj];B[nh];W[pk];B[sl];W[sk];B[sm];W[qn];B[pp];W[qm];B[pn];W[ro];B[qo];W[rn];B[rp];W[sn];B[sp];W[ip];B[fp];W[iq];B[jr];W[ko];B[hs];W[dr];B[gs];W[es];B[is];W[fs];B[sa];W[jq];B[kr];W[kp];B[jo];W[io];B[jn];W[lq];B[lr];W[jp];B[in];W[mq];B[mr];W[np];B[no];W[mo];B[ln];W[nn];B[oo];W[kn];B[km];W[lm];B[mn];W[mm];B[nq];W[lp];B[mp];W[lo];B[np];W[ll];B[ml];W[hn];B[im];W[gm];B[gl];W[gn];B[fo];W[fn];B[en];W[on];B[nm];W[lj];B[om];W[po];B[pn];W[pm])`;
@@ -1104,10 +1431,14 @@ collectStatic();applyStatic();
   Drive.init();
   // 从下载工具传来的棋谱：网址 #sgf=...
   const h=location.hash;
-  if(h.startsWith('#sgf=')){try{importText(decodeURIComponent(h.slice(5)));history.replaceState(null,'',location.pathname+location.search);return}catch(e){flash(T('棋谱读取失败：{0}',e.message))}}
-  const id=store.lastId&&store.games[store.lastId]?store.lastId:Object.keys(store.games)[0];
-  if(id){try{openRoot(parseSGF(store.games[id].sgf),{id});return}catch(e){}}
-  importText(SAMPLE);
+  const openLast=()=>{const id=store.lastId&&store.games[store.lastId]?store.lastId:Object.keys(store.games)[0];
+    if(id){try{openRoot(parseSGF(store.games[id].sgf),{id});return}catch(e){}}importText(SAMPLE)};
+  // 网页已经开着时，再点另一个链接只会改 # 后面的部分，也要处理
+  const joinFrom=hh=>{const id=hh.slice(3).replace(/[^A-Za-z0-9]/g,'');history.replaceState(null,'',location.pathname+location.search);return Shared.join(id)};
+  window.addEventListener('hashchange',()=>{if(/^#(g|sgf)=/.test(location.hash))handleHash(location.hash,()=>{});else if(/^#c=/.test(location.hash))joinFrom(location.hash)});
+  if(/^#c=/.test(h)){openLast();joinFrom(h);return}
+  if(/^#(g|sgf)=/.test(h)){handleHash(h,openLast);return}
+  openLast();
 })();
 </script>
 
