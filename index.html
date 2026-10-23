@@ -186,6 +186,8 @@ body.is-training #tree,body.is-training #vars{visibility:hidden}
 /* 整盘分析 */
 .revgw{border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:crosshair;line-height:0}
 .revsum p{margin:4px 0}
+.revles{background:var(--accent-soft);border-radius:8px;padding:8px 12px}.revles ol{margin:4px 0 0;padding-left:1.4em}.revles li{margin:2px 0}
+.tag.rep{background:#2E6FA8;color:#fff}
 .revkeys{display:flex;flex-direction:column;gap:6px}
 .revk{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;text-align:left;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 10px;font-size:.88rem}
 .revk.on{border-color:#2E6FA8;box-shadow:0 0 0 2px #2E6FA833}
@@ -411,7 +413,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>变化</dt><dd>点空点试下。导航条 ↑↓ 换变化，★ 设为主线，🗑 删除。</dd>
         <dt>评论</dt><dd>先在「我是」选名字再写。</dd>
         <dt>AI</dt><dd>「AI 分析」看推荐点、胜率和变化，可设思考时间；「新对局」可和 AI 下。第一次下载约 12 MB。</dd>
-        <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手和 AI 推荐的下法；可以写进棋谱，或下载报告（可打印、存 PDF）。</dd>
+        <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」；可以写进棋谱，或下载报告。和 AI 下完会自动分析。</dd>
         <dt>AI 网络</dt><dd>在「设置」选：手机、4 核以下电脑用轻量 b10；6–8 核以上电脑用强力 b18；有独立显卡的电脑分析用 b10，形势判断用 b18。</dd>
         <dt>同步</dt><dd>按「连接 Drive」，电脑、手机、iPad 自动同步。</dd>
         <dt>分享</dt><dd>共享链接：大家一起写。快照链接：一次性副本。</dd>
@@ -461,8 +463,10 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       </div>
       <div class="score-opts"><span>对手</span><span class="seg" id="ngOpp"><button data-v="ai">和 AI 下</button><button data-v="self">自己摆</button></span></div>
       <div class="score-opts" id="ngAiRow">
+        <label for="ngName"><span>我的名字</span><input id="ngName" maxlength="16" placeholder="必填，会记在棋谱里" style="width:11em"></label>
         <span>我执</span><span class="seg" id="ngColor"><button data-v="B">黑棋</button><button data-v="W">白棋</button></span>
         <label for="ngLevel"><span>AI 棋力</span><select id="ngLevel"></select></label>
+        <label class="chk" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ngAuto"> 自动调整棋力（赢了升一级，输了降一级）</label>
         <label for="ngTime" id="ngTimeL"><span>每步思考</span><select id="ngTime" class="aiPlayTime"><option value="1">1 秒</option><option value="5">5 秒</option><option value="10">10 秒</option><option value="30">30 秒</option></select></label>
       </div>
       <p class="note" id="ngNote" style="margin:0"></p>
@@ -739,6 +743,12 @@ const EN={
 // QR / 短链接
 '存 QR 图片':'Save QR image','链接太长，做不成 QR code':'The link is too long for a QR code','拿到链接或扫 QR code 的人，都看得到整盘棋和所有评论。':'Anyone with the link or QR code can see the whole game and all comments.',
 '找不到这个快照链接的棋谱':'Couldn’t find the game for this snapshot link',
+// 等级 / 名字 / 对局后报告
+'{0} 级':'{0} kyu','{0} 段':'{0} dan','（按思考时间）':' (by thinking time)','我的名字':'My name','必填，会记在棋谱里':'Required, saved in the game record',
+'请先输入你的名字（会记在棋谱里）':'Please enter your name first (it’s saved in the game record)','自动调整棋力（赢了升一级，输了降一级）':'Auto-adjust strength (up a level when you win, down when you lose)',
+'下一盘 AI 升到 {0}。':'Next game the AI goes up to {0}.','下一盘 AI 降到 {0}。':'Next game the AI goes down to {0}.','双方停一手，AI 正在判断胜负…':'Both passed. The AI is working out the result…',
+'双方停一手，对局结束：{0}（AI 判断死子，可以按「数子 / 数目」确认）。':'Both passed, game over: {0} (dead stones judged by the AI; you can check with Count score).',
+'这盘最该记住的 {0} 件事':'{0} things to remember from this game','第 {0} 手 {1}：{2}（损失 {3} 目）':'Move {0} {1}: {2} (lost {3} pts)','第 {0} 手 {1} 下得很好：{2}以后遇到类似局面可以这样下。':'Move {0} {1} was well played: {2} Use it again in similar positions.','有报告':'Report',
 // 整盘分析
 '好手':'Good moves','妙手':'Brilliant','最长连续同 AI':'Longest streak matching AI','{0}！':'{0}! ',
 '抓住了对方上一手的失误，马上下出最好的应对。':'Punished the opponent’s mistake right away with the best reply.',
@@ -764,7 +774,7 @@ const EN={
 'AI 复盘报告':'AI review report','总评':'Summary','黑胜率曲线':'Black win rate','目数差（黑领先为正）':'Score lead (positive = Black ahead)','双方统计':'Statistics','每手 {0} 次':'{0} visits per move',
 '红圈：实战下的这手。蓝色 A：AI 推荐的点，半透明数字是 AI 推荐的后续变化。':'Red ring: the move played. Blue A: the AI’s move; faded numbers show the AI’s follow-up line.',
 '报告已下载。文件名最后的 .txt 删掉，用浏览器打开':'Report downloaded. Remove “.txt” from the file name and open it in a browser.','报告已下载，用浏览器打开就能看、打印或存成 PDF':'Report downloaded. Open it in a browser to read, print or save as PDF.',
-'AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手和 AI 推荐的下法；可以写进棋谱，或下载报告（可打印、存 PDF）。':'The AI checks every move, draws the win-rate graph and lists good moves and mistakes with its suggested moves. Write it into the game, or download a report to print or save as PDF.',
+'AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」；可以写进棋谱，或下载报告。和 AI 下完会自动分析。':'The AI checks every move, draws the win-rate graph, lists up to 10 good moves and 10 mistakes (easy-to-learn ones first) and the 3 things to remember. Write it into the game or download a report. Games against the AI are reviewed automatically.','x_old':'The AI checks every move, draws the win-rate graph and lists good moves and mistakes with its suggested moves. Write it into the game, or download a report to print or save as PDF.',
 // AI 网络
 '下载不完整，请重试':'Download incomplete, please try again','设置':'Settings','AI 网络':'AI network','自动':'Auto','轻量 b10':'Light b10','强力 b18':'Strong b18','设备':'Device','建议':'Suggested',
 '手机、iPad':'Phone, iPad','电脑 4 核以下':'Computer, 4 cores or fewer','电脑 6–8 核以上（没有独立显卡）':'Computer, 6–8+ cores (no dedicated GPU)','电脑有独立显卡（如 RTX 3060 Ti）':'Computer with a dedicated GPU (e.g. RTX 3060 Ti)',
@@ -2949,7 +2959,7 @@ function renderLib(){
   if(!ids.length){el.innerHTML='<div class="empty">'+T('没有符合的棋谱。')+'</div>';return}
   el.innerHTML=ids.map(id=>{const g=store.games[id],m=metaOf(g);const d=new Date(g.updated);
     const shared=/XS\[/.test(g.sgf||'');
-    return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${shared?'⇄':g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}${m.tags.map(t=>`<span class="tag">${escH(t)}</span>`).join('')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
+    return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${shared?'⇄':g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}${g.review&&g.review.done&&g.review.key===g.key?`<span class="tag rep">${T('有报告')}</span>`:''}${m.tags.map(t=>`<span class="tag">${escH(t)}</span>`).join('')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
 }
 function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)});renderTagsInput()}
 
@@ -3447,16 +3457,28 @@ AI.on(()=>{renderAiBar();renderAiNet();if(typeof renderVs==='function')renderVs(
 
 /* ---- 新对局：棋盘大小、让子、贴目、和 AI 下 ---- */
 const MAX_HA={7:5,9:9,13:9,19:9},KOMI_DEF={7:9,9:7,13:7.5,19:7.5};
-const AI_LEVELS=[
-  {id:'25k',name:'25 级',k:40,t:2.5,b:.30},{id:'20k',name:'20 级',k:30,t:2,b:.20},{id:'15k',name:'15 级',k:20,t:1.5,b:.12},
-  {id:'10k',name:'10 级',k:12,t:1.1,b:.06},{id:'5k',name:'5 级',k:8,t:.8,b:.03},{id:'1k',name:'1 级',k:5,t:.5,b:.01},
-  {id:'2d',name:'业余 2 段',k:3,t:.2,b:0},{id:'max',name:'最强',search:true}];
+// 棋力等级：级位 = 从 AI 推荐点里随机挑（越低级越随便、偶尔故意下错）；段位 = 往下算，越高段算越多次
+const KYU_T=[[25,40,2.5,.30],[20,30,2,.20],[15,20,1.5,.12],[10,12,1.1,.06],[5,8,.8,.03],[1,5,.5,.01]];
+const DAN_T={1:{k:3,t:.2,b:0},2:{k:2,t:.1,b:0},3:{k:1,t:.05,b:0},4:{visits:8},5:{visits:16},6:{visits:32},7:{visits:64},8:{visits:128},9:{visits:256}};
+function levelIds(n){const kr=(a,b)=>Array.from({length:a-b+1},(_,i)=>(a-i)+'k');
+  if(n<=7)return['25k','20k','18k','15k','10k','5k','1d','max'];
+  if(n<=13)return['25k','20k','18k',...kr(15,5),'1d','max'];
+  return['25k','20k','18k','15k',...kr(10,1),...Array.from({length:9},(_,i)=>(i+1)+'d'),'max']}
+function levelObj(id){
+  if(id==='max')return{id,search:true};
+  const m=/^(\d+)([kd])$/.exec(id||'')||[0,'10','k'],v=+m[1];
+  if(m[2]==='d')return{id,...(DAN_T[v]||DAN_T[1])};
+  let i=0;while(i<KYU_T.length-2&&v<KYU_T[i+1][0])i++;const A=KYU_T[i],B=KYU_T[i+1],f=Math.max(0,Math.min(1,(A[0]-v)/(A[0]-B[0])));
+  return{id,k:Math.round(A[1]+(B[1]-A[1])*f),t:A[2]+(B[2]-A[2])*f,b:A[3]+(B[3]-A[3])*f};
+}
+function lvName(lv){const id=lv.id||lv;if(id==='max')return T('最强');const m=/^(\d+)([kd])$/.exec(id);return m?(m[2]==='k'?T('{0} 级',m[1]):T('{0} 段',m[1])):id}
 function handicapPts(n,h){const d=n>=13?3:2,a=d,b=n-1-d,c=(n-1)/2,pts=[];
   if(h>=2)pts.push([b,a],[a,b]);if(h>=3)pts.push([b,b]);if(h>=4)pts.push([a,a]);
   if(h===5||h===7||h===9)pts.push([c,c]);if(h>=6)pts.push([a,c],[b,c]);if(h>=8)pts.push([c,a],[c,b]);return pts}
-let ng={size:19,ha:0,komi:7.5,opp:'ai',color:'B',level:'10k'};
+let ng={size:19,ha:0,komi:7.5,opp:'ai',color:'B',level:'10k',lv:{},auto:true,name:''};
 try{const v=JSON.parse(localStorage.getItem('goReview.newgame')||'null');if(v)ng={...ng,...v}}catch(e){}
 function ngSave(){try{localStorage.setItem('goReview.newgame',JSON.stringify(ng))}catch(e){}}
+function ngLevel(){const ids=levelIds(ng.size),v=ng.lv&&ng.lv[ng.size];return ids.includes(v)?v:ids.includes(ng.level)?ng.level:ids[Math.min(4,ids.length-1)]}
 function ngDefaultKomi(){return ng.ha>=1?0.5:KOMI_DEF[ng.size]}
 function renderNew(){
   document.querySelectorAll('#ngSize button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===ng.size));
@@ -3464,17 +3486,21 @@ function renderNew(){
   document.querySelectorAll('#ngColor button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ng.color));
   const ha=$('#ngHa');const mx=MAX_HA[ng.size];if(ng.ha>mx)ng.ha=mx;
   ha.innerHTML=[0,1,...Array.from({length:mx-1},(_,i)=>i+2)].map(h=>`<option value="${h}"${h===ng.ha?' selected':''}>${h===0?T('不让子'):h===1?T('让先（不贴目）'):T('让 {0} 子',h)}</option>`).join('');
-  $('#ngLevel').innerHTML=AI_LEVELS.map(l=>`<option value="${l.id}"${l.id===ng.level?' selected':''}>${T(l.name)}${l.search?T('（多算一步）'):''}</option>`).join('');
+  const cl=ngLevel();$('#ngLevel').innerHTML=levelIds(ng.size).map(id=>`<option value="${id}"${id===cl?' selected':''}>${lvName(id)}${id==='max'?T('（按思考时间）'):''}</option>`).join('');
+  if(document.activeElement!==$('#ngName'))$('#ngName').value=ng.name||me()||'';$('#ngAuto').checked=ng.auto!==false;
   if(document.activeElement!==$('#ngKomi'))$('#ngKomi').value=ng.komi;
-  $('#ngAiRow').hidden=ng.opp!=='ai';$('#ngTimeL').hidden=ng.level!=='max';if(document.activeElement!==$('#ngTime'))$('#ngTime').value=String(prefs.aiPlayTime??5);
+  $('#ngAiRow').hidden=ng.opp!=='ai';$('#ngTimeL').hidden=cl!=='max';if(document.activeElement!==$('#ngTime'))$('#ngTime').value=String(prefs.aiPlayTime??5);
   $('#ngNote').textContent=ng.opp==='ai'?T('第一次要下载约 12 MB。棋力是大约的。'):'';
 }
 function openNew(){stopPlay();$('#newBox').hidden=false;$('#newToggle').setAttribute('aria-pressed','true');renderNew();$('#newBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
 function closeNew(){$('#newBox').hidden=true;$('#newToggle').setAttribute('aria-pressed','false')}
 function startNewGame(){
   const n=ng.size,h=ng.ha>=2?ng.ha:0,km=parseFloat($('#ngKomi').value);ng.komi=isFinite(km)?km:ngDefaultKomi();ngSave();
-  const lv=AI_LEVELS.find(l=>l.id===ng.level)||AI_LEVELS[3],dt=new Date().toISOString().slice(0,10);
-  const my=me()||T('我'),ai=T('AI（{0}）',T(lv.name));
+  const name=($('#ngName').value||'').trim();
+  if(ng.opp==='ai'&&!name){flash(T('请先输入你的名字（会记在棋谱里）'));$('#ngName').focus();return}
+  ng.name=name;ngSave();
+  const lv=levelObj(ngLevel()),dt=new Date().toISOString().slice(0,10);
+  const my=name||me()||T('我'),ai=T('AI（{0}）',lvName(lv));
   const esc=s=>String(s).replace(/([\]\\])/g,'\\$1');
   let PB=T('黑方'),PW=T('白方'),gn=T('{0} 路对局',n);
   if(ng.opp==='ai'){PB=ng.color==='B'?my:ai;PW=ng.color==='B'?ai:my;gn=T('和 AI 对局')}
@@ -3484,7 +3510,7 @@ function startNewGame(){
   const r=parseSGF(s);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};
   if(scoring)stopScoring();if(train)stopTrain();
   openRoot(r,{id});closeNew();
-  if(ng.opp==='ai'){vs={id,ai:ng.color==='B'?2:1,level:lv,low:0,over:false,thinking:false,msg:'',endMsg:''};tool='play';
+  if(ng.opp==='ai'){vs={id,ai:ng.color==='B'?2:1,level:lv,auto:ng.auto!==false,low:0,over:false,thinking:false,msg:'',endMsg:''};tool='play';
     document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool==='play'));
     $('#vsBox').hidden=false;AI.load().catch(()=>{});renderVs();vsAiMove();$('#vsBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
 }
@@ -3502,9 +3528,9 @@ async function aiChoose(node,res,lv){
   const cand=[];for(let p=0;p<N;p++)if(P[p]>0&&!nb[p].every(q=>b[q]===pla))cand.push([p,P[p]]); // 不填自己的眼
   cand.sort((x,y)=>y[1]-x[1]);
   if(!cand.length||P[N]>cand[0][1])return -1;
-  if(lv.search){ // 最强：用搜索想一段时间，选算得最多次的那一手
+  if(lv.search||lv.visits){ // 最强：想一段时间；4–9 段：算固定次数（最多 30 秒）。选算得最多次的那一手
     const s=new Search(it);vs.search=s;const t=+(prefs.aiPlayTime??5);
-    await s.run(t*1000,()=>renderVs());vs.search=null;
+    await s.run(lv.search?t*1000:30000,()=>renderVs(),lv.visits||300000);vs.search=null;
     const r=s.results().filter(c=>c.move<0||!nb[c.move].every(q=>b[q]===pla));
     return r.length?r[0].move:cand[0][0];
   }
@@ -3531,25 +3557,37 @@ async function vsAiMove(){
 }
 function vsUserPass(){if(!vs||vs.over||vs.thinking)return;const n=sizeOf(root());if(nextColor(cur)===vsAiCol())return vsAiMove();
   const prev=cur;snap();vsAddMove(vs.ai===1?'W':'B','');flash(T('你停一手'));if(isPassNode(prev,n))vsEnd();else vsAiMove()}
-function vsResult(re,msg){vs.over=true;vs.endMsg=msg;root().props.RE=[re];changed(false);renderInfo();renderVs();render()}
-function vsEnd(){ // 双方停一手：用 AI 判断死子，进入数子
-  vs.over=true;vs.endMsg=T('双方停一手，对局结束。确认死子后，按「把结果写入棋局信息」。');renderVs();
-  const node=cur;startScoring();
-  AI.analyze(node).then(res=>{if(!scoring||cur!==node)return;const n=sizeOf(root()),st=computeState(node,n),dead=new Set();
-    for(let y=0;y<n;y++)for(let x=0;x<n;x++){const c=st.g[y][x],o=res.ownB[y*n+x];if((c===1&&o<-0.2)||(c===2&&o>0.2))dead.add(y*n+x)}
-    scoring.node=node;scoring.dead=dead;render()}).catch(()=>{});
+function vsResult(re,msg){vsFinish(re,msg)}
+function vsFinish(re,msg){ // 对局结束：实战走成主线、写结果、自动调整棋力、自动整盘分析
+  if(!vs||vs.over&&vs.finished)return;vs.over=true;vs.finished=true;vs.endMsg=msg;
+  for(let x=cur;x.parent;x=x.parent){const q=x.parent,k=q.children.indexOf(x);if(k>0){q.children.splice(k,1);q.children.unshift(x)}q._sel=0}
+  root().props.RE=[re];changed();renderInfo();
+  const n=sizeOf(root()),user=vs.ai===1?'W':'B',win=re[0]===user,lose=re[0]===(user==='B'?'W':'B');
+  if(vs.auto&&vs.level.id!=='max'&&(win||lose)){const ids=levelIds(n),i=ids.indexOf(vs.level.id);
+    if(i>=0){const j=win?Math.min(ids.length-2,i+1):Math.max(0,i-1);if(j!==i){ng.lv=ng.lv||{};ng.lv[n]=ids[j];ngSave();
+      vs.endMsg+=' '+(win?T('下一盘 AI 升到 {0}。',lvName(ids[j])):T('下一盘 AI 降到 {0}。',lvName(ids[j])))}}}
+  renderVs();render();
+  const uc=user==='B'?1:2;setTimeout(()=>{if(G&&G.id===vs.id){revOpen();revStart('std',uc)}},400);
+}
+function vsEnd(){ // 双方停一手：用 AI 判断死子并算出胜负
+  vs.over=true;vs.endMsg=T('双方停一手，AI 正在判断胜负…');renderVs();const node=cur;
+  AI.analyze(node).then(()=>{if(!vs||cur!==node)return;const n=sizeOf(root()),st=computeState(node,n),e=aiEstimate(node,st);if(!e)return;
+    const k=aiKomi(),r=root(),ha=parseInt(prop(r,'HA')||'0',10)||0,H=ha>=2?ha:0;
+    const lead=Math.round((e.aB+e.tB+e.dame/2-H/2-(e.aW+e.tW+e.dame/2+H/2)-k.komi)*2)/2;
+    const re=lead>0?'B+'+lead:lead<0?'W+'+(-lead):'0';
+    vsFinish(re,T('双方停一手，对局结束：{0}（AI 判断死子，可以按「数子 / 数目」确认）。',resultText(re)))}).catch(()=>{});
 }
 function vsUndo(){ // 悔棋：拿掉 AI 的一手和自己的一手
   if(!vs||vs.thinking)return;const user=vs.ai===1?'W':'B';let a=cur;const rm=nd=>{const p=nd.parent;if(!p||nd.children.length)return false;p.children.splice(p.children.indexOf(nd),1);p._sel=0;cur=p;return true};
   snap();const m=moveOf(a);if(m&&m[0]!==user){if(!rm(a))return;a=cur}
   const m2=moveOf(a);if(m2&&m2[0]===user)rm(a);
-  vs.over=false;vs.endMsg='';vs.msg='';vs.low=0;if(scoring)stopScoring();changed();render();renderVs();
+  vs.over=false;vs.finished=false;vs.endMsg='';vs.msg='';vs.low=0;if(scoring)stopScoring();changed();render();renderVs();
 }
 function vsStop(){vs=null;$('#vsBox').hidden=true}
 function renderVs(){
   if(!vs){return}const box=$('#vsBox');box.hidden=false;
   const r=root(),n=sizeOf(r),ha=parseInt(prop(r,'HA')||'0',10)||0,user=vs.ai===1?'W':'B';
-  $('#vsSub').textContent=[T('AI 棋力：{0}',T(vs.level.name)),T('{0} 路',n),ha>=2?T('让 {0} 子',ha):'',T('贴 {0} 目',prop(r,'KM')||'0')].filter(Boolean).join(' · ');
+  $('#vsSub').textContent=[T('AI 棋力：{0}',lvName(vs.level)),T('{0} 路',n),ha>=2?T('让 {0} 子',ha):'',T('贴 {0} 目',prop(r,'KM')||'0')].filter(Boolean).join(' · ');
   const st=AI.status(),msg=$('#vsMsg');let t='';msg.className='big';
   if(vs.over){t=vs.endMsg;msg.classList.add('ok')}
   else if(st==='loading')t=T('AI 下载中（约 {1} MB，只需下载一次）… {0}%',Math.round(AI.prog()*100),AI.net().mb);
@@ -3561,7 +3599,7 @@ function renderVs(){
   msg.textContent=t;
   $('#vsPass').disabled=$('#vsResign').disabled=vs.over||vs.thinking;$('#vsUndo').disabled=vs.thinking;
   $('#vsHint').setAttribute('aria-pressed',aiHint);
-  $('#vsTimeL').hidden=!vs.level.search;if(document.activeElement!==$('#vsTime'))$('#vsTime').value=String(prefs.aiPlayTime??5);
+  $('#vsTimeL').hidden=!vs.level.search;$('#vsUndo').disabled=vs.thinking||!!vs.finished;if(document.activeElement!==$('#vsTime'))$('#vsTime').value=String(prefs.aiPlayTime??5);
 }
 
 /* ---- 整盘分析：AI 把实战每一手都算一遍，找出胜率 / 目数大跌的手，整理成报告 ----
@@ -3626,7 +3664,7 @@ function revPraise(x,n){ // 好手的称赞文字
   if(x.why.includes('hard'))p.push(T('不容易想到：AI 第一感觉只有 {0}% 会下这里，算下去才发现这是最好的一手。',Math.max(1,Math.round(x.pp*100))));
   return p.join('');
 }
-function revStats(line,rows,n){ // 双方统计、关键手
+function revStats(line,rows,n,only){ // 双方统计、关键手
   const S={1:{good:0,great:0,streak:0,run:0,cnt:0,loss:0,top1:0,top3:0,cat:{'??':0,'?':0,'?!':0},ph:[[0,0],[0,0],[0,0]]},2:{good:0,great:0,streak:0,run:0,cnt:0,loss:0,top1:0,top3:0,cat:{'??':0,'?':0,'?!':0},ph:[[0,0],[0,0],[0,0]]}};
   const moves=[];
   for(let k=1;k<line.length;k++){const nd=line[k],m=moveOf(nd);if(!m||!rows[k]||!rows[k-1])continue;const c=m[0]==='B'?1:2,a=revPt(nd,n);if(a===null)continue;
@@ -3640,9 +3678,13 @@ function revStats(line,rows,n){ // 双方统计、关键手
       if(why.length)good=hard&&(critical||punish)?'!!':'!'}
     if(good){s.good++;if(good==='!!')s.great++}
     moves.push({k,c,a,loss,wd,cat,w0:pre.w,w1:post.w,good,why,pp:pre.pp,g2:pre.g2})}
-  let key=moves.filter(x=>x.cat==='??'||x.cat==='?');if(key.length<3)key=moves.filter(x=>x.cat); // 关键失误：先列恶手、大恶手
-  key=key.sort((x,y)=>y.loss-x.loss).slice(0,10).sort((x,y)=>x.k-y.k);
-  const goodList=moves.filter(x=>x.good).sort((x,y)=>(y.good.length-x.good.length)||(y.why.length-x.why.length)||((y.g2||0)-(x.g2||0))||((x.pp||1)-(y.pp||1))).slice(0,8).sort((x,y)=>x.k-y.k);
+  // 选手：重要程度 × 好不好学。正确下法就在附近（局部）、会让一块棋死活改变（结果明确）的优先；远处的大场判断排后
+  const mine=x=>!only||x.c===only,dist=(p,q)=>p<0||q<0||p==null||q==null?99:Math.max(Math.abs(p%n-q%n),Math.abs(((p/n)|0)-((q/n)|0)));
+  for(const x of moves){const pre=rows[x.k-1];x.local=dist(x.a,pre.b[0])<=3;x.clear=!!(rows[x.k]&&rows[x.k].g);
+    x.score=x.cat?x.loss*(1+(x.local?0.4:0)+(x.clear?0.5:0)):0;
+    const pm=x.k>1?revPt(line[x.k-1],n):null;x.gscore=x.good?(x.g2||0)+(x.why.includes('punish')?3:0)+(x.why.includes('hard')?2:0)+(dist(x.a,pm)<=3?1:0)+(x.good==='!!'?2:0):0}
+  const key=moves.filter(x=>x.cat&&mine(x)).sort((x,y)=>y.score-x.score).slice(0,10).sort((x,y)=>x.k-y.k);
+  const goodList=moves.filter(x=>x.good&&mine(x)).sort((x,y)=>y.gscore-x.gscore).slice(0,10).sort((x,y)=>x.k-y.k);
   let swing=null;for(const x of moves)if(!swing||Math.abs(x.w1-x.w0)>Math.abs(swing.w1-swing.w0))swing=x;
   return{S,moves,key,swing,goodList};
 }
@@ -3656,6 +3698,13 @@ function revSummary(st,n){ // 总评文字
     if(parts.length)out.push(T('{0}的优点：{1}。',c===1?T('黑'):T('白'),parts.join('，')))}
   if(st.swing)out.push(T('全局最大转折：第 {0} 手（{1} {2}），黑胜率从 {3}% 变成 {4}%。',st.swing.k,st.swing.c===1?T('黑'):T('白'),revName(st.swing.a,n),Math.round(st.swing.w0*100),Math.round(st.swing.w1*100)));
   return out;
+}
+function revLessons(st,line,rows,n){ // 最多 3 件：两个最该改的失误 + 一个值得记住的好手
+  const bad=[...st.key].sort((x,y)=>y.score-x.score),good=[...st.goodList].sort((x,y)=>y.gscore-x.gscore),out=[];
+  const takeBad=good.length?2:3;
+  for(const x of bad.slice(0,takeBad))out.push({k:x.k,t:T('第 {0} 手 {1}：{2}（损失 {3} 目）',x.k,revName(x.a,n),revExplain(x.k,line,rows,n).replace(/。$/,''),x.loss.toFixed(1))});
+  if(good[0]){const x=good[0];out.push({k:x.k,t:T('第 {0} 手 {1} 下得很好：{2}以后遇到类似局面可以这样下。',x.k,revName(x.a,n),revPraise(x,n))})}
+  return out.sort((a,b)=>a.k-b.k).map(o=>o.t);
 }
 function revGraphSvg(rows,key,mode,w,h,curK,good){ // 胜率 / 目数曲线
   const M=rows.length-1;if(M<1)return'';const X=k=>4+(w-8)*k/M;let o=`<svg viewBox="0 0 ${w} ${h}" width="100%" class="revg" xmlns="http://www.w3.org/2000/svg"><rect width="${w}" height="${h}" fill="#f4f2ee"/>`;
@@ -3690,10 +3739,10 @@ function revLoad(){ // 之前分析过、棋谱没改过，就直接显示
   const rec=store.games[G.id],sv=rec&&rec.review;
   rev=sv&&sv.key===gameKey(root())?{...sv,gid:G.id,running:false,stop:false,focus:null,graph:'wr'}:null;
 }
-async function revStart(){
-  if(rev&&rev.running)return;const mode=prefs.revMode||'std',line=revLine(),n=sizeOf(root());
+async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
+  if(rev&&rev.running)return;const mode=forceMode||prefs.revMode||'std',line=revLine(),n=sizeOf(root());
   if(line.length<3){flash(T('棋谱太短，没有可以分析的手'));return}
-  rev={key:gameKey(root()),gid:G.id,mode,visits:REV_MODES[mode],rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
+  rev={key:gameKey(root()),gid:G.id,mode,only:only||0,visits:REV_MODES[mode],rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
   anaStop();renderRev();const my=rev;
   try{await AI.load();my.net=AI.net().id;my.t0=performance.now();
     const own=new Array(line.length);
@@ -3703,7 +3752,7 @@ async function revStart(){
       if(my.i%4===0||my.i===line.length)renderRev()});
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
     for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
-    if(!my.stop&&rev===my){my.done=true;const rec=store.games[G.id];if(rec&&G.id===my.gid){rec.review={key:my.key,mode:my.mode,visits:my.visits,net:my.net,rows:my.rows,done:true,date:Date.now()};lsSet(store)}}
+    if(!my.stop&&rev===my){my.done=true;const rec=store.games[G.id];if(rec&&G.id===my.gid){rec.review={key:my.key,mode:my.mode,only:my.only,visits:my.visits,net:my.net,rows:my.rows,done:true,date:Date.now()};lsSet(store);renderLib()}}
   }catch(e){my.err=(e&&e.message)||String(e)}
   my.running=false;if(rev===my)renderRev();render();
 }
@@ -3721,10 +3770,11 @@ function renderRev(){
   else if(r&&!r.done&&!r.running)st=T('分析已停止（只完成一部分）');
   $('#revStatus').textContent=st;
   const res=$('#revRes');if(!r||!r.rows.some(Boolean)){res.innerHTML='';return}
-  const stt=revStats(line,r.rows,n),curK=line.indexOf(cur);
+  const stt=revStats(line,r.rows,n,r.only),curK=line.indexOf(cur);
   let h=`<div class="revgw">${revGraphSvg(r.rows,stt.key,r.graph,600,150,curK>=0?curK:null,stt.goodList)}</div>`;
   h+=`<div class="row" style="gap:6px"><span class="seg" id="revGraph"><button data-g="wr" aria-pressed="${r.graph==='wr'}">${T('胜率')}</button><button data-g="score" aria-pressed="${r.graph==='score'}">${T('目数')}</button></span><span class="note" style="margin:0">${T('点曲线可以跳到那一手')}</span></div>`;
   if(r.done||!r.running){
+    const les=revLessons(stt,line,r.rows,n);if(les.length)h+=`<div class="revles"><b>${T('这盘最该记住的 {0} 件事',les.length)}</b><ol>${les.map(t=>`<li>${revEsc(t)}</li>`).join('')}</ol></div>`;
     const sum=revSummary(stt,n);h+=`<div class="revsum">${sum.map(s=>`<p>${revEsc(s)}</p>`).join('')}</div>`;
     h+=`<div style="overflow-x:auto"><table class="score-t"><thead><tr><th></th><th>${T('黑')}</th><th>${T('白')}</th></tr></thead><tbody>`;
     const row=(lb,f)=>`<tr><td>${lb}</td><td>${f(stt.S[1])}</td><td>${f(stt.S[2])}</td></tr>`;
@@ -3747,13 +3797,15 @@ function revOverlay(n,X){ // 在棋盘上：跳到关键手时，用蓝圈 A 标
   return`<g pointer-events="none"><circle cx="${X(x)}" cy="${X(y)}" r="${U*0.44}" fill="none" stroke="#2E6FA8" stroke-width="4" stroke-dasharray="6 4"/><text x="${X(x)}" y="${X(y)}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,ui-monospace,monospace" font-weight="700" font-size="${U*0.42}" fill="#2E6FA8">A</text></g>`;
 }
 function revWrite(){ // 把分析写进棋谱：评论（作者 AI）、恶手记号、AI 推荐变化
-  if(!rev||!rev.rows.some(Boolean))return;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n);snap();
+  if(!rev||!rev.rows.some(Boolean))return;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n,rev.only);snap();
   const setAI=(nd,text)=>{const secs=secsOf(nd).filter(s=>s.author!=='AI');secs.push({author:'AI',text});const c=buildC(secs);if(c)nd.props.C=[c];else delete nd.props.C};
-  setAI(root(),revSummary(stt,n).join('\n'));
-  for(const x of stt.moves){if(!x.good)continue;const nd=line[x.k];
+  const les=revLessons(stt,line,rev.rows,n);
+  setAI(root(),(les.length?T('这盘最该记住的 {0} 件事',les.length)+'：\n'+les.map((t,i)=>(i+1)+'. '+t).join('\n')+'\n\n':'')+revSummary(stt,n).join('\n'));
+  const mineOnly=x=>!rev.only||x.c===rev.only;
+  for(const x of stt.moves){if(!x.good||!mineOnly(x))continue;const nd=line[x.k];
     setAI(nd,T('{0}！',x.good==='!!'?T('妙手'):T('好手'))+revPraise(x,n));
     if(!annoOf(nd)){delete nd.props.BM;delete nd.props.DO;nd.props.TE=[x.good==='!!'?'2':'1']}}
-  for(const x of stt.moves){if(!x.cat)continue;const nd=line[x.k],pre=rev.rows[x.k-1],pv=(pre.pv||[]).slice(0,8);
+  for(const x of stt.moves){if(!x.cat||!mineOnly(x))continue;const nd=line[x.k],pre=rev.rows[x.k-1],pv=(pre.pv||[]).slice(0,8);
     setAI(nd,T('{0}：损失 {1} 目（黑胜率 {2}% → {3}%）。',T(REV_CAT[x.cat]),x.loss.toFixed(1),Math.round(x.w0*100),Math.round(x.w1*100))+revExplain(x.k,line,rev.rows,n)+' '+T('AI 推荐：{0}',pv.map(m=>revName(m,n)).join(' ')));
     if(!annoOf(nd)){delete nd.props.TE;if(x.cat==='??')nd.props.BM=['2'];else if(x.cat==='?')nd.props.BM=['1'];else nd.props.DO=['']}
     // AI 推荐的变化：从失误前的局面开始
@@ -3765,7 +3817,7 @@ function revWrite(){ // 把分析写进棋谱：评论（作者 AI）、恶手�
   rev.key=gameKey(root());const rec=store.games[G.id];if(rec&&rec.review)rec.review.key=rev.key;
 }
 async function revDownload(){ // 下载报告（一个 HTML 文件，用浏览器打开，可以打印或另存 PDF）
-  if(!rev)return;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n),r=root();
+  if(!rev)return;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n,rev.only),r=root();
   const title=titleOf(r),sum=revSummary(stt,n);
   let h=`<!doctype html><html lang="${LANG==='en'?'en':'zh-CN'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${revEsc(T('AI 复盘报告'))} · ${revEsc(title)}</title>
 <style>body{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;max-width:860px;margin:24px auto;padding:0 16px;color:#1C2326;line-height:1.55}h1{font-size:1.5rem;margin:0 0 4px}h2{font-size:1.1rem;margin:28px 0 8px;border-bottom:2px solid #2F6B5A;padding-bottom:4px}
@@ -3773,6 +3825,7 @@ async function revDownload(){ // 下载报告（一个 HTML 文件，用浏览�
 .k{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;margin:14px 0;page-break-inside:avoid}.cat{display:inline-block;min-width:2em;text-align:center;border-radius:6px;color:#fff;background:#C0392B;padding:0 6px;margin-right:6px}.cat.d{background:#C27C0E}.cat.g{background:#2E8B57}
 @media(max-width:560px){.k{grid-template-columns:1fr}}@media print{h2{page-break-after:avoid}}</style></head><body>`;
   h+=`<h1>${revEsc(T('AI 复盘报告'))}</h1><div class="meta">${revEsc(title)} · ${revEsc(prop(r,'PB')||T('黑方'))} vs ${revEsc(prop(r,'PW')||T('白方'))} · ${revEsc(resultText(prop(r,'RE')))} · ${T('{0} 路',n)} · KataGo ${revEsc(T(AI_NETS[rev.net]?AI_NETS[rev.net].name:''))} · ${T('每手 {0} 次',rev.visits)}</div>`;
+  const les=revLessons(stt,line,rev.rows,n);if(les.length)h+=`<h2>${revEsc(T('这盘最该记住的 {0} 件事',les.length))}</h2><ol>${les.map(t=>`<li>${revEsc(t)}</li>`).join('')}</ol>`;
   h+=`<h2>${revEsc(T('总评'))}</h2>`+sum.map(s=>`<p>${revEsc(s)}</p>`).join('');
   h+=`<h2>${revEsc(T('黑胜率曲线'))}</h2>`+revGraphSvg(rev.rows,stt.key,'wr',800,180,null,stt.goodList)+`<h2>${revEsc(T('目数差（黑领先为正）'))}</h2>`+revGraphSvg(rev.rows,stt.key,'score',800,180,null,stt.goodList);
   h+=`<h2>${revEsc(T('双方统计'))}</h2><table><tr><th></th><th>${T('黑')}</th><th>${T('白')}</th></tr>`;
@@ -3986,7 +4039,8 @@ $('#ngHa').onchange=e=>{ng.ha=+e.target.value;ng.komi=ngDefaultKomi();renderNew(
 $('#ngKomi').onchange=e=>{const v=parseFloat(e.target.value);if(isFinite(v))ng.komi=v};
 $('#ngOpp').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.opp=b.dataset.v;renderNew()};
 $('#ngColor').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.color=b.dataset.v;renderNew()};
-$('#ngLevel').onchange=e=>{ng.level=e.target.value;renderNew();if(vs){vs.level=AI_LEVELS.find(l=>l.id===ng.level)||vs.level;renderVs()}};
+$('#ngLevel').onchange=e=>{ng.lv=ng.lv||{};ng.lv[ng.size]=e.target.value;ngSave();renderNew()};
+$('#ngName').oninput=e=>{ng.name=e.target.value};$('#ngAuto').onchange=e=>{ng.auto=e.target.checked;ngSave()};
 $('#aiToggle').onclick=()=>setAiHint(!aiHint);
 $('#revToggle').onclick=()=>$('#revBox').hidden?revOpen():revClose();
 $('#revClose').onclick=revClose;
