@@ -26,6 +26,9 @@
 - 「AI 分析」：显示候选点的胜率和计算次数、黑白胜率条、目数差，以及推荐变化
   - 思考时间可以选 1 秒、5 秒、10 秒、30 秒或不限，可以随时停止或继续
   - 推荐变化可以加进棋谱树
+- 「整盘分析」：AI 把每一手都算一遍，画出胜率和目数曲线，统计双方平均损失、和 AI 首选的吻合率，列出恶手、大恶手和中文说明（方向错误、次序错误、哪块棋变死等）
+  - 可以把分析写进棋谱（作者为「AI」的评论、恶手记号和 AI 推荐的变化），或下载报告（HTML，可打印或存成 PDF）
+- 「设置」可以选 AI 网络：轻量 b10（12 MB，用显卡）或强力 b18（30 MB，新一代网络，用 CPU）
 - 「新对局」：7、9、13、19 路棋盘，可以让子、设贴目
   - 可以和 AI 下，有 8 种棋力，从 25 级到最强
   - 也可以不用 AI，自己摆谱
@@ -45,7 +48,7 @@
 | `index.html` | 整个程序（单一网页） |
 | `sw.js` | 离线缓存，AI 模型只下载一次 |
 | `manifest.webmanifest`、`icon-*.png`、`apple-touch-icon.png` | 安装到桌面用 |
-| `katago/` | KataGo 神经网络（TensorFlow.js 格式，约 12 MB）和授权文件 |
+| `katago/` | KataGo 神经网络：b10（TensorFlow.js，`model.json` 和 3 个 `.bin`）、b18（ONNX，分成两个 `.bin`，因为 GitHub 网页上传每个文件不能超过 25 MB）和授权文件 |
 
 ## 自己架设
 
@@ -66,7 +69,8 @@
   - 网络的 TensorFlow.js 版本由 Yuji Ichikawa 转换。这里另外修改了它的计算方式，让 7、9、13 路小棋盘也能正确使用。
   - https://github.com/lightvector/KataGo
 - **goscorer**（David J Wu）：数目、双活和假眼判断，MIT 授权。https://github.com/lightvector/goscorer
-- **TensorFlow.js**：Apache 2.0 授权，从 jsDelivr 载入。
+- **TensorFlow.js**、**ONNX Runtime Web**：Apache 2.0 / MIT 授权，从 jsDelivr 载入。
+- b18 网络（kata1-b18c384nbt）的 ONNX 版本取自 OnnxGo-models，依照 KataGo 网络授权使用，见 [`katago/LICENSE-b18.txt`](katago/LICENSE-b18.txt)。
 - 落子和提子音效取自 MultiGo 4。
 
 ---
@@ -88,6 +92,8 @@
 
 **KataGo AI**
 - The AI runs on your own device; nothing is sent to a server.
+- **Game review:** analyses every move, draws win-rate and score graphs, gives per-player statistics, lists mistakes with explanations, and can write the review into the SGF or export an HTML report.
+- **Networks:** choose Light b10 (TensorFlow.js, GPU) or Strong b18 (ONNX Runtime Web, CPU) in Settings.
 - **Analysis:** MCTS search showing candidate moves with win rate and visit counts, plus the score lead and the best line. Thinking time can be 1/5/10/30 s or unlimited, and lines can be added to the game tree.
 - **New game:** 7×7, 9×9, 13×13 or 19×19 boards, with handicap and komi. Play the AI at 8 levels, from 25 kyu to strongest.
 
