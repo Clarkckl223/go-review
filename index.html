@@ -413,7 +413,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>变化</dt><dd>点空点试下。导航条 ↑↓ 换变化，★ 设为主线，🗑 删除。</dd>
         <dt>评论</dt><dd>先在「我是」选名字再写。</dd>
         <dt>AI</dt><dd>「AI 分析」看推荐点、胜率和变化，可设思考时间；「新对局」可和 AI 下。第一次下载约 12 MB。</dd>
-        <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」；可以写进棋谱，或下载报告。和 AI 下完会自动分析。</dd>
+        <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」。分析结果跟着棋谱同步到其他设备；连接 Drive 时报告也会存进 Drive。和 AI 下完会自动分析。</dd>
         <dt>AI 网络</dt><dd>在「设置」选：手机、4 核以下电脑用轻量 b10；6–8 核以上电脑用强力 b18；有独立显卡的电脑分析用 b10，形势判断用 b18。</dd>
         <dt>同步</dt><dd>按「连接 Drive」，电脑、手机、iPad 自动同步。</dd>
         <dt>分享</dt><dd>共享链接：大家一起写。快照链接：一次性副本。</dd>
@@ -744,6 +744,7 @@ const EN={
 '存 QR 图片':'Save QR image','链接太长，做不成 QR code':'The link is too long for a QR code','拿到链接或扫 QR code 的人，都看得到整盘棋和所有评论。':'Anyone with the link or QR code can see the whole game and all comments.',
 '找不到这个快照链接的棋谱':'Couldn’t find the game for this snapshot link',
 // 等级 / 名字 / 对局后报告
+'报告已存到 Google Drive「围棋复盘」文件夹':'Report saved to the “围棋复盘” folder in Google Drive',
 '{0} 级':'{0} kyu','{0} 段':'{0} dan','（按思考时间）':' (by thinking time)','我的名字':'My name','必填，会记在棋谱里':'Required, saved in the game record',
 '请先输入你的名字（会记在棋谱里）':'Please enter your name first (it’s saved in the game record)','自动调整棋力（赢了升一级，输了降一级）':'Auto-adjust strength (up a level when you win, down when you lose)',
 '下一盘 AI 升到 {0}。':'Next game the AI goes up to {0}.','下一盘 AI 降到 {0}。':'Next game the AI goes down to {0}.','双方停一手，AI 正在判断胜负…':'Both passed. The AI is working out the result…',
@@ -2959,7 +2960,7 @@ function renderLib(){
   if(!ids.length){el.innerHTML='<div class="empty">'+T('没有符合的棋谱。')+'</div>';return}
   el.innerHTML=ids.map(id=>{const g=store.games[id],m=metaOf(g);const d=new Date(g.updated);
     const shared=/XS\[/.test(g.sgf||'');
-    return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${shared?'⇄':g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}${g.review&&g.review.done&&g.review.key===g.key?`<span class="tag rep">${T('有报告')}</span>`:''}${m.tags.map(t=>`<span class="tag">${escH(t)}</span>`).join('')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
+    return`<button class="li${G&&id===G.id?' on':''}" data-id="${id}"><span class="k">${shared?'⇄':g.driveId?'☁':'·'}</span><span class="t">${escH(g.title||T('未命名'))}${(g.review&&g.review.done&&g.review.key===g.key)||/XR\[1:/.test(g.sgf||'')?`<span class="tag rep">${T('有报告')}</span>`:''}${m.tags.map(t=>`<span class="tag">${escH(t)}</span>`).join('')}</span><span class="x">${d.getMonth()+1}/${d.getDate()}</span></button>`}).join('');
 }
 function renderInfo(){document.querySelectorAll('[data-prop]').forEach(i=>{i.value=prop(root(),i.dataset.prop)});renderTagsInput()}
 
@@ -3738,6 +3739,23 @@ function revLoad(){ // 之前分析过、棋谱没改过，就直接显示
   if(rev&&rev.key===gameKey(root())&&rev.gid===G.id)return;
   const rec=store.games[G.id],sv=rec&&rec.review;
   rev=sv&&sv.key===gameKey(root())?{...sv,gid:G.id,running:false,stop:false,focus:null,graph:'wr'}:null;
+  if(rev)return;
+  const xr=prop(root(),'XR'),gid=G.id; // 别的设备做的分析：跟着棋谱（Drive / 分享链接）带过来
+  if(xr&&xr.startsWith('1:'))revUnpack(xr.slice(2)).then(o=>{
+    if(!o||!G||G.id!==gid||o.key!==gameKey(root())||(rev&&rev.done))return;
+    rev={...o,gid,done:true,running:false,stop:false,focus:null,graph:'wr'};
+    if(rec){rec.review={...o,done:true};lsSet(store);renderLib()}renderRev();render()}).catch(()=>{});
+}
+// 分析数据压缩后存进棋谱的 XR 栏位（其他围棋软件会忽略它）
+async function revPack(o){const data=new TextEncoder().encode(JSON.stringify(o));
+  const buf=await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer();return b64u.enc(new Uint8Array(buf))}
+async function revUnpack(str){const u=b64u.dec(str);
+  const buf=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();return JSON.parse(new TextDecoder().decode(buf))}
+async function revSaveShared(my){ // 分析完成：写进棋谱（跟着同步），再把 HTML 报告存到 Drive
+  if(typeof CompressionStream==='undefined')return;
+  try{const o={key:my.key,mode:my.mode,only:my.only,visits:my.visits,net:my.net,rows:my.rows,date:Date.now()};
+    if(!G||G.id!==my.gid)return;root().props.XR=['1:'+await revPack(o)];changed(false)}catch(e){console.warn('XR',e)}
+  try{if(Drive.connected()){const r=revReportHtml();if(r&&await Drive.saveReport(G.id,r.name,r.html))flash(T('报告已存到 Google Drive「围棋复盘」文件夹'))}}catch(e){console.warn('report to Drive',e)}
 }
 async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
   if(rev&&rev.running)return;const mode=forceMode||prefs.revMode||'std',line=revLine(),n=sizeOf(root());
@@ -3752,7 +3770,7 @@ async function revStart(forceMode,only){ // only：和 AI 对局时只看自己�
       if(my.i%4===0||my.i===line.length)renderRev()});
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
     for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
-    if(!my.stop&&rev===my){my.done=true;const rec=store.games[G.id];if(rec&&G.id===my.gid){rec.review={key:my.key,mode:my.mode,only:my.only,visits:my.visits,net:my.net,rows:my.rows,done:true,date:Date.now()};lsSet(store);renderLib()}}
+    if(!my.stop&&rev===my){my.done=true;const rec=store.games[G.id];if(rec&&G.id===my.gid){rec.review={key:my.key,mode:my.mode,only:my.only,visits:my.visits,net:my.net,rows:my.rows,done:true,date:Date.now()};lsSet(store);renderLib()}await revSaveShared(my)}
   }catch(e){my.err=(e&&e.message)||String(e)}
   my.running=false;if(rev===my)renderRev();render();
 }
@@ -3817,7 +3835,14 @@ function revWrite(){ // 把分析写进棋谱：评论（作者 AI）、恶手�
   rev.key=gameKey(root());const rec=store.games[G.id];if(rec&&rec.review)rec.review.key=rev.key;
 }
 async function revDownload(){ // 下载报告（一个 HTML 文件，用浏览器打开，可以打印或另存 PDF）
-  if(!rev)return;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n,rev.only),r=root();
+  const R=revReportHtml();if(!R)return;const{name,html:h}=R;
+  if(Drive.connected())Drive.saveReport(G.id,name,h).catch(()=>{});
+  let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
+  if(dl){try{await dl.save({filename:name+'.txt',data:h});flash(T('报告已下载。文件名最后的 .txt 删掉，用浏览器打开'))}catch(e){flash(e.code==='declined'?T('已取消下载'):e.message)}return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();flash(T('报告已下载，用浏览器打开就能看、打印或存成 PDF'));
+}
+function revReportHtml(){
+  if(!rev||!rev.rows.some(Boolean))return null;const n=sizeOf(root()),line=revLine(),stt=revStats(line,rev.rows,n,rev.only),r=root();
   const title=titleOf(r),sum=revSummary(stt,n);
   let h=`<!doctype html><html lang="${LANG==='en'?'en':'zh-CN'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${revEsc(T('AI 复盘报告'))} · ${revEsc(title)}</title>
 <style>body{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;max-width:860px;margin:24px auto;padding:0 16px;color:#1C2326;line-height:1.55}h1{font-size:1.5rem;margin:0 0 4px}h2{font-size:1.1rem;margin:28px 0 8px;border-bottom:2px solid #2F6B5A;padding-bottom:4px}
@@ -3841,10 +3866,8 @@ async function revDownload(){ // 下载报告（一个 HTML 文件，用浏览�
     h+=`<div class="k">${revBoardSvg(line[x.k],x.a,pre.b[0],pre.pv,n,260)}<div><b><span class="cat${x.cat==='?!'?' d':''}">${x.cat}</span>${T('第 {0} 手',x.k)} ${x.c===1?T('黑'):T('白')} ${revName(x.a,n)}</b><br>${T('损失 {0} 目',x.loss.toFixed(1))} · ${T('黑胜率 {0}% → {1}%',Math.round(x.w0*100),Math.round(x.w1*100))}<p>${revEsc(revExplain(x.k,line,rev.rows,n))}</p><p>${revEsc(T('AI 推荐：{0}',(pre.pv||[]).slice(0,8).map(m=>revName(m,n)).join(' ')))}</p></div></div>`}
   if(!stt.key.length)h+=`<p>${revEsc(T('没有明显的失误。'))}</p>`;
   h+=`<p class="meta" style="margin-top:32px">${revEsc(T('由 围棋复盘本 制作'))} · KataGo © David J Wu</p></body></html>`;
-  const d=new Date(),z=v=>String(v).padStart(2,'0'),name=`AI_Report_${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_`+fileName().replace(/\.sgf$/,'')+'.html';
-  let dl=null;try{dl=window.claude&&window.claude.use?await claude.use('downloads'):null}catch(e){}
-  if(dl){try{await dl.save({filename:name+'.txt',data:h});flash(T('报告已下载。文件名最后的 .txt 删掉，用浏览器打开'))}catch(e){flash(e.code==='declined'?T('已取消下载'):e.message)}return}
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([h],{type:'text/html;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();flash(T('报告已下载，用浏览器打开就能看、打印或存成 PDF'));
+  const name='AI_Report_'+fileName().replace(/\.sgf$/,'')+'.html'; // 同一盘棋固定文件名，Drive 上会更新同一个文件
+  return{name,html:h};
 }
 
 /* ===================== 存成图片 ===================== */
@@ -4112,7 +4135,15 @@ const Drive=(()=>{
     if(j.files&&j.files[0])return folderId=j.files[0].id;
     const c=await(await api(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:DRIVE_FOLDER,mimeType:'application/vnd.google-apps.folder'})})).json();
     return folderId=c.id}
-  function multipart(meta,text){const b='goreview'+Math.random().toString(36).slice(2);return{body:`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/x-go-sgf; charset=UTF-8\r\n\r\n${text}\r\n--${b}--`,type:'multipart/related; boundary='+b}}
+  function multipart(meta,text,ctype='application/x-go-sgf'){const b='goreview'+Math.random().toString(36).slice(2);return{body:`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: ${ctype}; charset=UTF-8\r\n\r\n${text}\r\n--${b}--`,type:'multipart/related; boundary='+b}}
+  // 整盘分析的 HTML 报告：存进同一个文件夹（同步只看 .sgf，不会把报告当成棋谱）；同一盘棋更新同一个文件
+  async function saveReport(id,name,html){
+    if(!ok())return false;const rec=store.games[id];
+    if(rec&&rec.reportDriveId){const m=multipart({name},html,'text/html');const r=await api(`${UP}/${rec.reportDriveId}?uploadType=multipart&fields=id`,{method:'PATCH',headers:{'Content-Type':m.type},body:m.body}).catch(()=>null);if(r&&r.ok)return true}
+    const f=await folder();const m=multipart({name,parents:[f],mimeType:'text/html'},html,'text/html');
+    const j=await(await api(`${UP}?uploadType=multipart&fields=id`,{method:'POST',headers:{'Content-Type':m.type},body:m.body})).json();
+    if(rec&&j.id){rec.reportDriveId=j.id;lsSet(store)}return!!j.id;
+  }
   const nameOf=rec=>{let r;try{r=parseSGF(rec.sgf)}catch(e){return(rec.title||'棋谱')+'.sgf'}return(titleOf(r)+(prop(r,'RE')?' '+prop(r,'RE'):'')).replace(/[\\/:*?"<>|·]/g,' ').replace(/\s+/g,' ').trim()+'.sgf'};
   async function upload(id){
     const rec=store.games[id];if(!rec)return;const sentAt=Date.now();const meta={name:nameOf(rec),appProperties:{key:(rec.key||'').slice(0,100),app:'go-review'}};let j;
@@ -4183,8 +4214,8 @@ const Drive=(()=>{
     ui();
   }
   function autoSync(){if(!on||!ok()||!$('#driveAuto').checked)return;clearTimeout(syncT);syncT=setTimeout(()=>syncAll(),2500)}
-  function trash(rec){if(!rec||!rec.driveId)return;(store.trashQueue=store.trashQueue||[]).push(rec.driveId);lsSet(store);if(ok())syncAll()}
-  return{init,autoSync,trash,connected:ok,available:on,ui,saveNow:()=>syncAll()};
+  function trash(rec){if(!rec)return;if(rec.reportDriveId)(store.trashQueue=store.trashQueue||[]).push(rec.reportDriveId);if(!rec.driveId){lsSet(store);return}(store.trashQueue=store.trashQueue||[]).push(rec.driveId);lsSet(store);if(ok())syncAll()}
+  return{init,autoSync,trash,saveReport,connected:ok,available:on,ui,saveNow:()=>syncAll()};
 })();
 
 /* ===================== QR code（qrcode-generator，Kazuhiko Arase，MIT 授权） ===================== */
