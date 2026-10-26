@@ -499,7 +499,8 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <div class="score-head"><b>整盘分析</b><span>AI 把实战每一手都算一遍，找出大失误，整理成报告。</span></div>
       <div class="score-opts" id="revEngineRow" hidden><span>用</span><span class="seg" id="revEngine"><button data-e="local">这台设备</button><button data-e="pc">家里电脑</button></span></div>
       <div class="score-opts">
-        <span>每手计算</span><span class="seg" id="revMode"><button data-m="fast">快速 1 次</button><button data-m="std">标准 16 次</button><button data-m="deep">深入 64 次</button></span>
+        <span>每手计算</span><span class="seg" id="revMode"><button data-m="fast">快速 1 次</button><button data-m="std">标准 16 次</button><button data-m="deep">深入 64 次</button><button data-m="v4">很深 256 次</button><button data-m="v5">最深 1000 次</button></span>
+        <label class="revCust">自订 <input id="revCustom" type="number" min="1" step="1" inputmode="numeric" placeholder="次数" style="width:6em"> 次</label> <small id="revEst" class="muted"></small>
         <button class="btn pri" id="revStart">开始分析</button>
       </div>
       <div class="status" id="revStatus"></div>
@@ -775,7 +776,7 @@ const EN={
 '做题':'Problems','死活题、手筋题练习册。':'Life-and-death and tesuji workbooks.','吃子入门':'Capturing basics','死活入门':'Life & death basics','老师':'Teacher','学生':'Student','{0} 分':'{0} pts','全班记录':'Class records','排行榜':'Leaderboard','登出':'Log out','没有登录：记录只存在这台设备（{0} 分）':'Not logged in: records stay on this device ({0} pts)','登录 / 加入班级':'Log in / join a class','{0} 题':'{0} problems','完成 {0}':'{0} done','班级':'Class','本机':'This device','新练习册':'New workbook','练习册':'Workbooks','还没有题目。':'No problems yet.','绿色：一次答对 · 蓝色：后来答对 · 红色：还没答对':'Green: right first time · Blue: right later · Red: not solved yet','新题目':'New problem','用目前棋局出题':'From current game','导入 SGF':'Import SGF','下载练习册':'Download workbook','删除练习册':'Delete workbook','第 {0} / {1} 题':'Problem {0} / {1}','黑先':'Black to play','白先':'White to play','答对了！':'Correct!','+{0} 分':'+{0} pts','对方应…':'Opponent replies…','在棋盘上点出你的答案。':'Click your answer on the board.','重做':'Retry','看答案':'Show answer','上一题':'Previous','下一题':'Next','修改这题':'Edit','删除这题':'Delete','不对，再想想。':'Not quite, think again.','这样不行。':'That doesn’t work.','白棋这样应，就不行了。':'After this reply it fails.','这是正确答案。再按「重做」自己下一次。':'That’s the answer. Press Retry to play it yourself.','看答案中…':'Showing the answer…','修改题目':'Edit problem','第 1 步：在棋盘上摆好题目的棋子。':'Step 1: set up the stones on the board.','标题':'Title','难度':'Difficulty','题目说明':'Question','例如：黑先活':'e.g. Black to live','放黑子':'Black stone','放白子':'White stone','擦掉':'Erase','下一步：摆答案':'Next: play the answer','取消':'Cancel','这条是正解':'Mark as correct','这条是错的':'Mark as wrong','回到开头':'Back to start','回去改棋子':'Edit stones','存进练习册':'Save to workbook','第 2 步：在棋盘上下出答案。正解下完按「这条是正解」；也可以回到开头，下错的变化再按「这条是错的」。':'Step 2: play the answer on the board and press “Mark as correct”. You can go back to the start and add wrong lines with “Mark as wrong”.','返回':'Back','学生登录':'Student login','班级代码':'Class code','名字':'Name','4 位数密码':'4-digit PIN','登录':'Log in','老师密码':'Teacher PIN','老师登录':'Teacher login','新班级名称':'New class name','老师名字':'Teacher name','设定老师密码':'Set teacher PIN','建立新班级':'Create class','第一次登录会用这个名字加入班级，并设定密码。之后在任何设备用同样的名字和密码登录，记录都在。':'The first login joins the class with this name and sets the PIN. Log in with the same name and PIN on any device to see your records.','分数':'Points','答对':'Solved','一次答对率':'First-try rate','对局':'Games','最近':'Last active','详细':'Details','重设密码':'Reset PIN','移出班级':'Remove','再点一次确认':'Click again to confirm','还没有学生。把班级代码 {0} 给学生，让他们登录。':'No students yet. Give them the class code {0} to log in.','班级已建立。班级代码：{0}（给学生登录用，请记下）':'Class created. Class code: {0} (students use it to log in; write it down)','找不到这个班级代码':'Class code not found','密码不对':'Wrong PIN','请填好班级代码、名字和 4 位数密码':'Please fill in the class code, name and 4-digit PIN','请填好班级名称、老师名字和 4–8 位数密码':'Please fill in the class name, teacher name and a 4–8 digit PIN','题目已存好':'Problem saved','请先摆好题目的棋子':'Set up the stones first','请摆出至少一条正解':'Play at least one correct line','导入了 {0} 题':'Imported {0} problems','已标为正解':'Marked as correct','已标为错误':'Marked as wrong','做题中':'Solving a problem','按「做题」打开练习册（有入门吃子、死活题）。老师可以建立班级、出题、导入 SGF 题库；学生用班级代码 + 名字 + 4 位数密码登录，做题记录和积分会跨设备保存。':'Press “Problems” for workbooks (capturing and life-and-death basics included). Teachers can create a class, make problems and import SGF collections; students log in with class code + name + 4-digit PIN and their records and points follow them across devices.',
 // 家里电脑
 '用':'Use','这台设备':'This device','家里电脑':'Home PC','家里电脑（KataGo）':'Home PC (KataGo)','配对码':'Pairing code','产生配对码':'New pairing code',
-'快速 {0} 次':'Fast ({0})','标准 {0} 次':'Standard ({0})','深入 {0} 次':'Deep ({0})','KataGo（家里电脑）':'KataGo (home PC)',
+'快速 {0} 次':'Fast ({0})','标准 {0} 次':'Standard ({0})','深入 {0} 次':'Deep ({0})','很深 {0} 次':'Deeper ({0})','最深 {0} 次':'Deepest ({0})','预计约 {0}':'About {0}','{0} 秒':'{0} s','{0} 分钟':'{0} min','{0} 小时':'{0} h','自订':'Custom','次数':'visits','KataGo（家里电脑）':'KataGo (home PC)',
 '家里电脑分析中：已分析 {0} / {1} 个局面':'Home PC analysing: {0} / {1} positions','已送到家里电脑，等它开始…':'Sent to the home PC, waiting for it to start…',
 '家里电脑目前离线，开机并执行小程序后会自动开始分析（可以先关掉这页）':'The home PC is offline. Analysis starts automatically once it is on and the program is running (you can close this page).',
 '还没设定。':'Not set up yet.','检查中…':'Checking…','电脑还没连上过。请在电脑上执行小程序并输入这个配对码。':'The PC hasn’t connected yet. Run the program on the PC and enter this code.',
@@ -2693,7 +2694,7 @@ const savedText=()=>(typeof Shared!=='undefined'&&Shared.isShared())?(Shared.pen
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
 let prefs={sound:'on'};
-try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.pcCode)prefs.pcCode=v.pcCode;if(v.revEngine)prefs.revEngine=v.revEngine;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
+try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.revCustom)prefs.revCustom=v.revCustom;if(v.revRateL)prefs.revRateL=v.revRateL;if(v.revRateP)prefs.revRateP=v.revRateP;if(v.pcCode)prefs.pcCode=v.pcCode;if(v.revEngine)prefs.revEngine=v.revEngine;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
 function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}syncPrefUI();render()}
 function syncPrefUI(){document.querySelectorAll('[data-pref]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===prefs[g.dataset.pref])))}
 const SND={};
@@ -3648,7 +3649,13 @@ function renderVs(){
 /* ---- 整盘分析：AI 把实战每一手都算一遍，找出胜率 / 目数大跌的手，整理成报告 ----
    做法和 KaTrain、AI Sensei 类似：每个局面算出「最好下法时的目数」，
    实战这一手之后的目数比之前少了多少，就是这一手的损失。 */
-const REV_MODES={fast:1,std:16,deep:64};
+const REV_MODES={fast:1,std:16,deep:64,v4:256,v5:1000};
+function revVisits(eng,mode){const c=+prefs.revCustom||0;if(c>0)return Math.max(1,Math.min(eng==='pc'?20000:5000,Math.round(c)));return(eng==='pc'?REV_PC_VISITS:REV_MODES)[mode]||(eng==='pc'?200:16)}
+function revSaveRate(k,v){if(!(v>0))return;prefs['revRate'+k]=Math.round(v);try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}}
+function revEstimate(eng,visits,positions){ // 预计时间：用上次实际量到的速度；没有的话用大概的数字
+  let rate=eng==='pc'?(prefs.revRateP||1500):(prefs.revRateL||(aiNetId()==='b18'?1.5:aiDevice().discrete||!aiDevice().mobile?300:60));
+  let sec=eng!=='pc'&&visits<=1?positions*(aiNetId()==='b18'?0.6:0.03):positions*visits/rate;if(eng==='pc')sec+=10;
+  return sec<90?T('{0} 秒',Math.max(5,Math.round(sec/5)*5)):sec<5400?T('{0} 分钟',Math.round(sec/60)):T('{0} 小时',(sec/3600).toFixed(1))}
 var rev=null; // {key, mode, visits, net, rows:[...], running, stop, i, total, focus, graph:'wr'}
 function revLine(){const out=[root()];let n=root();while(n.children.length){n=n.children[0];out.push(n)}return out}
 function revName(m,n){return m<0?T('停一手'):COLS[m%n]+(n-((m/n)|0))}
@@ -3801,6 +3808,7 @@ async function revSaveShared(my){ // 分析完成：写进棋谱（跟着同步�
 }
 async function revLocal(my,line,n){ // 用这台设备的 AI 算
   await AI.load();my.net=AI.net().id;my.t0=performance.now();
+  const tL=performance.now();
     const own=new Array(line.length);
     await revEvalNodes(line,my.visits,(k,r)=>{own[k]=r.own;delete r.own;my.rows[k]={w:+r.w.toFixed(4),l:+r.l.toFixed(2),b:r.b,pv:r.pv,pp:+(+r.pp).toFixed(3)};if(r.g2!=null)my.rows[k].g2=+r.g2.toFixed(1);my.i++;
       if(k>=1&&own[k-1]){const m=moveOf(line[k]);if(m)my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
@@ -3808,11 +3816,12 @@ async function revLocal(my,line,n){ // 用这台设备的 AI 算
       if(my.i%4===0||my.i===line.length)renderRev()});
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
     for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
+  if(!my.stop&&my.visits>=16){const sec=(performance.now()-tL)/1000;if(sec>3)revSaveRate('L',my.visits*line.length/sec)}
 }
 async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
   if(rev&&rev.running)return;const mode=forceMode||prefs.revMode||'std',line=revLine(),n=sizeOf(root());
   if(line.length<3){flash(T('棋谱太短，没有可以分析的手'));return}
-  rev={key:gameKey(root()),gid:G.id,mode,only:only||0,visits:REV_MODES[mode],rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
+  rev={key:gameKey(root()),gid:G.id,mode,forced:!!forceMode,only:only||0,visits:forceMode?REV_MODES[mode]:revVisits('local',mode),rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
   anaStop();renderRev();const my=rev;
   const usePc=prefs.revEngine==='pc'&&PC.on();
   try{if(usePc)await revStartPC(my,line,n);else await revLocal(my,line,n);
@@ -3823,10 +3832,12 @@ async function revStart(forceMode,only){ // only：和 AI 对局时只看自己�
 function revGo(k){const line=revLine();const nd=line[k];if(!nd)return;for(let x=nd;x.parent;x=x.parent)x.parent._sel=x.parent.children.indexOf(x);rev.focus=k;cur=nd;render();soundFor(nd)}
 function renderRev(){
   const box=$('#revBox');if(!box||box.hidden)return;
-  document.querySelectorAll('#revMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===(prefs.revMode||'std')));
+  const cust=+prefs.revCustom||0;document.querySelectorAll('#revMode button').forEach(b=>b.setAttribute('aria-pressed',!cust&&b.dataset.m===(prefs.revMode||'std')));
   const pcOn=PC.on(),eng=pcOn&&prefs.revEngine==='pc'?'pc':'local';$('#revEngineRow').hidden=!pcOn;
   document.querySelectorAll('#revEngine button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.e===eng));
-  document.querySelectorAll('#revMode button').forEach(b=>{const m=b.dataset.m,v=eng==='pc'?REV_PC_VISITS[m]:REV_MODES[m];b.textContent=T({fast:'快速 {0} 次',std:'标准 {0} 次',deep:'深入 {0} 次'}[m],v)});
+  document.querySelectorAll('#revMode button').forEach(b=>{const m=b.dataset.m,v=eng==='pc'?REV_PC_VISITS[m]:REV_MODES[m];b.textContent=T({fast:'快速 {0} 次',std:'标准 {0} 次',deep:'深入 {0} 次',v4:'很深 {0} 次',v5:'最深 {0} 次'}[m],v)});
+  const ci=$('#revCustom');if(document.activeElement!==ci)ci.value=cust||'';ci.max=eng==='pc'?20000:5000;
+  $('#revEst').textContent=T('预计约 {0}',revEstimate(eng,revVisits(eng,prefs.revMode||'std'),revLine().length));
   const n=sizeOf(root()),line=revLine(),r=rev;
   $('#revStart').textContent=r&&r.running?T('停止'):r&&r.done?T('重新分析'):T('开始分析');
   let st='';
@@ -3924,7 +3935,7 @@ function revReportHtml(){
 /* ---- 家里电脑（KataGo）：手机把整盘分析的任务放进 Firebase，电脑上的小程序算好再传回来 ----
    位置：games/pc_<配对码>/layers/{job, res, hb}
    job：要分析的棋局；res：电脑传回的进度和结果；hb：电脑每分钟报一次「我在线」 */
-const REV_PC_VISITS={fast:50,std:200,deep:800};
+const REV_PC_VISITS={fast:50,std:200,deep:800,v4:2000,v5:5000};
 const OWN_ALPH='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
 function pcGtp(p,n){return p<0?'pass':COLS[p%n]+(n-((p/n)|0))}
 function pcIdx(s,n){if(!s||/^pass$/i.test(s))return -1;const x=COLS.indexOf(s[0].toUpperCase()),y=n-parseInt(s.slice(1),10);return x>=0&&y>=0&&y<n?y*n+x:-1}
@@ -3947,19 +3958,20 @@ function pcJob(line,n,visits){ // 把实战主线变成 KataGo 分析引擎看�
     rules:guessRule()==='jp'?'japanese':'chinese',initialStones:init,initialPlayer:nextColor(r),moves,created:Date.now()};
 }
 async function revStartPC(my,line,n){ // 由 revStart 叫：等电脑算好，转成和本机分析一样的格式
-  const job=pcJob(line,n,REV_PC_VISITS[my.mode]||200);my.visits=job.visits;my.net=T('KataGo（家里电脑）');my.pc={state:'sent',hb:null};
+  const job=pcJob(line,n,my.forced?REV_PC_VISITS[my.mode]||200:revVisits('pc',my.mode));let tRun=0;my.visits=job.visits;my.net=T('KataGo（家里电脑）');my.pc={state:'sent',hb:null};
   const hb=await PC.status();my.pc.hb=hb;renderRev();
   await PC.send(job);
   await new Promise((resolve,reject)=>{
     const chk=setInterval(()=>{if(my.stop){clearInterval(chk);PC.stop();resolve()}},500);
     PC.watch(job.id,o=>{
       if(o.state==='error'){clearInterval(chk);PC.stop();reject(new Error(o.msg||'KataGo'))}
-      else if(o.state==='running'){my.pc.state='running';my.i=o.done||0;my.total=o.total||line.length;if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;renderRev()}
+      else if(o.state==='running'){if(!tRun)tRun=performance.now();my.pc.state='running';my.i=o.done||0;my.total=o.total||line.length;if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;renderRev()}
       else if(o.state==='done'){clearInterval(chk);PC.stop();
         if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;
         const own=(o.own||[]).map(s=>s?pcOwnDec(s,n):null);
         line.forEach((nd,k)=>{const r=o.rows&&o.rows[k];if(!r)return;my.rows[k]=r;
           if(k>=1&&own[k-1]&&own[k]){const m=moveOf(nd);if(m)r.g=revGroupText(nd,own[k-1],own[k],n,m[0]==='B'?1:2)}});
+        if(tRun){const sec=(performance.now()-tRun)/1000;if(sec>5)revSaveRate('P',job.visits*line.length/sec)}
         my.i=line.length;resolve()}
     });
   });
@@ -4454,7 +4466,8 @@ $('#revEngine').onclick=e=>{const b=e.target.closest('button');if(!b)return;pref
 $('#pcCode').onchange=e=>pcSetCode(e.target.value);$('#pcNew').onclick=pcNewCode;
 document.querySelector('.tab[data-tab="prefs"]').addEventListener('click',()=>setTimeout(renderPcSet,50));
 $('#revStart').onclick=()=>{if(rev&&rev.running){rev.stop=true;return}revStart()};
-$('#revMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revMode=b.dataset.m;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
+$('#revCustom').oninput=e=>{const v=Math.round(+e.target.value)||0;prefs.revCustom=v>0?v:0;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
+$('#revMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revMode=b.dataset.m;prefs.revCustom=0;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
 $('#revRes').addEventListener('click',e=>{
   const g=e.target.closest('#revGraph button');if(g){rev.graph=g.dataset.g;renderRev();return}
   const k=e.target.closest('.revk');if(k){revGo(+k.dataset.k);return}
