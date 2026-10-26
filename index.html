@@ -197,6 +197,20 @@ body.is-training #tree,body.is-training #vars{visibility:hidden}
 .qr{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .qrimg{width:170px;height:170px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
 .qrimg svg{width:100%;height:100%;display:block}
+/* 做题 */
+.tsbar{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:.88rem}.tsbar span{margin-right:auto}
+.tsbooks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tsbook{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:10px 12px 14px}
+.tsbook span{font-size:.8rem;color:var(--muted)}.tsbook i{position:absolute;left:0;bottom:0;height:4px;background:#2E8B57}
+.tsgrid{display:flex;flex-wrap:wrap;gap:6px}
+.tsp{width:46px;height:46px;border:1px solid var(--line);border-radius:8px;background:var(--panel);display:inline-flex;flex-direction:column;align-items:center;justify-content:center;font-weight:600;font-variant-numeric:tabular-nums}
+.tsp small{font-size:.55rem;color:#C27C0E;font-weight:400}.tsp.g{background:#2E8B57;color:#fff;border-color:#2E8B57}.tsp.b{background:#2E6FA8;color:#fff;border-color:#2E6FA8}.tsp.r{background:#C0392B22;border-color:#C0392B}
+.tsp.g small,.tsp.b small{color:#fff}
+.tsq{margin:0;font-size:1.05rem;font-family:var(--f-display)}.tsq .dot{width:14px;height:14px;display:inline-block;vertical-align:-2px}
+.stars{color:#C27C0E}
+#tsBody .score-t td,#tsBody .score-t th{white-space:nowrap}
+body.is-ts aside,body.is-ts .tools,body.is-ts .nav,body.is-ts #vars,body.is-ts #judgeBar,body.is-ts #aiBar{display:none!important}
+body.is-ts .app{grid-template-columns:minmax(0,1fr)}
 .prefs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;align-items:center;font-size:.9rem}
 .prefs label{color:var(--muted)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
@@ -287,6 +301,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
     <div class="top-actions">
       <button class="btn" id="langBtn" title="English / 中文">EN</button>
       <button class="btn" id="shareBtn">分享</button>
+      <button class="btn" id="tsToggle" aria-pressed="false">做题</button>
       <button class="btn" id="helpBtn">说明</button>
       <button class="btn" id="installBtn" hidden>安装 App</button>
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
@@ -414,6 +429,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>评论</dt><dd>先在「我是」选名字再写。</dd>
         <dt>AI</dt><dd>「AI 分析」看推荐点、胜率和变化，可设思考时间；「新对局」可和 AI 下。第一次下载约 12 MB。</dd>
         <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」。分析结果跟着棋谱同步到其他设备；连接 Drive 时报告也会存进 Drive。和 AI 下完会自动分析。</dd>
+        <dt>做题</dt><dd>按「做题」打开练习册（有入门吃子、死活题）。老师可以建立班级、出题、导入 SGF 题库；学生用班级代码 + 名字 + 4 位数密码登录，做题记录和积分会跨设备保存。</dd>
         <dt>家里电脑</dt><dd>在「设置」产生配对码，家里电脑执行 katago_bridge.py 并输入同一个码；「整盘分析」选「家里电脑」，结果会传回手机。</dd>
         <dt>AI 网络</dt><dd>在「设置」选：手机、4 核以下电脑用轻量 b10；6–8 核以上电脑用强力 b18；有独立显卡的电脑分析用 b10，形势判断用 b18。</dd>
         <dt>同步</dt><dd>按「连接 Drive」，电脑、手机、iPad 自动同步。</dd>
@@ -472,6 +488,11 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       </div>
       <p class="note" id="ngNote" style="margin:0"></p>
       <div class="row"><button class="btn pri" id="ngStart">开始</button><button class="btn" id="ngClose">关闭</button></div>
+    </div>
+
+    <div class="score ts" id="tsBox" hidden>
+      <div class="score-head"><b>做题</b><span>死活题、手筋题练习册。</span><button class="btn" id="tsClose" style="margin-left:auto">关闭</button></div>
+      <div id="tsBody" class="stack"></div>
     </div>
 
     <div class="score" id="revBox" hidden>
@@ -750,6 +771,8 @@ const EN={
 // QR / 短链接
 '存 QR 图片':'Save QR image','链接太长，做不成 QR code':'The link is too long for a QR code','拿到链接或扫 QR code 的人，都看得到整盘棋和所有评论。':'Anyone with the link or QR code can see the whole game and all comments.',
 '找不到这个快照链接的棋谱':'Couldn’t find the game for this snapshot link',
+// 做题
+'做题':'Problems','死活题、手筋题练习册。':'Life-and-death and tesuji workbooks.','吃子入门':'Capturing basics','死活入门':'Life & death basics','老师':'Teacher','学生':'Student','{0} 分':'{0} pts','全班记录':'Class records','排行榜':'Leaderboard','登出':'Log out','没有登录：记录只存在这台设备（{0} 分）':'Not logged in: records stay on this device ({0} pts)','登录 / 加入班级':'Log in / join a class','{0} 题':'{0} problems','完成 {0}':'{0} done','班级':'Class','本机':'This device','新练习册':'New workbook','练习册':'Workbooks','还没有题目。':'No problems yet.','绿色：一次答对 · 蓝色：后来答对 · 红色：还没答对':'Green: right first time · Blue: right later · Red: not solved yet','新题目':'New problem','用目前棋局出题':'From current game','导入 SGF':'Import SGF','下载练习册':'Download workbook','删除练习册':'Delete workbook','第 {0} / {1} 题':'Problem {0} / {1}','黑先':'Black to play','白先':'White to play','答对了！':'Correct!','+{0} 分':'+{0} pts','对方应…':'Opponent replies…','在棋盘上点出你的答案。':'Click your answer on the board.','重做':'Retry','看答案':'Show answer','上一题':'Previous','下一题':'Next','修改这题':'Edit','删除这题':'Delete','不对，再想想。':'Not quite, think again.','这样不行。':'That doesn’t work.','白棋这样应，就不行了。':'After this reply it fails.','这是正确答案。再按「重做」自己下一次。':'That’s the answer. Press Retry to play it yourself.','看答案中…':'Showing the answer…','修改题目':'Edit problem','第 1 步：在棋盘上摆好题目的棋子。':'Step 1: set up the stones on the board.','标题':'Title','难度':'Difficulty','题目说明':'Question','例如：黑先活':'e.g. Black to live','放黑子':'Black stone','放白子':'White stone','擦掉':'Erase','下一步：摆答案':'Next: play the answer','取消':'Cancel','这条是正解':'Mark as correct','这条是错的':'Mark as wrong','回到开头':'Back to start','回去改棋子':'Edit stones','存进练习册':'Save to workbook','第 2 步：在棋盘上下出答案。正解下完按「这条是正解」；也可以回到开头，下错的变化再按「这条是错的」。':'Step 2: play the answer on the board and press “Mark as correct”. You can go back to the start and add wrong lines with “Mark as wrong”.','返回':'Back','学生登录':'Student login','班级代码':'Class code','名字':'Name','4 位数密码':'4-digit PIN','登录':'Log in','老师密码':'Teacher PIN','老师登录':'Teacher login','新班级名称':'New class name','老师名字':'Teacher name','设定老师密码':'Set teacher PIN','建立新班级':'Create class','第一次登录会用这个名字加入班级，并设定密码。之后在任何设备用同样的名字和密码登录，记录都在。':'The first login joins the class with this name and sets the PIN. Log in with the same name and PIN on any device to see your records.','分数':'Points','答对':'Solved','一次答对率':'First-try rate','对局':'Games','最近':'Last active','详细':'Details','重设密码':'Reset PIN','移出班级':'Remove','再点一次确认':'Click again to confirm','还没有学生。把班级代码 {0} 给学生，让他们登录。':'No students yet. Give them the class code {0} to log in.','班级已建立。班级代码：{0}（给学生登录用，请记下）':'Class created. Class code: {0} (students use it to log in; write it down)','找不到这个班级代码':'Class code not found','密码不对':'Wrong PIN','请填好班级代码、名字和 4 位数密码':'Please fill in the class code, name and 4-digit PIN','请填好班级名称、老师名字和 4–8 位数密码':'Please fill in the class name, teacher name and a 4–8 digit PIN','题目已存好':'Problem saved','请先摆好题目的棋子':'Set up the stones first','请摆出至少一条正解':'Play at least one correct line','导入了 {0} 题':'Imported {0} problems','已标为正解':'Marked as correct','已标为错误':'Marked as wrong','做题中':'Solving a problem','按「做题」打开练习册（有入门吃子、死活题）。老师可以建立班级、出题、导入 SGF 题库；学生用班级代码 + 名字 + 4 位数密码登录，做题记录和积分会跨设备保存。':'Press “Problems” for workbooks (capturing and life-and-death basics included). Teachers can create a class, make problems and import SGF collections; students log in with class code + name + 4-digit PIN and their records and points follow them across devices.',
 // 家里电脑
 '用':'Use','这台设备':'This device','家里电脑':'Home PC','家里电脑（KataGo）':'Home PC (KataGo)','配对码':'Pairing code','产生配对码':'New pairing code',
 '快速 {0} 次':'Fast ({0})','标准 {0} 次':'Standard ({0})','深入 {0} 次':'Deep ({0})','KataGo（家里电脑）':'KataGo (home PC)',
@@ -2647,6 +2670,7 @@ function openRoot(r,{id=null,driveId=null}={}){
     }else{ id=newId(); store.games[id]={sgf:toSGF(r),key,title:titleOf(r),updated:Date.now(),driveId}; setTimeout(()=>Drive.autoSync(),0); }
   }
   if(vs&&vs.id!==id)vsStop();
+  if(ts&&id!=='__ts'){ts=null;tsCrop=null;document.body.classList.remove('is-ts');if(tsView==='solve'||tsView==='edit')tsView='home'}
   if(rev&&rev.gid!==id){if(rev.running)rev.stop=true;rev=null}
   G={id,root:r}; store.lastId=id; lsSet(store);
   cur=r; undoStack=[];redoStack=[];undoUI(); if(!$('#revBox').hidden)revLoad(); renderWho(); renderTree(); render(); renderLib(); renderInfo();
@@ -2656,6 +2680,7 @@ function importText(t,opts){const r=parseSGF(fixFoxSgf(t));openRoot(r,opts);retu
 
 let saveT=null;
 function changed(structural=true){
+  if(G&&G.id==='__ts'){if(structural)renderTree();return} // 做题、出题用的临时棋盘：不存进「我的棋谱」
   if(structural)renderTree();
   const rec=store.games[G.id]||(store.games[G.id]={});
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
@@ -2797,6 +2822,7 @@ function render(){
   const r=root(),n=sizeOf(r),st=computeState(cur,n);
   const W=PAD*2+U*(n-1);
   const svg=$('#board');svg.setAttribute('viewBox',`0 0 ${W} ${W}`);
+  if(tsCrop&&ts&&ts.mode==='solve'){const[x0,y0,x1,y1]=tsCrop,a=x0===0?0:PAD+U*x0-U*0.7,b=y0===0?0:PAD+U*y0-U*0.7,c=x1===n-1?W:PAD+U*x1+U*0.7,d=y1===n-1?W:PAD+U*y1+U*0.7;svg.setAttribute('viewBox',`${a} ${b} ${c-a} ${d-b}`)}
   const X=i=>PAD+U*i;
   let o=`<defs>
   <radialGradient id="gB" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#6b6b6b"/><stop offset=".45" stop-color="#1e1e1e"/><stop offset="1" stop-color="#050505"/></radialGradient>
@@ -2832,7 +2858,7 @@ function render(){
   }
   // AI 提示
   if(aiHint&&!train&&!scoring&&!exporting)o+=aiOverlay(n,X);
-  if(!exporting)o+=revOverlay(n,X);
+  if(!exporting)o+=revOverlay(n,X)+tsOverlay(n,X);
   // 最后一手
   if(!scoring&&!judging&&st.last&&!st.last.pass&&!(showNums&&st.nums.has(st.last.y*n+st.last.x))){const c=st.last.color==='B';o+=`<circle cx="${X(st.last.x)}" cy="${X(st.last.y)}" r="${U*0.2}" fill="none" stroke="${c?'#ffffff':'#1a1a1a'}" stroke-width="2.5"/>`}
   // 好手 / 恶手：在这一手的棋子右上角画小标
@@ -3947,6 +3973,284 @@ function renderPcSet(){ // 设置分页：配对码和电脑状态
 function pcSetCode(v){prefs.pcCode=(v||'').replace(/[^A-Za-z0-9]/g,'').slice(0,24);try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}renderPcSet();renderRev()}
 function pcNewCode(){const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(10);crypto.getRandomValues(u);pcSetCode([...u].map(x=>a[x%a.length]).join(''))}
 
+/* ===================== 练习题：练习册、做题、出题、班级、积分 =====================
+   题目 = SGF：根节点摆好棋子（AB/AW）、PL 谁先下、C 题目说明；答案是变化树，
+   正解的最后一手评论里有 RIGHT（或「正解」），错的有 WRONG。不在树里的下法都算错。
+   班级资料放在 Firebase：games/cls_<班级代码>/layers/{meta, b_<练习册>, u_<学生>} */
+const TS_BUILTIN=[{"id": "starter-cap", "title": "吃子入门", "builtin": true, "problems": [{"id": "c1", "title": "提子", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[提子]C[黑先，把白子提掉。]PL[B]AB[br][cs][dr]AW[cr];B[cq]C[RIGHT 提掉了！])"}, {"id": "c2", "title": "双打吃", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[双打吃]C[黑先，一手同时打吃两块白棋。]PL[B]AB[bq][cr][fq][er]AW[cq][eq];B[dq](;W[cp];B[ep]C[RIGHT 双打吃，白只能救一边。])(;W[ep];B[cp]C[RIGHT 双打吃，白只能救一边。]))"}, {"id": "c3", "title": "征子", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[征子]C[黑先，用征子吃掉白子。要注意从哪一边打吃。]PL[B]AB[fo][go][ep]AW[fp](;B[fq];W[gp];B[hp]C[RIGHT 征子成立，白子往边上逃，逃不掉。])(;B[gp];W[fq]C[WRONG 方向错了，白往左下逃，征子不成立。]))"}, {"id": "c4", "title": "倒扑", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[倒扑]C[黑先，先送一子，再把白棋整块吃掉。]PL[B]AB[aq][bq][cq][dq][eq][fq][gq][gr][gs][ar][br][cr]AW[dr][er][fr][cs][fs];B[ds];W[es];B[ds]C[RIGHT 倒扑成功，吃掉五子！])"}]}, {"id": "starter-ld", "title": "死活入门", "builtin": true, "problems": [{"id": "l1", "title": "杀直三", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀直三]C[黑先，把白棋杀掉。]PL[B]AB[aq][bq][cq][dq][eq][er][es]AW[ar][br][cr][dr][ds](;B[bs]C[RIGHT 点在中间，白棋只剩一只眼。])(;B[as];W[bs]C[WRONG 白下在中间，做成两只眼。])(;B[cs];W[bs]C[WRONG 白下在中间，做成两只眼。]))"}, {"id": "l2", "title": "弯三做活", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[弯三做活]C[黑先，让黑棋活下来。]PL[B]AB[aq][bq][br][cr][cs]AW[ap][bp][cp][cq][dq][dr][ds](;B[as]C[RIGHT 下在角上，做成两只眼，活了！])(;B[ar];W[as]C[WRONG 白点在角上，黑只剩一只眼。])(;B[bs];W[as]C[WRONG 白点在角上，黑只剩一只眼。]))"}, {"id": "l3", "title": "杀丁四", "level": 3, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀丁四]C[黑先，把白棋杀掉。]PL[B]AB[aq][ap][bp][cp][dp][ep][eq][fq][fr][fs]AW[as][ar][br][bq][cq][dq][dr][er][es](;B[cs]C[RIGHT 点在丁四的中心，白棋活不了。])(;B[bs];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[ds];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[cr];W[cs]C[WRONG 白占到中心，做成两只眼。]))"}]}];
+const TS_KEY='goReview.ts';
+let tsStore=(()=>{try{return JSON.parse(localStorage.getItem(TS_KEY))||{}}catch(e){return{}}})();
+tsStore.books=tsStore.books||{};tsStore.log=tsStore.log||{};
+function tsSave(){try{localStorage.setItem(TS_KEY,JSON.stringify(tsStore))}catch(e){}}
+let ts=null,tsView='home',tsBookId=null,tsCloud=null,tsMsg='',tsCrop=null,tsTeacherView=null;
+const tsE=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tsId=(k=8)=>{const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(k);crypto.getRandomValues(u);return[...u].map(x=>a[x%a.length]).join('')};
+async function tsHash(s){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const tsLogin=()=>tsStore.login||null;
+
+/* ---- 云端（班级） ---- */
+const TsCloud={
+  async col(cls){const db=await Shared.db();return db.collection('games').doc('cls_'+cls).collection('layers')},
+  async get(cls,name){const d=await(await this.col(cls)).doc(name).get();if(!d.exists)return null;try{return JSON.parse(d.data().sgf||'null')}catch(e){return null}},
+  async set(cls,name,obj){await(await this.col(cls)).doc(name).set({sgf:JSON.stringify(obj),name,updated:Date.now()})},
+  async list(cls){const qs=await(await this.col(cls)).get();const o={};qs.forEach(d=>{try{o[d.id]=JSON.parse(d.data().sgf)}catch(e){}});return o}
+};
+const tsUserDoc=async name=>'u_'+(await tsHash('name:'+name)).slice(0,16);
+async function tsRefreshCloud(){const L=tsLogin();if(!L){tsCloud=null;return}
+  try{const all=await TsCloud.list(L.cls);tsCloud={meta:all.meta||{},books:{},users:{}};
+    for(const k in all){if(k.startsWith('b_')&&!all[k].removed)tsCloud.books[k.slice(2)]={...all[k],id:k.slice(2),cloud:true};if(k.startsWith('u_')&&!all[k].removed)tsCloud.users[k]=all[k]}
+    if(L.role==='student'){const me=tsCloud.users[L.doc];if(me){L.pts=me.pts||0;tsStore.login=L;tsSave()}}
+  }catch(e){tsMsg=T('连不上班级资料：{0}',e.message)}}
+
+/* ---- 练习册 ---- */
+function tsBooks(){const out=[...TS_BUILTIN];for(const id in tsStore.books)out.push({...tsStore.books[id],id,local:true});if(tsCloud)for(const id in tsCloud.books)out.push(tsCloud.books[id]);return out}
+const tsBook=id=>tsBooks().find(b=>b.id===id);
+const tsCanEdit=b=>b&&!b.builtin&&(b.local||(tsLogin()&&tsLogin().role==='teacher'));
+async function tsSaveBook(b){const L=tsLogin();
+  if(b.cloud){await TsCloud.set(L.cls,'b_'+b.id,{title:b.title,problems:b.problems,updated:Date.now(),by:L.name});await tsRefreshCloud()}
+  else{tsStore.books[b.id]={title:b.title,problems:b.problems,updated:Date.now()};tsSave()}}
+function tsNewBook(){const L=tsLogin();const b={id:tsId(),title:T('新练习册'),problems:[]};
+  if(L&&L.role==='teacher'){b.cloud=true}else b.local=true;return b}
+const tsPid=(b,p)=>b.id+':'+p.id;
+function tsStat(b){let ok=0,first=0;for(const p of b.problems){const l=tsLogEntry(tsPid(b,p));if(l&&l.ok){ok++;if(l.first)first++}}return{ok,first,n:b.problems.length}}
+function tsLogEntry(pid){const L=tsLogin();if(L&&L.role==='student'&&tsCloud&&tsCloud.users[L.doc]){const c=(tsCloud.users[L.doc].log||{})[pid];if(c)return c}return tsStore.log[pid]}
+
+/* ---- SGF 题目工具 ---- */
+function tsSplitSgf(text){ // 一个文件里可能有很多盘（题库常见），按最外层括号切开
+  const out=[];let d=0,st=-1,inB=false;
+  for(let i=0;i<text.length;i++){const c=text[i];if(inB){if(c==='\\')i++;else if(c===']')inB=false;continue}
+    if(c==='[')inB=true;else if(c==='('){if(d===0)st=i;d++}else if(c===')'){d--;if(d===0&&st>=0){out.push(text.slice(st,i+1));st=-1}}}
+  return out}
+function tsVerdict(nd){const c=(nd.props.C||[''])[0];
+  if(/RIGHT|正解|正确|Correct/i.test(c))return'right';if(/WRONG|失败|错误|Wrong/i.test(c))return'wrong';return nd.children.length?'':'right'}
+function tsNote(nd){return((nd.props.C||[''])[0]).replace(/RIGHT|WRONG|正解|【[^】]*】/gi,'').trim()}
+function tsCropOf(r,n){ // 题目只占棋盘一角时，放大那一块
+  let x0=n,y0=n,x1=-1,y1=-1;const add=(x,y)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)};
+  (function walk(nd){for(const k of['AB','AW'])for(const[x,y]of expandPts(nd.props[k],n))add(x,y);const m=moveOf(nd),xy=m&&ptToXY(m[1],n);if(xy)add(xy[0],xy[1]);nd.children.forEach(walk)})(r);
+  if(x1<0)return null;x0=Math.max(0,x0-2);y0=Math.max(0,y0-2);x1=Math.min(n-1,x1+2);y1=Math.min(n-1,y1+2);
+  if(x0<=2)x0=0;if(y0<=2)y0=0;if(x1>=n-3)x1=n-1;if(y1>=n-3)y1=n-1;
+  while(x1-x0<6){if(x0>0)x0--;else if(x1<n-1)x1++;else break}while(y1-y0<6){if(y0>0)y0--;else if(y1<n-1)y1++;else break}
+  if(x1-x0>=n-2&&y1-y0>=n-2)return null;return[x0,y0,x1,y1]}
+
+/* ---- 做题 ---- */
+function tsEnter(){if(!ts||!ts.prevG){ts={prevG:G,prevCur:cur}}}
+function tsOpen(bookId,idx){
+  const b=tsBook(bookId);if(!b||!b.problems[idx])return;tsEnter();stopPlay();if(scoring)stopScoring();if(train)stopTrain();if(aiHint)setAiHint(false);
+  if(judging){judging=false;$('#judgeToggle').setAttribute('aria-pressed','false')}tool='play';
+  const p=b.problems[idx];let r;try{r=parseSGF(p.sgf)}catch(e){flash(T('这一题读不出来'));return}
+  G={id:'__ts',root:r};cur=r;const n=sizeOf(r);
+  Object.assign(ts,{mode:'solve',bookId,idx,pid:tsPid(b,p),prob:p,node:r,tries:0,solved:false,shown:false,busy:false,wrong:null,msg:'',gained:0});
+  tsCrop=tsCropOf(r,n);tsView='solve';document.body.classList.add('is-ts');renderTree();render();renderTs();
+}
+function tsExit(){ // 回到原来的棋谱
+  if(!ts)return;const p=ts;ts=null;tsCrop=null;document.body.classList.remove('is-ts');
+  if(p.prevG){G=p.prevG;cur=p.prevCur||G.root}tool='play';renderWho();renderTree();render();renderInfo();
+}
+function tsReset(){if(!ts||ts.mode!=='solve')return;cur=G.root;ts.node=G.root;ts.wrong=null;ts.busy=false;render();renderTs()}
+function tsClick(x,y){
+  if(ts.mode==='edit')return tsEditClick(x,y);
+  if(ts.solved||ts.busy||ts.shown)return;const n=sizeOf(root()),pt=xyToPt(x,y),col=nextColor(ts.node),st=computeState(ts.node,n);if(st.g[y][x])return;
+  const ch=ts.node.children.find(c=>{const m=moveOf(c);return m&&m[0]===col&&m[1]===pt});
+  if(!ch){ts.wrong=[x,y];playSound('stone');tsFail(T('不对，再想想。'));return}
+  cur=ch;ts.node=ch;ts.wrong=null;soundFor(ch);render();
+  const v=tsVerdict(ch);if(v==='wrong'){tsFail(tsNote(ch)||T('这样不行。'));return}if(v==='right'&&!ch.children.length){tsWin(tsNote(ch));return}
+  ts.busy=true;renderTs();
+  setTimeout(()=>{if(!ts||ts.node!==ch)return;const r=ch.children[0];ts.busy=false;if(!r){tsWin(tsNote(ch));return}
+    cur=r;ts.node=r;soundFor(r);render();const v2=tsVerdict(r);
+    if(v2==='wrong')tsFail(tsNote(r)||T('白棋这样应，就不行了。'));else if(v2==='right')tsWin(tsNote(r));else renderTs()},500);
+}
+function tsFail(msg){ts.tries++;ts.msg=msg;ts.ok=false;renderTs();render();tsRecord(false);
+  setTimeout(()=>{if(ts&&!ts.solved&&!ts.shown){ts.wrong=null;tsReset()}},1400)}
+async function tsWin(note){ts.solved=true;ts.msg=(note?note+' ':'');const g=await tsRecord(true);ts.gained=g;renderTs();render()}
+function tsShow(){ // 看答案：慢慢摆出第一条正解
+  if(!ts||ts.solved)return;ts.shown=true;tsReset();ts.shown=true;const path=[];
+  (function find(nd,acc){if(path.length)return;for(const c of nd.children){const a=acc.concat(c);if(tsVerdict(c)==='right'&&!c.children.length){path.push(...a);return}find(c,a)}})(G.root,[]);
+  let i=0;const step=()=>{if(!ts||!ts.shown||i>=path.length){if(ts){ts.msg=T('这是正确答案。再按「重做」自己下一次。');renderTs()}return}cur=path[i];ts.node=path[i];soundFor(path[i]);render();i++;setTimeout(step,800)};
+  ts.msg=T('看答案中…');renderTs();setTimeout(step,500);tsRecord(false,true);
+}
+async function tsRecord(ok,viewed){ // 记录做题结果，回传这次得到的分数
+  const pid=ts.pid,prev=tsLogEntry(pid),lv=+ts.prob.level||1,today=new Date().toISOString().slice(0,10);
+  let gain=0;
+  if(ok&&!(prev&&prev.ok)){gain=(ts.tries===0&&!(prev&&prev.tries))?10*lv:3*lv;
+    const days=tsStore.days||{};if(!days[today]){gain+=5;days[today]=1;tsStore.days=days}} // 每天第一题多 5 分
+  const e={ok:!!(ok||(prev&&prev.ok)),first:prev&&prev.ok?prev.first:(ok&&ts.tries===0&&!(prev&&prev.tries)&&!viewed),tries:((prev&&prev.tries)||0)+(ok?0:1),viewed:!!(viewed||(prev&&prev.viewed)),t:Date.now()};
+  if(ok&&ts.shown)e.first=false;
+  tsStore.log[pid]=e;tsStore.pts=(tsStore.pts||0)+gain;tsSave();
+  const L=tsLogin();if(L&&L.role==='student'){try{const u=(await TsCloud.get(L.cls,L.doc))||{name:L.name};u.log=u.log||{};u.log[pid]=e;u.pts=(u.pts||0)+gain;u.last=Date.now();
+    await TsCloud.set(L.cls,L.doc,u);if(tsCloud)tsCloud.users[L.doc]=u;L.pts=u.pts;tsStore.login=L;tsSave()}catch(err){flash(T('记录没有上传，请检查网络'))}}
+  return gain;
+}
+async function tsAward(pts,what){ // 其他得分（和 AI 下完一盘）
+  const L=tsLogin();tsStore.pts=(tsStore.pts||0)+pts;tsSave();
+  if(L&&L.role==='student'){try{const u=(await TsCloud.get(L.cls,L.doc))||{name:L.name};u.pts=(u.pts||0)+pts;u[what]=(u[what]||0)+1;u.last=Date.now();await TsCloud.set(L.cls,L.doc,u);L.pts=u.pts;tsStore.login=L;tsSave()}catch(e){}}
+}
+
+/* ---- 出题 ---- */
+function tsEditStart(bookId,idx,fromGame){
+  const b=tsBook(bookId);if(!tsCanEdit(b))return;tsEnter();stopPlay();if(aiHint)setAiHint(false);
+  let r;const old=idx!=null&&b.problems[idx];
+  if(old)r=parseSGF(old.sgf);
+  else if(fromGame&&ts.prevG){const pg=ts.prevG,n=sizeOf(pg.root),st=computeState(ts.prevCur||pg.root,n),B=[],W=[];
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(st.g[y][x]===1)B.push(xyToPt(x,y));if(st.g[y][x]===2)W.push(xyToPt(x,y))}
+    r=parseSGF(`(;GM[1]FF[4]SZ[${n}]PL[${nextColor(ts.prevCur||pg.root)}]C[${T('黑先')}])`);if(B.length)r.props.AB=B;if(W.length)r.props.AW=W}
+  else r=parseSGF(`(;GM[1]FF[4]SZ[19]PL[B]C[${T('黑先')}])`);
+  G={id:'__ts',root:r};cur=r;
+  Object.assign(ts,{mode:'edit',bookId,idx:old?idx:null,stone:'AB',phase:old?'answer':'setup',title:old?old.title:'',level:old?old.level||2:2});
+  tsCrop=null;tsView='edit';document.body.classList.remove('is-ts');tool='play';renderTree();render();renderTs();
+}
+function tsEditClick(x,y){ // 摆题阶段：放黑子 / 白子 / 擦掉；答案阶段：照一般下法记录变化
+  const n=sizeOf(root()),pt=xyToPt(x,y),r=G.root;
+  if(ts.phase==='setup'){if(cur!==r){cur=r}
+    const has=k=>(r.props[k]||[]).includes(pt),del=k=>{if(r.props[k]){r.props[k]=r.props[k].filter(v=>v!==pt);if(!r.props[k].length)delete r.props[k]}};
+    const on=ts.stone!=='AE'&&has(ts.stone);del('AB');del('AW');if(ts.stone!=='AE'&&!on)(r.props[ts.stone]=r.props[ts.stone]||[]).push(pt);playSound('stone');render();return true}
+  return false; // 交给一般的落子
+}
+function tsMark(right){const nd=cur;if(nd===G.root)return;const c=tsNote(nd);nd.props.C=[(right?'RIGHT ':'WRONG ')+c];renderTree();render();renderTs();flash(right?T('已标为正解'):T('已标为错误'))}
+async function tsEditSave(){
+  const b=tsBook(ts.bookId);if(!b)return;const r=G.root;if(!r.props.AB&&!r.props.AW){flash(T('请先摆好题目的棋子'));return}
+  const title=($('#tsTitle')&&$('#tsTitle').value.trim())||T('第 {0} 题',(ts.idx!=null?ts.idx:b.problems.length)+1);const q=$('#tsQ')?$('#tsQ').value.trim():'';
+  r.props.C=[q||T('黑先')];r.props.GN=[title];const lv=+($('#tsLevel')?$('#tsLevel').value:2);
+  let hasRight=false;(function w(nd){if(nd!==r&&/RIGHT/.test((nd.props.C||[''])[0]))hasRight=true;nd.children.forEach(w)})(r);
+  if(!r.children.length){flash(T('请摆出至少一条正解'));return}
+  if(!hasRight){(function lastMain(nd){while(nd.children.length)nd=nd.children[0];nd.props.C=['RIGHT '+tsNote(nd)]})(r)} // 没标的话，主线最后一手算正解
+  const p={id:ts.idx!=null?b.problems[ts.idx].id:tsId(),title,level:lv,sgf:toSGF(r)};
+  if(ts.idx!=null)b.problems[ts.idx]=p;else b.problems.push(p);
+  try{await tsSaveBook(b);flash(T('题目已存好'))}catch(e){flash(T('存不进去：{0}',e.message));return}
+  tsBookId=b.id;tsExit();tsView='book';renderTs();
+}
+async function tsImport(files,bookId){
+  const b=tsBook(bookId);if(!tsCanEdit(b))return;let added=0,bad=0;
+  for(const f of files){const text=await f.text();for(const s of tsSplitSgf(text)){try{const r=parseSGF(s);if(!r.props.AB&&!r.props.AW){bad++;continue}
+    if(!r.props.PL){const m=r.children[0]&&moveOf(r.children[0]);r.props.PL=[m?m[0]:'B']}
+    // 只有一条主线、没有任何标记的题：主线最后一手算正解
+    let has=false;(function w(nd){if(/RIGHT|正解|正确|Correct/i.test((nd.props.C||[''])[0]))has=true;nd.children.forEach(w)})(r);
+    if(!has&&r.children.length){let nd=r;while(nd.children.length)nd=nd.children[0];nd.props.C=['RIGHT '+((nd.props.C||[''])[0])]}
+    b.problems.push({id:tsId(),title:prop(r,'GN')||f.name.replace(/\.sgf$/i,'')+(added?' #'+(added+1):''),level:2,sgf:toSGF(r)});added++}catch(e){bad++}}}
+  try{await tsSaveBook(b)}catch(e){flash(T('存不进去：{0}',e.message));return}
+  flash(T('导入了 {0} 题',added)+(bad?T('，{0} 个读不出来',bad):''));renderTs();
+}
+function tsDownloadBook(b){const t=b.problems.map(p=>p.sgf).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/x-go-sgf;charset=utf-8'}));a.download=(b.title||'练习册')+'.sgf';document.body.appendChild(a);a.click();a.remove()}
+
+/* ---- 登录 ---- */
+async function tsStudentLogin(cls,name,pin){
+  cls=cls.toUpperCase().replace(/[^A-Z0-9]/g,'');name=name.trim();if(!cls||!name||!/^\d{4}$/.test(pin))throw new Error(T('请填好班级代码、名字和 4 位数密码'));
+  const meta=await TsCloud.get(cls,'meta');if(!meta)throw new Error(T('找不到这个班级代码'));
+  const doc=await tsUserDoc(name),h=await tsHash(cls+':'+name+':'+pin),u=await TsCloud.get(cls,doc);
+  if(u&&u.removed)throw new Error(T('这个名字已被老师移出班级'));
+  if(u&&u.h&&u.h!==h)throw new Error(T('密码不对'));
+  const nu=u||{name,pts:0,log:{},joined:Date.now()};nu.h=h;nu.name=name;nu.last=Date.now();await TsCloud.set(cls,doc,nu);
+  tsStore.login={cls,clsName:meta.name,name,role:'student',doc,pts:nu.pts||0};tsSave();await tsRefreshCloud();
+}
+async function tsTeacherCreate(clsName,name,pin){
+  if(!clsName.trim()||!name.trim()||!/^\d{4,8}$/.test(pin))throw new Error(T('请填好班级名称、老师名字和 4–8 位数密码'));
+  let cls='';for(let i=0;i<5;i++){cls=tsId(6).toUpperCase();if(!(await TsCloud.get(cls,'meta')))break}
+  await TsCloud.set(cls,'meta',{name:clsName.trim(),teacher:name.trim(),th:await tsHash(cls+':teacher:'+pin),created:Date.now()});
+  tsStore.login={cls,clsName:clsName.trim(),name:name.trim(),role:'teacher'};tsSave();await tsRefreshCloud();return cls;
+}
+async function tsTeacherLogin(cls,pin){cls=cls.toUpperCase().replace(/[^A-Z0-9]/g,'');const meta=await TsCloud.get(cls,'meta');if(!meta)throw new Error(T('找不到这个班级代码'));
+  if(meta.th!==await tsHash(cls+':teacher:'+pin))throw new Error(T('密码不对'));tsStore.login={cls,clsName:meta.name,name:meta.teacher,role:'teacher'};tsSave();await tsRefreshCloud()}
+function tsLogout(){delete tsStore.login;tsSave();tsCloud=null;tsView='home';renderTs()}
+
+/* ---- 画面 ---- */
+function tsOpenPanel(){$('#tsBox').hidden=false;$('#tsToggle').setAttribute('aria-pressed','true');if(tsView==='solve'&&!ts)tsView='home';
+  renderTs();if(tsLogin())tsRefreshCloud().then(renderTs);$('#tsBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
+function tsClosePanel(){if(ts)tsExit();$('#tsBox').hidden=true;$('#tsToggle').setAttribute('aria-pressed','false')}
+const tsStars=lv=>'★'.repeat(+lv||1);
+function renderTs(){
+  const el=$('#tsBody');if(!el||$('#tsBox').hidden)return;const L=tsLogin();let h='';
+  const top=`<div class="tsbar">${L?`<span><b>${tsE(L.name)}</b>（${L.role==='teacher'?T('老师'):T('学生')}）· ${tsE(L.clsName||'')} <code>${L.cls}</code>${L.role==='student'?` · ${T('{0} 分',L.pts||0)}`:''}</span><button class="btn" data-a="rank">${L.role==='teacher'?T('全班记录'):T('排行榜')}</button><button class="btn" data-a="logout">${T('登出')}</button>`
+    :`<span class="note" style="margin:0">${T('没有登录：记录只存在这台设备（{0} 分）',tsStore.pts||0)}</span><button class="btn pri" data-a="login">${T('登录 / 加入班级')}</button>`}</div>`;
+  if(tsView==='home'){
+    h=top+`<div class="tsbooks">`+tsBooks().map(b=>{const s=tsStat(b);return`<button class="tsbook" data-a="book" data-b="${b.id}"><b>${tsE(b.title)}</b><span>${T('{0} 题',s.n)} · ${T('完成 {0}',s.ok)}${b.cloud?' · '+T('班级'):b.local?' · '+T('本机'):''}</span><i style="width:${s.n?Math.round(s.ok/s.n*100):0}%"></i></button>`}).join('')+`</div>`;
+    h+=`<div class="row"><button class="btn" data-a="newbook">${T('新练习册')}</button></div>`;
+  }else if(tsView==='book'){
+    const b=tsBook(tsBookId);if(!b){tsView='home';return renderTs()}const ed=tsCanEdit(b);
+    h=top+`<div class="row" style="align-items:center"><button class="btn" data-a="home">← ${T('练习册')}</button>${ed?`<input id="tsBookTitle" value="${tsE(b.title)}" style="flex:1;min-width:8em;height:34px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg)">`:`<b>${tsE(b.title)}</b>`}</div>`;
+    h+=`<div class="tsgrid">`+b.problems.map((p,i)=>{const l=tsLogEntry(tsPid(b,p));const c=l&&l.ok?(l.first?'g':'b'):l&&l.tries?'r':'';return`<button class="tsp ${c}" data-a="solve" data-i="${i}" title="${tsE(p.title)}">${i+1}<small>${tsStars(p.level)}</small></button>`}).join('')+`</div>`;
+    if(!b.problems.length)h+=`<p class="note">${T('还没有题目。')}</p>`;
+    h+=`<p class="note" style="margin:0">${T('绿色：一次答对 · 蓝色：后来答对 · 红色：还没答对')}</p>`;
+    if(ed)h+=`<div class="row"><button class="btn pri" data-a="newp">${T('新题目')}</button>${ts&&ts.prevG||G.id!=='__ts'?`<button class="btn" data-a="newpg">${T('用目前棋局出题')}</button>`:''}<label class="btn" style="cursor:pointer">${T('导入 SGF')}<input type="file" id="tsFile" accept=".sgf,text/plain" multiple hidden></label><button class="btn" data-a="dlbook">${T('下载练习册')}</button><button class="btn warn" data-a="delbook">${T('删除练习册')}</button></div>`;
+  }else if(tsView==='solve'&&ts){
+    const b=tsBook(ts.bookId),p=ts.prob,col=nextColor(G.root);
+    h=`<div class="row" style="align-items:center"><button class="btn" data-a="back">← ${tsE(b?b.title:'')}</button><span>${T('第 {0} / {1} 题',ts.idx+1,b?b.problems.length:0)} · ${tsE(p.title)} · <span class="stars">${tsStars(p.level)}</span></span></div>`;
+    h+=`<p class="tsq"><span class="dot ${col==='B'?'b':'w'}"></span> ${tsE(tsNote(G.root)||(col==='B'?T('黑先'):T('白先')))}</p>`;
+    const cls=ts.solved?'ok':ts.msg&&!ts.shown?'no':'';
+    h+=`<p class="big ${cls}">${ts.solved?T('答对了！')+' '+tsE(ts.msg)+(ts.gained?' '+T('+{0} 分',ts.gained):''):ts.busy?T('对方应…'):tsE(ts.msg||T('在棋盘上点出你的答案。'))}</p>`;
+    h+=`<div class="row"><button class="btn" data-a="redo">${T('重做')}</button><button class="btn" data-a="show"${ts.solved?' disabled':''}>${T('看答案')}</button><button class="btn" data-a="prev"${ts.idx<=0?' disabled':''}>${T('上一题')}</button><button class="btn pri" data-a="next"${!b||ts.idx>=b.problems.length-1?' disabled':''}>${T('下一题')}</button>${tsCanEdit(b)?`<button class="btn" data-a="editp">${T('修改这题')}</button><button class="btn warn" data-a="delp">${T('删除这题')}</button>`:''}</div>`;
+  }else if(tsView==='edit'&&ts){
+    const setup=ts.phase==='setup';
+    h=`<div class="score-head"><b>${ts.idx!=null?T('修改题目'):T('新题目')}</b><span>${setup?T('第 1 步：在棋盘上摆好题目的棋子。'):T('第 2 步：在棋盘上下出答案。正解下完按「这条是正解」；也可以回到开头，下错的变化再按「这条是错的」。')}</span></div>`;
+    h+=`<div class="score-opts"><label>${T('标题')} <input id="tsTitle" value="${tsE(ts.title)}" style="width:10em"></label><label>${T('难度')} <select id="tsLevel">${[1,2,3,4,5].map(v=>`<option value="${v}"${v==ts.level?' selected':''}>${tsStars(v)}</option>`).join('')}</select></label></div>`;
+    h+=`<div class="score-opts"><label style="flex:1">${T('题目说明')} <input id="tsQ" value="${tsE(tsNote(G.root))}" placeholder="${T('例如：黑先活')}" style="flex:1;min-width:10em"></label></div>`;
+    if(setup)h+=`<div class="score-opts"><span class="seg" id="tsStone"><button data-s="AB" aria-pressed="${ts.stone==='AB'}">${T('放黑子')}</button><button data-s="AW" aria-pressed="${ts.stone==='AW'}">${T('放白子')}</button><button data-s="AE" aria-pressed="${ts.stone==='AE'}">${T('擦掉')}</button></span>
+      <span class="seg" id="tsFirst"><button data-c="B" aria-pressed="${prop(G.root,'PL')!=='W'}">${T('黑先')}</button><button data-c="W" aria-pressed="${prop(G.root,'PL')==='W'}">${T('白先')}</button></span></div>
+      <div class="row"><button class="btn pri" data-a="toanswer">${T('下一步：摆答案')}</button><button class="btn" data-a="cancel">${T('取消')}</button></div>`;
+    else h+=`<div class="row"><button class="btn" data-a="right">${T('这条是正解')}</button><button class="btn" data-a="wrongm">${T('这条是错的')}</button><button class="btn" data-a="tostart">${T('回到开头')}</button><button class="btn" data-a="tosetup">${T('回去改棋子')}</button></div>
+      <div class="row"><button class="btn pri" data-a="savep">${T('存进练习册')}</button><button class="btn" data-a="cancel">${T('取消')}</button></div>`;
+  }else if(tsView==='login'){
+    h=`<div class="row"><button class="btn" data-a="home">← ${T('返回')}</button></div>
+    <b class="sub">${T('学生登录')}</b><div class="score-opts"><input id="tsCls" placeholder="${T('班级代码')}" maxlength="8" style="width:7em;text-transform:uppercase"><input id="tsName" placeholder="${T('名字')}" maxlength="16" style="width:8em" value="${tsE(me()||'')}"><input id="tsPin" placeholder="${T('4 位数密码')}" maxlength="4" inputmode="numeric" type="password" style="width:7em"><button class="btn pri" data-a="slogin">${T('登录')}</button></div>
+    <p class="note" style="margin:0">${T('第一次登录会用这个名字加入班级，并设定密码。之后在任何设备用同样的名字和密码登录，记录都在。')}</p><hr>
+    <b class="sub">${T('老师')}</b><div class="score-opts"><input id="tsTCls" placeholder="${T('班级代码')}" maxlength="8" style="width:7em;text-transform:uppercase"><input id="tsTPin" placeholder="${T('老师密码')}" maxlength="8" inputmode="numeric" type="password" style="width:7em"><button class="btn" data-a="tlogin">${T('老师登录')}</button></div>
+    <div class="score-opts"><input id="tsNewCls" placeholder="${T('新班级名称')}" maxlength="20" style="width:9em"><input id="tsNewT" placeholder="${T('老师名字')}" maxlength="16" style="width:7em"><input id="tsNewPin" placeholder="${T('设定老师密码')}" maxlength="8" inputmode="numeric" type="password" style="width:8em"><button class="btn" data-a="tcreate">${T('建立新班级')}</button></div>`;
+  }else if(tsView==='rank'){
+    const users=tsCloud?Object.entries(tsCloud.users):[];const isT=L&&L.role==='teacher';
+    const rows=users.map(([doc,u])=>{let ok=0,first=0,tried=0;for(const k in u.log||{}){const l=u.log[k];tried++;if(l.ok){ok++;if(l.first)first++}}return{doc,u,ok,first,tried}}).sort((a,b)=>(b.u.pts||0)-(a.u.pts||0));
+    h=`<div class="row"><button class="btn" data-a="home">← ${T('返回')}</button><b>${isT?T('全班记录'):T('排行榜')}</b></div><div style="overflow-x:auto"><table class="score-t"><thead><tr><th>#</th><th>${T('名字')}</th><th>${T('分数')}</th><th>${T('答对')}</th>${isT?`<th>${T('一次答对率')}</th><th>${T('对局')}</th><th>${T('最近')}</th><th></th>`:''}</tr></thead><tbody>`+
+      rows.map((r,i)=>`<tr${L&&r.doc===L.doc?' class="tot"':''}><td>${i+1}</td><td style="text-align:left">${tsE(r.u.name)}</td><td>${r.u.pts||0}</td><td>${r.ok}</td>${isT?`<td>${r.ok?Math.round(r.first/r.ok*100)+'%':'—'}</td><td>${r.u.game||0}</td><td>${r.u.last?new Date(r.u.last).toLocaleDateString():'—'}</td><td><button class="btn" data-a="stu" data-d="${r.doc}">${T('详细')}</button></td>`:''}</tr>`).join('')+`</tbody></table></div>`;
+    if(!rows.length)h+=`<p class="note">${T('还没有学生。把班级代码 {0} 给学生，让他们登录。',L?L.cls:'')}</p>`;
+    if(isT&&tsTeacherView&&tsCloud.users[tsTeacherView]){const u=tsCloud.users[tsTeacherView];
+      h+=`<b class="sub">${tsE(u.name)}</b>`+tsBooks().map(b=>`<div class="note" style="margin:4px 0 0">${tsE(b.title)}</div><div class="tsgrid">`+b.problems.map((p,i)=>{const l=(u.log||{})[tsPid(b,p)];return`<span class="tsp ${l&&l.ok?(l.first?'g':'b'):l&&l.tries?'r':''}">${i+1}</span>`}).join('')+'</div>').join('')+
+        `<div class="row"><button class="btn" data-a="resetpin" data-d="${tsTeacherView}">${T('重设密码')}</button><button class="btn warn" data-a="remove" data-d="${tsTeacherView}">${T('移出班级')}</button></div>`}
+  }
+  el.innerHTML=h+(tsMsg?`<p class="status">${tsE(tsMsg)}</p>`:'');tsMsg='';
+  const ft=$('#tsFile');if(ft)ft.onchange=e=>{tsImport([...e.target.files],tsBookId);e.target.value=''};
+  const bt=$('#tsBookTitle');if(bt)bt.onchange=async e=>{const b=tsBook(tsBookId);b.title=e.target.value.trim()||b.title;await tsSaveBook(b);renderTs()};
+}
+async function tsAct(e){
+  const t=e.target.closest('[data-a],[data-s],[data-c]');if(!t||!$('#tsBody').contains(t))return;const a=t.dataset.a,L=tsLogin();
+  const busy=async f=>{t.disabled=true;try{await f()}catch(err){tsMsg=err.message||String(err)}finally{t.disabled=false;renderTs()}};
+  if(t.dataset.s&&ts){ts.stone=t.dataset.s;renderTs();return}
+  if(t.dataset.c&&ts&&ts.mode==='edit'){G.root.props.PL=[t.dataset.c];renderTs();return}
+  switch(a){
+    case'login':tsView='login';renderTs();break;
+    case'logout':tsLogout();break;
+    case'home':tsView='home';renderTs();break;
+    case'rank':tsView='rank';tsTeacherView=null;await tsRefreshCloud();renderTs();break;
+    case'stu':tsTeacherView=t.dataset.d;renderTs();break;
+    case'book':tsBookId=t.dataset.b;tsView='book';renderTs();break;
+    case'newbook':{const b=tsNewBook();await busy(()=>tsSaveBook(b));tsBookId=b.id;tsView='book';renderTs();break}
+    case'delbook':armed(t,T('再点一次确认删除'),async()=>{const b=tsBook(tsBookId);if(b.local){delete tsStore.books[b.id];tsSave()}else{await TsCloud.set(L.cls,'b_'+b.id,{removed:true});await tsRefreshCloud()}tsView='home';renderTs()});break;
+    case'dlbook':tsDownloadBook(tsBook(tsBookId));break;
+    case'solve':tsOpen(tsBookId,+t.dataset.i);break;
+    case'back':tsExit();tsView='book';renderTs();break;
+    case'redo':ts.solved=false;ts.shown=false;ts.msg='';ts.gained=0;tsReset();break;
+    case'show':tsShow();break;
+    case'prev':tsOpen(ts.bookId,ts.idx-1);break;
+    case'next':tsOpen(ts.bookId,ts.idx+1);break;
+    case'editp':tsEditStart(ts.bookId,ts.idx);break;
+    case'delp':armed(t,T('再点一次确认删除'),async()=>{const b=tsBook(ts.bookId);b.problems.splice(ts.idx,1);await tsSaveBook(b);tsExit();tsView='book';renderTs()});break;
+    case'newp':tsEditStart(tsBookId,null,false);break;
+    case'newpg':tsEditStart(tsBookId,null,true);break;
+    case'toanswer':ts.title=$('#tsTitle').value;ts.level=+$('#tsLevel').value;G.root.props.C=[$('#tsQ').value||T('黑先')];ts.phase='answer';cur=G.root;renderTs();render();break;
+    case'tosetup':ts.phase='setup';cur=G.root;renderTs();render();break;
+    case'tostart':cur=G.root;render();break;
+    case'right':tsMark(true);break;
+    case'wrongm':tsMark(false);break;
+    case'savep':await busy(tsEditSave);break;
+    case'cancel':{const bid=ts.bookId;tsExit();tsBookId=bid;tsView='book';renderTs();break}
+    case'slogin':await busy(async()=>{await tsStudentLogin($('#tsCls').value,$('#tsName').value,$('#tsPin').value);tsView='home'});break;
+    case'tlogin':await busy(async()=>{await tsTeacherLogin($('#tsTCls').value,$('#tsTPin').value);tsView='home'});break;
+    case'tcreate':await busy(async()=>{const c=await tsTeacherCreate($('#tsNewCls').value,$('#tsNewT').value,$('#tsNewPin').value);tsView='home';tsMsg=T('班级已建立。班级代码：{0}（给学生登录用，请记下）',c)});break;
+    case'resetpin':await busy(async()=>{const u=tsCloud.users[t.dataset.d];u.h=null;await TsCloud.set(L.cls,t.dataset.d,u);tsMsg=T('已重设，{0} 下次登录时设定新密码',u.name)});break;
+    case'remove':armed(t,T('再点一次确认'),async()=>{const u=tsCloud.users[t.dataset.d];u.removed=true;await TsCloud.set(L.cls,t.dataset.d,u);tsTeacherView=null;await tsRefreshCloud();renderTs()});break;
+  }
+}
+function tsOverlay(n,X){ // 做题时：下错的点画红色 ✕
+  if(!ts||ts.mode!=='solve'||!ts.wrong)return'';const[x,y]=ts.wrong,a=U*0.24;
+  return`<path d="M${X(x)-a} ${X(y)-a}L${X(x)+a} ${X(y)+a}M${X(x)+a} ${X(y)-a}L${X(x)-a} ${X(y)+a}" stroke="#C0392B" stroke-width="5" stroke-linecap="round"/>`;
+}
+
 /* ===================== 存成图片 ===================== */
 let imgMode='now',imgBlob=null,imgUrl=null;
 function nodeAtMove(mn){const line=lineFrom(cur);let c=0,t=line[0];for(const nd of line){if(moveOf(nd))c++;if(c<=mn)t=nd;else break}return t}
@@ -3996,7 +4300,7 @@ function closeImg(){$('#imgBox').hidden=true;$('#imgToggle').setAttribute('aria-
 
 /* ===================== 操作 ===================== */
 function go(node){if(!node)return;cur=node;if(node.parent)node.parent._sel=node.parent.children.indexOf(node);render()}
-function trainBlock(){if(train){flash(T('练习中，先结束练习再翻棋谱'));return true}return false}
+function trainBlock(){if(train){flash(T('练习中，先结束练习再翻棋谱'));return true}if(ts&&ts.mode==='solve'){flash(T('做题中'));return true}return false}
 function fwd(k=1){if(trainBlock())return;let n=cur;for(let i=0;i<k&&n.children.length;i++)n=n.children[n._sel||0]||n.children[0];const moved=n!==cur;go(n);if(k===1&&moved)soundFor(n)}
 function back(k=1){if(trainBlock())return;let n=cur;for(let i=0;i<k&&n.parent;i++)n=n.parent;cur=n;render()}
 function toEnd(){if(trainBlock())return;let n=cur;while(n.children.length)n=n.children[n._sel||0]||n.children[0];go(n)}
@@ -4008,6 +4312,7 @@ function boardClick(ev){
   const x=Math.round((p.x-PAD)/U),y=Math.round((p.y-PAD)/U);if(x<0||y<0||x>=n||y>=n)return;
   const pt2=xyToPt(x,y);
   if(train){trainClick(x,y);return}
+  if(ts){if(ts.mode==='solve'){tsClick(x,y);return}if(ts.mode==='edit'&&tsEditClick(x,y))return}
   if(scoring){ // 点棋子：整块标成死子 / 取消
     const st=computeState(cur,n);if(!st.g[y][x])return;
     const grp=groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);const isDead=scoring.dead.has(y*n+x);
@@ -4048,7 +4353,7 @@ $('#board').addEventListener('mouseleave',()=>{if(Ana.hover!=null){Ana.hover=nul
 // 鼠标滚轮：往下滚 = 下一手，往上滚 = 上一手；滚得快就走得快
 let wheelAcc=0,wheelT=null;
 $('#board').addEventListener('wheel',e=>{
-  e.preventDefault();if(train)return;
+  e.preventDefault();if(train||(ts&&ts.mode==='solve'))return;
   let d=e.deltaY||e.deltaX;if(e.deltaMode===1)d*=40;else if(e.deltaMode===2)d*=400;
   wheelAcc+=d;clearTimeout(wheelT);wheelT=setTimeout(()=>{wheelAcc=0},250);
   const STEP=100;let k=0; // 滚轮一格 = 一手；按住 Shift 一格 = 十手
@@ -4144,6 +4449,7 @@ $('#ngName').oninput=e=>{ng.name=e.target.value};$('#ngAuto').onchange=e=>{ng.au
 $('#aiToggle').onclick=()=>setAiHint(!aiHint);
 $('#revToggle').onclick=()=>$('#revBox').hidden?revOpen():revClose();
 $('#revClose').onclick=revClose;
+$('#tsToggle').onclick=()=>$('#tsBox').hidden?tsOpenPanel():tsClosePanel();$('#tsClose').onclick=tsClosePanel;$('#tsBody').addEventListener('click',tsAct);
 $('#revEngine').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revEngine=b.dataset.e;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
 $('#pcCode').onchange=e=>pcSetCode(e.target.value);$('#pcNew').onclick=pcNewCode;
 document.querySelector('.tab[data-tab="prefs"]').addEventListener('click',()=>setTimeout(renderPcSet,50));
@@ -6836,7 +7142,7 @@ function handleHash(h,onFail){
 /* ===================== 启动 ===================== */
 const SAMPLE=`(;GM[1]FF[4]SZ[19]GN[]DT[2026-10-19]PB[槟州0010]PW[槟州0013]BR[25级]WR[25级]KM[7.5]HA[0]RU[Chinese]RE[W+R]AP[foxwq]
 ;B[dp];W[pd];B[qp];W[dd];B[fd];W[cf];B[dc];W[cc];B[eb];W[cb];B[db];W[de];B[qc];W[qd];B[pc];W[oc];B[ob];W[nc];B[nb];W[mc];B[rd];W[re];B[op];W[cq];B[cp];W[dq];B[fq];W[eq];B[ep];W[fr];B[gq];W[gr];B[bq];W[br];B[aq];W[hr];B[hq];W[mb];B[na];W[qf];B[cm];W[di];B[cj];W[ci];B[fl];W[fi];B[ej];W[ei];B[gj];W[gi];B[kq];W[dj];B[dk];W[bj];B[ck];W[pi];B[pm];W[ok];B[ol];W[nk];B[nl];W[ff];B[jk];W[fj];B[fk];W[ii];B[jd];W[jf];B[he];W[hf];B[ie];W[if];B[ee];W[ef];B[me];W[ne];B[le];W[nf];B[lg];W[li];B[mh];W[ni];B[ma];W[rc];B[rb];W[sc];B[pa];W[sb];B[ra];W[sd];B[qb];W[jc];B[kc];W[jb];B[kb];W[ik];B[il];W[hk];B[gk];W[hj];B[hl];W[jj];B[lk];W[kk];B[kl];W[kj];B[jl];W[mj];B[mk];W[mi];B[kf];W[ge];B[gd];W[qk];B[ql];W[rl];B[rm];W[rk];B[pl];W[ar];B[bo];W[cs];B[bk];W[aj];B[ak];W[bh];B[ek];W[da];B[ea];W[ca];B[ed];W[fe];B[lc];W[md];B[ld];W[je];B[ke];W[id];B[hd];W[kd];B[ir];W[jd];B[ic];W[hc];B[og];W[pf];B[ng];W[mf];B[lf];W[ka];B[la];W[ja];B[lb];W[gc];B[mg];W[pg];B[od];W[nd];B[of];W[oe];B[jg];W[ig];B[jh];W[ih];B[ji];W[kh];B[ki];W[kg];B[fc];W[gb];B[oh];W[ph];B[oi];W[oj];B[nh];W[pk];B[sl];W[sk];B[sm];W[qn];B[pp];W[qm];B[pn];W[ro];B[qo];W[rn];B[rp];W[sn];B[sp];W[ip];B[fp];W[iq];B[jr];W[ko];B[hs];W[dr];B[gs];W[es];B[is];W[fs];B[sa];W[jq];B[kr];W[kp];B[jo];W[io];B[jn];W[lq];B[lr];W[jp];B[in];W[mq];B[mr];W[np];B[no];W[mo];B[ln];W[nn];B[oo];W[kn];B[km];W[lm];B[mn];W[mm];B[nq];W[lp];B[mp];W[lo];B[np];W[ll];B[ml];W[hn];B[im];W[gm];B[gl];W[gn];B[fo];W[fn];B[en];W[on];B[nm];W[lj];B[om];W[po];B[pn];W[pm])`;
-function saveNow(){
+function saveNow(){if(G&&G.id==='__ts'){flash(T('做题中：题目存在练习册里'));return}
   clearTimeout(saveT);const rec=store.games[G.id]||(store.games[G.id]={});
   rec.sgf=toSGF(G.root);rec.key=gameKey(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();
   const ok=lsSet(store);renderLib();
