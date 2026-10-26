@@ -414,6 +414,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>评论</dt><dd>先在「我是」选名字再写。</dd>
         <dt>AI</dt><dd>「AI 分析」看推荐点、胜率和变化，可设思考时间；「新对局」可和 AI 下。第一次下载约 12 MB。</dd>
         <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」。分析结果跟着棋谱同步到其他设备；连接 Drive 时报告也会存进 Drive。和 AI 下完会自动分析。</dd>
+        <dt>家里电脑</dt><dd>在「设置」产生配对码，家里电脑执行 katago_bridge.py 并输入同一个码；「整盘分析」选「家里电脑」，结果会传回手机。</dd>
         <dt>AI 网络</dt><dd>在「设置」选：手机、4 核以下电脑用轻量 b10；6–8 核以上电脑用强力 b18；有独立显卡的电脑分析用 b10，形势判断用 b18。</dd>
         <dt>同步</dt><dd>按「连接 Drive」，电脑、手机、iPad 自动同步。</dd>
         <dt>分享</dt><dd>共享链接：大家一起写。快照链接：一次性副本。</dd>
@@ -475,6 +476,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
 
     <div class="score" id="revBox" hidden>
       <div class="score-head"><b>整盘分析</b><span>AI 把实战每一手都算一遍，找出大失误，整理成报告。</span></div>
+      <div class="score-opts" id="revEngineRow" hidden><span>用</span><span class="seg" id="revEngine"><button data-e="local">这台设备</button><button data-e="pc">家里电脑</button></span></div>
       <div class="score-opts">
         <span>每手计算</span><span class="seg" id="revMode"><button data-m="fast">快速 1 次</button><button data-m="std">标准 16 次</button><button data-m="deep">深入 64 次</button></span>
         <button class="btn pri" id="revStart">开始分析</button>
@@ -610,6 +612,11 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
           </tbody>
         </table>
         <p class="note">b10：12 MB，有显卡时很快。b18：约 41 MB，新一代网络，判断准很多，但只用 CPU（19 路每秒约 1–2 次，9 路约 5 次），适合形势、死活和对局；长时间多步分析用 b10 较快。每台设备各自记住选择。</p>
+        <hr>
+        <b class="sub">家里电脑（KataGo）</b>
+        <div class="row" style="gap:6px;align-items:center"><input id="pcCode" maxlength="24" placeholder="配对码" style="width:12em;height:34px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg);font-family:var(--f-mono)"><button class="btn" id="pcNew">产生配对码</button></div>
+        <p class="note" id="pcState"></p>
+        <p class="note">在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用。配对码不要给别人。</p>
         <p class="note">落子、提子音效取自 MultiGo 4。</p>
       </div>
 
@@ -743,6 +750,15 @@ const EN={
 // QR / 短链接
 '存 QR 图片':'Save QR image','链接太长，做不成 QR code':'The link is too long for a QR code','拿到链接或扫 QR code 的人，都看得到整盘棋和所有评论。':'Anyone with the link or QR code can see the whole game and all comments.',
 '找不到这个快照链接的棋谱':'Couldn’t find the game for this snapshot link',
+// 家里电脑
+'用':'Use','这台设备':'This device','家里电脑':'Home PC','家里电脑（KataGo）':'Home PC (KataGo)','配对码':'Pairing code','产生配对码':'New pairing code',
+'快速 {0} 次':'Fast ({0})','标准 {0} 次':'Standard ({0})','深入 {0} 次':'Deep ({0})','KataGo（家里电脑）':'KataGo (home PC)',
+'家里电脑分析中：已分析 {0} / {1} 个局面':'Home PC analysing: {0} / {1} positions','已送到家里电脑，等它开始…':'Sent to the home PC, waiting for it to start…',
+'家里电脑目前离线，开机并执行小程序后会自动开始分析（可以先关掉这页）':'The home PC is offline. Analysis starts automatically once it is on and the program is running (you can close this page).',
+'还没设定。':'Not set up yet.','检查中…':'Checking…','电脑还没连上过。请在电脑上执行小程序并输入这个配对码。':'The PC hasn’t connected yet. Run the program on the PC and enter this code.',
+'家里电脑在线 ✓（{0}）':'Home PC online ✓ ({0})','家里电脑离线（最后在线：{0} 分钟前）':'Home PC offline (last seen {0} min ago)',
+'在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用。配对码不要给别人。':'Run katago_bridge.py on the home PC with the same code, then choose “Home PC” in Game review. Enter the same code on your phone, iPad or other computers to share it. Keep the code private.',
+'在「设置」产生配对码，家里电脑执行 katago_bridge.py 并输入同一个码；「整盘分析」选「家里电脑」，结果会传回手机。':'Create a pairing code in Settings, run katago_bridge.py on the home PC with the same code, then pick “Home PC” in Game review; the results come back to your phone.',
 // 等级 / 名字 / 对局后报告
 '报告已存到 Google Drive「围棋复盘」文件夹':'Report saved to the “围棋复盘” folder in Google Drive',
 '{0} 级':'{0} kyu','{0} 段':'{0} dan','（按思考时间）':' (by thinking time)','我的名字':'My name','必填，会记在棋谱里':'Required, saved in the game record',
@@ -2652,7 +2668,7 @@ const savedText=()=>(typeof Shared!=='undefined'&&Shared.isShared())?(Shared.pen
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
 let prefs={sound:'on'};
-try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
+try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.pcCode)prefs.pcCode=v.pcCode;if(v.revEngine)prefs.revEngine=v.revEngine;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
 function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}syncPrefUI();render()}
 function syncPrefUI(){document.querySelectorAll('[data-pref]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===prefs[g.dataset.pref])))}
 const SND={};
@@ -3757,12 +3773,8 @@ async function revSaveShared(my){ // 分析完成：写进棋谱（跟着同步�
     if(!G||G.id!==my.gid)return;root().props.XR=['1:'+await revPack(o)];changed(false)}catch(e){console.warn('XR',e)}
   try{if(Drive.connected()){const r=revReportHtml();if(r&&await Drive.saveReport(G.id,r.name,r.html))flash(T('报告已存到 Google Drive「围棋复盘」文件夹'))}}catch(e){console.warn('report to Drive',e)}
 }
-async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
-  if(rev&&rev.running)return;const mode=forceMode||prefs.revMode||'std',line=revLine(),n=sizeOf(root());
-  if(line.length<3){flash(T('棋谱太短，没有可以分析的手'));return}
-  rev={key:gameKey(root()),gid:G.id,mode,only:only||0,visits:REV_MODES[mode],rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
-  anaStop();renderRev();const my=rev;
-  try{await AI.load();my.net=AI.net().id;my.t0=performance.now();
+async function revLocal(my,line,n){ // 用这台设备的 AI 算
+  await AI.load();my.net=AI.net().id;my.t0=performance.now();
     const own=new Array(line.length);
     await revEvalNodes(line,my.visits,(k,r)=>{own[k]=r.own;delete r.own;my.rows[k]={w:+r.w.toFixed(4),l:+r.l.toFixed(2),b:r.b,pv:r.pv,pp:+(+r.pp).toFixed(3)};if(r.g2!=null)my.rows[k].g2=+r.g2.toFixed(1);my.i++;
       if(k>=1&&own[k-1]){const m=moveOf(line[k]);if(m)my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
@@ -3770,6 +3782,14 @@ async function revStart(forceMode,only){ // only：和 AI 对局时只看自己�
       if(my.i%4===0||my.i===line.length)renderRev()});
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
     for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
+}
+async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
+  if(rev&&rev.running)return;const mode=forceMode||prefs.revMode||'std',line=revLine(),n=sizeOf(root());
+  if(line.length<3){flash(T('棋谱太短，没有可以分析的手'));return}
+  rev={key:gameKey(root()),gid:G.id,mode,only:only||0,visits:REV_MODES[mode],rows:new Array(line.length).fill(null),running:true,stop:false,i:0,total:line.length,t0:performance.now(),focus:null,graph:'wr'};
+  anaStop();renderRev();const my=rev;
+  const usePc=prefs.revEngine==='pc'&&PC.on();
+  try{if(usePc)await revStartPC(my,line,n);else await revLocal(my,line,n);
     if(!my.stop&&rev===my){my.done=true;const rec=store.games[G.id];if(rec&&G.id===my.gid){rec.review={key:my.key,mode:my.mode,only:my.only,visits:my.visits,net:my.net,rows:my.rows,done:true,date:Date.now()};lsSet(store);renderLib()}await revSaveShared(my)}
   }catch(e){my.err=(e&&e.message)||String(e)}
   my.running=false;if(rev===my)renderRev();render();
@@ -3778,10 +3798,15 @@ function revGo(k){const line=revLine();const nd=line[k];if(!nd)return;for(let x=
 function renderRev(){
   const box=$('#revBox');if(!box||box.hidden)return;
   document.querySelectorAll('#revMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===(prefs.revMode||'std')));
+  const pcOn=PC.on(),eng=pcOn&&prefs.revEngine==='pc'?'pc':'local';$('#revEngineRow').hidden=!pcOn;
+  document.querySelectorAll('#revEngine button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.e===eng));
+  document.querySelectorAll('#revMode button').forEach(b=>{const m=b.dataset.m,v=eng==='pc'?REV_PC_VISITS[m]:REV_MODES[m];b.textContent=T({fast:'快速 {0} 次',std:'标准 {0} 次',deep:'深入 {0} 次'}[m],v)});
   const n=sizeOf(root()),line=revLine(),r=rev;
   $('#revStart').textContent=r&&r.running?T('停止'):r&&r.done?T('重新分析'):T('开始分析');
   let st='';
-  if(r&&r.running){const el=(performance.now()-r.t0)/1000,per=r.i?el/r.i:0,left=Math.max(0,(r.total-r.i)*per);
+  if(r&&r.running&&r.pc){const hbMin=r.pc.hb&&r.pc.hb.t?(Date.now()-r.pc.hb.t)/60000:null;
+    st=r.pc.state==='running'?T('家里电脑分析中：已分析 {0} / {1} 个局面',r.i,r.total):hbMin!=null&&hbMin<=2?T('已送到家里电脑，等它开始…'):T('家里电脑目前离线，开机并执行小程序后会自动开始分析（可以先关掉这页）')}
+  else if(r&&r.running){const el=(performance.now()-r.t0)/1000,per=r.i?el/r.i:0,left=Math.max(0,(r.total-r.i)*per);
     st=AI.status()!=='ready'?T('AI 准备中…'):T('已分析 {0} / {1} 个局面 · 还要约 {2}',r.i,r.total,left>90?T('{0} 分钟',Math.ceil(left/60)):T('{0} 秒',Math.ceil(left)))}
   else if(r&&r.err)st=T('AI 无法载入：{0}',r.err);
   else if(r&&r.done)st=T('{0} · 每手 {1} 次 · {2}',T(AI_NETS[r.net]?AI_NETS[r.net].name:r.net||''),r.visits,new Date(r.date||Date.now()).toLocaleString());
@@ -3869,6 +3894,58 @@ function revReportHtml(){
   const name='AI_Report_'+fileName().replace(/\.sgf$/,'')+'.html'; // 同一盘棋固定文件名，Drive 上会更新同一个文件
   return{name,html:h};
 }
+
+/* ---- 家里电脑（KataGo）：手机把整盘分析的任务放进 Firebase，电脑上的小程序算好再传回来 ----
+   位置：games/pc_<配对码>/layers/{job, res, hb}
+   job：要分析的棋局；res：电脑传回的进度和结果；hb：电脑每分钟报一次「我在线」 */
+const REV_PC_VISITS={fast:50,std:200,deep:800};
+const OWN_ALPH='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+function pcGtp(p,n){return p<0?'pass':COLS[p%n]+(n-((p/n)|0))}
+function pcIdx(s,n){if(!s||/^pass$/i.test(s))return -1;const x=COLS.indexOf(s[0].toUpperCase()),y=n-parseInt(s.slice(1),10);return x>=0&&y>=0&&y<n?y*n+x:-1}
+function pcOwnDec(str,n){const o=new Float32Array(n*n);for(let i=0;i<n*n;i++)o[i]=OWN_ALPH.indexOf(str[i]||'V')/63*2-1;return o}
+const PC=(()=>{
+  let unsub=null;
+  const code=()=>(prefs.pcCode||'').replace(/[^A-Za-z0-9]/g,'');
+  async function slot(name){const db=await Shared.db();return db.collection('games').doc('pc_'+code()).collection('layers').doc(name)}
+  async function status(){ // 电脑上次报到是几分钟前（null = 从来没有）
+    try{const d=await(await slot('hb')).get();if(!d.exists)return null;const o=JSON.parse(d.data().sgf||'{}');return o}catch(e){return null}}
+  async function send(job){await(await slot('job')).set({sgf:JSON.stringify(job),name:'job',updated:Date.now()})}
+  async function watch(id,cb){stop();const ref=await slot('res');unsub=ref.onSnapshot(d=>{if(!d.exists)return;let o=null;try{o=JSON.parse(d.data().sgf||'{}')}catch(e){}if(o&&o.id===id)cb(o)},e=>cb({id,state:'error',msg:e.message}))}
+  function stop(){if(unsub)unsub();unsub=null}
+  return{code,status,send,watch,stop,on:()=>!!code()&&Shared.avail()};
+})();
+function pcJob(line,n,visits){ // 把实战主线变成 KataGo 分析引擎看得懂的格式
+  const r=root(),init=[];for(const[x,y]of expandPts(r.props.AB,n))init.push(['B',pcGtp(y*n+x,n)]);for(const[x,y]of expandPts(r.props.AW,n))init.push(['W',pcGtp(y*n+x,n)]);
+  const moves=[];for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(!m)continue;const p=revPt(line[k],n);moves.push([m[0],p==null?'pass':pcGtp(p,n)])}
+  const k=aiKomi();return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),n,visits,komi:Math.round(k.komi*2)/2,
+    rules:guessRule()==='jp'?'japanese':'chinese',initialStones:init,initialPlayer:nextColor(r),moves,created:Date.now()};
+}
+async function revStartPC(my,line,n){ // 由 revStart 叫：等电脑算好，转成和本机分析一样的格式
+  const job=pcJob(line,n,REV_PC_VISITS[my.mode]||200);my.visits=job.visits;my.net=T('KataGo（家里电脑）');my.pc={state:'sent',hb:null};
+  const hb=await PC.status();my.pc.hb=hb;renderRev();
+  await PC.send(job);
+  await new Promise((resolve,reject)=>{
+    const chk=setInterval(()=>{if(my.stop){clearInterval(chk);PC.stop();resolve()}},500);
+    PC.watch(job.id,o=>{
+      if(o.state==='error'){clearInterval(chk);PC.stop();reject(new Error(o.msg||'KataGo'))}
+      else if(o.state==='running'){my.pc.state='running';my.i=o.done||0;my.total=o.total||line.length;if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;renderRev()}
+      else if(o.state==='done'){clearInterval(chk);PC.stop();
+        if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;
+        const own=(o.own||[]).map(s=>s?pcOwnDec(s,n):null);
+        line.forEach((nd,k)=>{const r=o.rows&&o.rows[k];if(!r)return;my.rows[k]=r;
+          if(k>=1&&own[k-1]&&own[k]){const m=moveOf(nd);if(m)r.g=revGroupText(nd,own[k-1],own[k],n,m[0]==='B'?1:2)}});
+        my.i=line.length;resolve()}
+    });
+  });
+}
+function renderPcSet(){ // 设置分页：配对码和电脑状态
+  const inp=$('#pcCode');if(!inp)return;if(document.activeElement!==inp)inp.value=prefs.pcCode||'';
+  const st=$('#pcState');if(!PC.code()){st.textContent=T('还没设定。');return}
+  st.textContent=T('检查中…');PC.status().then(o=>{const min=o&&o.t?Math.round((Date.now()-o.t)/60000):null;
+    st.textContent=min==null?T('电脑还没连上过。请在电脑上执行小程序并输入这个配对码。'):min<=2?T('家里电脑在线 ✓（{0}）',o.model||'KataGo'):T('家里电脑离线（最后在线：{0} 分钟前）',min)});
+}
+function pcSetCode(v){prefs.pcCode=(v||'').replace(/[^A-Za-z0-9]/g,'').slice(0,24);try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}renderPcSet();renderRev()}
+function pcNewCode(){const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(10);crypto.getRandomValues(u);pcSetCode([...u].map(x=>a[x%a.length]).join(''))}
 
 /* ===================== 存成图片 ===================== */
 let imgMode='now',imgBlob=null,imgUrl=null;
@@ -4067,6 +4144,9 @@ $('#ngName').oninput=e=>{ng.name=e.target.value};$('#ngAuto').onchange=e=>{ng.au
 $('#aiToggle').onclick=()=>setAiHint(!aiHint);
 $('#revToggle').onclick=()=>$('#revBox').hidden?revOpen():revClose();
 $('#revClose').onclick=revClose;
+$('#revEngine').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revEngine=b.dataset.e;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
+$('#pcCode').onchange=e=>pcSetCode(e.target.value);$('#pcNew').onclick=pcNewCode;
+document.querySelector('.tab[data-tab="prefs"]').addEventListener('click',()=>setTimeout(renderPcSet,50));
 $('#revStart').onclick=()=>{if(rev&&rev.running){rev.stop=true;return}revStart()};
 $('#revMode').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revMode=b.dataset.m;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
 $('#revRes').addEventListener('click',e=>{
@@ -6740,7 +6820,7 @@ const Shared=(()=>{
     if(rec){rec.snap={id,h};lsSet(store)}return id;
   }
   async function snapRead(id){const b=await backend();const d=b.read?await b.read(id):null;return d&&d.base}
-  return{avail,attach,detach,sync,onLocalChange,create,join,meChanged,ui,snap,snapRead,
+  return{avail,attach,detach,sync,onLocalChange,create,join,meChanged,ui,snap,snapRead,db:async()=>{await backend();return firebase.firestore()},
     active:()=>!!(gid&&curGid()===gid),pending:()=>pending||connecting,isShared:()=>!!curGid(),names:()=>Object.keys(layers)};
 })();
 $('#liveCreate').onclick=()=>Shared.create();
