@@ -2934,7 +2934,8 @@ function render(){
       o+=`<rect x="${X(qx)-U/2}" y="${X(qy)-U/2}" width="${U*h}" height="${U*h}" fill="#F2C14E" opacity=".28" rx="8"/>`}
     if(xy&&train.reveal)o+=`<circle cx="${X(xy[0])}" cy="${X(xy[1])}" r="${U*0.42}" fill="none" stroke="#2E8B57" stroke-width="5"/>`;
   }
-  if(!train&&!exporting&&cur.children.length>1)cur.children.forEach((ch,i)=>{const m=moveOf(ch);if(!m)return;const xy=ptToXY(m[1],n);if(!xy||st.g[xy[1]][xy[0]])return;
+  const tsHide=typeof ts!=='undefined'&&ts&&ts.mode==='solve'&&!ts.view&&!ts.solved&&!ts.shown; // 做题时不提示答案的变化
+  if(!train&&!exporting&&!tsHide&&cur.children.length>1)cur.children.forEach((ch,i)=>{const m=moveOf(ch);if(!m)return;const xy=ptToXY(m[1],n);if(!xy||st.g[xy[1]][xy[0]])return;
     o+=`<circle cx="${X(xy[0])}" cy="${X(xy[1])}" r="${U*.34}" fill="${m[0]==='B'?'#111':'#fff'}" opacity=".35"/><text x="${X(xy[0])}" y="${X(xy[1])}" text-anchor="middle" dominant-baseline="central" font-family="IBM Plex Mono,monospace" font-size="17" fill="${m[0]==='B'?'#fff':'#000'}">${String.fromCharCode(65+i)}</text>`});
   svg.innerHTML=o;
 
@@ -3428,7 +3429,7 @@ class Search{
       const ev=this.leafVal(o,st.pla);
       const prev=lf.parent?this.state(lf.parent).boards:null;
       if(lf.move===-1&&prev&&prev[prev.length-1].move===-1)lf.term=ev; // 双方停一手：终局
-      else{const a=[];for(let p=0;p<=N;p++)if(o.policy[p]>1e-5)a.push([p===N?-1:p,o.policy[p]]);a.sort((x,y)=>y[1]-x[1]);
+      else{const a=[],al=this.allow;for(let p=0;p<=N;p++)if(o.policy[p]>1e-5&&(!al||p===N||al[p]))a.push([p===N?-1:p,o.policy[p]]);if(al){const z=a.reduce((s,x)=>s+x[1],0)||1;a.forEach(x=>x[1]/=z)}a.sort((x,y)=>y[1]-x[1]);
         lf.mv=Int16Array.from(a,x=>x[0]);lf.pr=Float32Array.from(a,x=>x[1]);lf.kids=new Array(a.length)}
       this.backup(path,ev)});
   }
@@ -3770,19 +3771,19 @@ function revPhase(k,n){const N=n*n;return k<=N*0.14?0:k<=N*0.42?1:2}
 const REV_PHASE=['布局','中盘','官子'];
 
 // 局面 → 一行结果：{w:黑胜率, l:黑领先目数, b:[前三名], pv:[推荐变化], own:棋子归属(只在记忆体里)}
-async function revEvalNodes(nodes,visits,onEach){
+async function revEvalNodes(nodes,visits,onEach,allow){ // allow：只准下这些点（死活题只看局部）
   const n=sizeOf(root());
   if(visits<=1){ // 快速：只用神经网络，一次算 8 个
     const B=AI.backend()==='webgl'?8:1;
     for(let i=0;i<nodes.length;i+=B){if(rev&&rev.stop)return;
       const chunk=nodes.slice(i,i+B),outs=await AI.run(chunk.map(nd=>AI.itemFor(nd)));
-      outs.forEach((o,j)=>{const P=o.policy,a=[];for(let p=0;p<P.length;p++)if(P[p]>0)a.push([p===n*n?-1:p,P[p]]);a.sort((x,y)=>y[1]-x[1]);
+      outs.forEach((o,j)=>{const P=o.policy,a=[];for(let p=0;p<P.length;p++)if(P[p]>0&&(!allow||p===n*n||allow[p]))a.push([p===n*n?-1:p,P[p]]);a.sort((x,y)=>y[1]-x[1]);
         onEach(i+j,{w:o.winB,l:o.leadB,b:a.slice(0,3).map(x=>x[0]),pv:[a[0]?a[0][0]:-1],own:o.ownB,pp:a[0]?a[0][1]:1})});
     }
     return;
   }
   for(let i=0;i<nodes.length;i++){if(rev&&rev.stop)return; // 标准 / 深入：每个局面用搜索算固定次数
-    const nd=nodes[i],it=AI.itemFor(nd),[o]=await AI.run([it]),s=new Search(it);
+    const nd=nodes[i],it=AI.itemFor(nd),[o]=await AI.run([it]),s=new Search(it);if(allow)s.allow=allow;
     await s.run(Infinity,null,visits);const r=s.results();
     const best=r[0],sg=it.pla===1?1:-1,g2=best&&r[1]&&r[1].N>=2?Math.max(0,(best.leadB-r[1].leadB)*sg):null;
     onEach(i,{w:best?best.winB:o.winB,l:best?best.leadB:o.leadB,b:r.slice(0,3).map(c=>c.move),pv:best?best.pv.slice(0,10):[-1],own:o.ownB,pp:best?best.P:1,g2});
@@ -3913,10 +3914,10 @@ async function revLocal(my,line,n){ // 用这台设备的 AI 算
   await AI.load();my.net=AI.net().id;my.t0=performance.now();
   const tL=performance.now();
     const own=new Array(line.length);
-    await revEvalNodes(line,my.visits,(k,r)=>{own[k]=r.own;delete r.own;my.rows[k]={w:+r.w.toFixed(4),l:+r.l.toFixed(2),b:r.b,pv:r.pv,pp:+(+r.pp).toFixed(3)};if(r.g2!=null)my.rows[k].g2=+r.g2.toFixed(1);my.i++;
+    await revEvalNodes(line,my.visits,(k,r)=>{own[k]=r.own;if(my.own)my.own[k]=r.own;delete r.own;my.rows[k]={w:+r.w.toFixed(4),l:+r.l.toFixed(2),b:r.b,pv:r.pv,pp:+(+r.pp).toFixed(3)};if(r.g2!=null)my.rows[k].g2=+r.g2.toFixed(1);my.i++;
       if(k>=1&&own[k-1]){const m=moveOf(line[k]);if(m)my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
       if(k+1<line.length&&own[k+1]===undefined){} // 下一手算好时再补
-      if(my.i%4===0||my.i===line.length)renderRev()});
+      if(my.i%4===0||my.i===line.length)renderRev()},my.allow);
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
     for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
   if(!my.stop&&my.visits>=16){const sec=(performance.now()-tL)/1000;if(sec>3)revSaveRate('L',my.visits*line.length/sec)}
@@ -4061,7 +4062,8 @@ function pcJob(line,n,visits){ // 把实战主线变成 KataGo 分析引擎看�
     rules:guessRule()==='jp'?'japanese':'chinese',initialStones:init,initialPlayer:nextColor(r),moves,created:Date.now()};
 }
 async function revStartPC(my,line,n){ // 由 revStart 叫：等电脑算好，转成和本机分析一样的格式
-  const job=pcJob(line,n,my.forced?REV_PC_VISITS[my.mode]||200:revVisits('pc',my.mode));let tRun=0;my.visits=job.visits;my.net=T('KataGo（家里电脑）');my.pc={state:'sent',hb:null};
+  const job=pcJob(line,n,my.forced?REV_PC_VISITS[my.mode]||200:revVisits('pc',my.mode));
+  if(my.allow){const mv=['pass'];for(let p=0;p<n*n;p++)if(my.allow[p])mv.push(pcGtp(p,n));job.allowMoves=[{player:'B',moves:mv,untilDepth:60},{player:'W',moves:mv,untilDepth:60}]}let tRun=0;my.visits=job.visits;my.net=T('KataGo（家里电脑）');my.pc={state:'sent',hb:null};
   const hb=await PC.status();my.pc.hb=hb;renderRev();
   await PC.send(job);
   await new Promise((resolve,reject)=>{
@@ -4071,7 +4073,7 @@ async function revStartPC(my,line,n){ // 由 revStart 叫：等电脑算好，�
       else if(o.state==='running'){if(!tRun)tRun=performance.now();my.pc.state='running';my.i=o.done||0;my.total=o.total||line.length;if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;renderRev()}
       else if(o.state==='done'){clearInterval(chk);PC.stop();
         if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;
-        const own=(o.own||[]).map(s=>s?pcOwnDec(s,n):null);
+        const own=(o.own||[]).map(s=>s?pcOwnDec(s,n):null);if(my.own)own.forEach((x,k)=>{my.own[k]=x});
         line.forEach((nd,k)=>{const r=o.rows&&o.rows[k];if(!r)return;my.rows[k]=r;
           if(k>=1&&own[k-1]&&own[k]){const m=moveOf(nd);if(m)r.g=revGroupText(nd,own[k-1],own[k],n,m[0]==='B'?1:2)}});
         if(tRun){const sec=(performance.now()-tRun)/1000;if(sec>5)revSaveRate('P',job.visits*line.length/sec)}
@@ -4953,23 +4955,65 @@ function tsReports(users){const res=(tsCloud&&tsCloud.meta&&tsCloud.meta.resolve
 /* ---- AI 解说：KataGo 分析原书每一手，写进评论（欣赏模式的题再加 AI 推荐变化） ---- */
 function tsViewNote(nd){const c=(nd.props.C||[''])[0];return c.replace(/^\s*(RIGHT|WRONG)\s*/,'').replace(/\bRIGHT\b|\bWRONG\b/g,'').trim()}
 async function tsPcOnline(){if(!PC.on())return false;const o=await PC.status();return!!(o&&o.t&&Date.now()-o.t<150000)}
+function tsRoles(r,n){ // 谁要活（防守方），谁要杀（进攻方）
+  const pl=nextColor(r),op=pl==='B'?'W':'B',xg=tsXG(r),q=(r.props.C||[''])[0];
+  if(xg)return xg.goal==='live'?{def:pl,att:op,t:xg.t}:{def:op,att:pl,t:xg.t};
+  if(/先.*(杀|死)|白死|黑死|kill/i.test(q)){const dead=/黑死/.test(q)?'B':/白死/.test(q)?'W':op;return{def:dead,att:dead==='B'?'W':'B'}}
+  if(/活|live/i.test(q))return{def:pl,att:op};
+  let nb=0,nw=0;const st=computeState(r,n);for(const row of st.g)for(const v of row){if(v===1)nb++;if(v===2)nw++}
+  return nb>=nw?{def:'W',att:'B'}:{def:'B',att:'W'};
+}
+function tsFrame(r,n,crop,att){ // 死活题框：题目以外的空地摆上双方的实地，AI 就不会去抢大场
+  const[x0,y0,x1,y1]=crop,A=att==='B'?'AB':'AW',D=att==='B'?'AW':'AB',st=computeState(r,n),cells=[];
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(x>=x0&&x<=x1&&y>=y0&&y<=y1)continue;if(st.g[y][x])continue;
+    const d=Math.max(x<x0?x0-x:x>x1?x-x1:0,y<y0?y0-y:y>y1?y-y1:0);cells.push([x,y,d])}
+  if(cells.length<12)return null;
+  cells.sort((a,b)=>b[2]-a[2]);const nd=Math.floor(cells.length*0.45),r2=parseSGF(toSGF(r));
+  cells.forEach(([x,y,d],i)=>{if(d>1&&x%3===1&&y%3===1)return; // 留眼
+    const k=d<=1?A:i<nd?D:A;(r2.props[k]=r2.props[k]||[]).push(xyToPt(x,y))});
+  // 防守方的地不要碰到边框墙：和墙相邻的防守方格子改成空
+  return r2;
+}
+function tsTargetStones(nd,n,roles,crop){ // 要看死活的那块棋（在 nd 局面里）
+  const st=computeState(nd,n),c=roles.def==='B'?1:2;let seeds=[];
+  if(roles.t){const p=pcIdx(roles.t,n);if(p>=0&&st.g[(p/n)|0][p%n]===c)seeds=[p]}
+  if(!seeds.length){const[x0,y0,x1,y1]=crop;let best=null;const seen=new Set();
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){if(st.g[y][x]!==c||seen.has(y*n+x))continue;const g=groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);g.forEach(p=>seen.add(p));if(!best||g.length>best.length)best=g}
+    return best||[]}
+  const[s0]=seeds,x=s0%n,y=(s0/n)|0;return groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);
+}
 async function tsAiExplain(sgf,addVars,onMsg){
   const r=parseSGF(sgf);tsClean(r);(function w(nd){if(nd.props.C)nd.props.C=[nd.props.C[0].replace(/\n?【AI[^】]*】[^\n]*/g,'').trim()].filter(Boolean);if(nd.props.C&&!nd.props.C.length)delete nd.props.C;nd.children=nd.children.filter(c=>!c._ai&&!/^【AI 推荐】/.test((c.props.C||[''])[0]));nd.children.forEach(w)})(r);
   const line=[r];let nd=r;while(nd.children.length){nd=nd.children[0];line.push(nd)}if(line.length<2)return null;
-  const n=sizeOf(r),my={visits:prefs.tsExpVisits||32,rows:new Array(line.length).fill(null),i:0,stop:false,mode:'deep',forced:true,pc:null};
+  const n=sizeOf(r),crop=tsCropOf(r,n),roles=crop?tsRoles(r,n):null;
+  // 分析用的棋盘：加上死活题框；只准下题目那一块
+  let ar=r,aline=line,allow=null;
+  if(crop){const fr=tsFrame(r,n,crop,roles.att);if(fr){ar=fr;aline=[fr];let q=fr;while(q.children.length){q=q.children[0];aline.push(q)}}
+    allow=new Uint8Array(n*n);const[x0,y0,x1,y1]=crop;for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)allow[y*n+x]=1}
+  const my={visits:prefs.tsExpVisits||32,rows:new Array(line.length).fill(null),own:new Array(line.length).fill(null),allow,i:0,stop:false,mode:'deep',forced:true,pc:null};
   if(rev&&rev.running)throw new Error(T('整盘分析还在跑，请等它完成'));const oldRev=rev;rev=null;
-  G0push(r);try{
-    if(await tsPcOnline()){onMsg&&onMsg(T('家里电脑分析中…'));await revStartPC(my,line,n)}
-    else{onMsg&&onMsg(T('这台设备分析中…'));await revLocal(my,line,n)}
+  G0push(ar);try{
+    if(await tsPcOnline()){onMsg&&onMsg(T('家里电脑分析中…'));await revStartPC(my,aline,n)}
+    else{onMsg&&onMsg(T('这台设备分析中…'));await revLocal(my,aline,n)}
   }finally{G0pop();rev=oldRev}
   const rows=my.rows,gtp=p=>p<0?T('停一手'):pcGtp(p,n),add=(nd,t)=>{const c=(nd.props.C||[''])[0];nd.props.C=[(c?c+'\n':'')+'【AI】'+t]};
+  const defName=roles&&(roles.def==='B'?T('黑棋'):T('白棋')),sgn=roles&&(roles.def==='B'?1:-1);
+  const status=k=>{if(!roles||!my.own[k])return null;const ts=tsTargetStones(line[k],n,roles,crop);if(!ts.length)return-1;let s=0;ts.forEach(p=>s+=my.own[k][p]);return s/ts.length*sgn};
+  const say=v=>v==null?'':v>0.5?T('{0}这块活了（AI 判断活棋 {1}%）',defName,Math.round((v+1)*50)):v<-0.5?T('{0}这块死了（AI 判断活棋 {1}%）',defName,Math.round((v+1)*50)):T('{0}这块还不确定（AI 判断活棋 {1}%）',defName,Math.round((v+1)*50));
   for(let k=1;k<line.length;k++){const a=rows[k-1],b=rows[k],m=moveOf(line[k]);if(!a||!b||!m)continue;
-    const p=revPt(line[k],n),best=a.b&&a.b[0],sg=m[0]==='B'?1:-1,loss=Math.max(0,sg*(a.l-b.l));
+    const p=revPt(line[k],n),best=a.b&&a.b[0];
+    if(crop&&roles){ // 死活题：用这块棋的死活来说明
+      const s0=status(k-1),s1=status(k),forDef=m[0]===roles.def,worse=s0!=null&&s1!=null?(forDef?s0-s1:s1-s0):0;
+      let t=p===best?T('AI 也选这里。'):worse>0.3?T('AI 推荐 {0}，这样下比较不好。',gtp(best)):T('也可以；AI 首选 {0}。',gtp(best));
+      if(s1!=null)t+=' '+T('这手之后：')+say(s1)+'。';add(line[k],t);
+      if(addVars&&p!==best&&worse>0.3&&a.pv&&a.pv.length&&best!=null&&best>=0){let par=line[k-1],c=m[0];a.pv.slice(0,6).forEach((q,i)=>{const ch={props:{[c]:[q<0?'':xyToPt(q%n,(q/n)|0)]},children:[],parent:par,_ai:1};if(i===0)ch.props.C=['【AI 推荐】'];par.children.push(ch);par=ch;c=c==='B'?'W':'B'})}
+      continue}
+    const sg=m[0]==='B'?1:-1,loss=Math.max(0,sg*(a.l-b.l));
     if(p===best)add(line[k],T('AI 也选这里。'));
     else if(loss<1.5)add(line[k],T('也可以；AI 首选 {0}（只差 {1} 目）。',gtp(best),loss.toFixed(1)));
     else{add(line[k],T('AI 推荐 {0}，这手大约亏 {1} 目。',gtp(best),loss.toFixed(1)));
       if(addVars&&a.pv&&a.pv.length&&best!=null&&best>=0){let par=line[k-1],c=m[0];a.pv.slice(0,6).forEach((q,i)=>{const ch={props:{[c]:[q<0?'':xyToPt(q%n,(q/n)|0)]},children:[],parent:par,_ai:1};if(i===0)ch.props.C=['【AI 推荐】'];par.children.push(ch);par=ch;c=c==='B'?'W':'B'})}}}
-  const z=addVars&&rows[line.length-1];if(z){const lead=z.l,who=lead>=0?T('黑'):T('白');add(line[line.length-1],T('最后局面：{0}领先约 {1} 目（{0}胜率 {2}%）。',who,Math.abs(lead).toFixed(1),Math.round((lead>=0?z.w:1-z.w)*100)))}
+  const z=addVars&&!crop&&rows[line.length-1];if(z){const lead=z.l,who=lead>=0?T('黑'):T('白');add(line[line.length-1],T('最后局面：{0}领先约 {1} 目（{0}胜率 {2}%）。',who,Math.abs(lead).toFixed(1),Math.round((lead>=0?z.w:1-z.w)*100)))}
   (function w(x){delete x._ai;x.children.forEach(w)})(r);
   return toSGF(r);
 }
