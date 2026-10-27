@@ -1,0 +1,26 @@
+diff --git a/engine/globals.c b/engine/globals.c
+index e178736..7f37aab 100644
+--- a/engine/globals.c
++++ b/engine/globals.c
+@@ -178,3 +178,6 @@ float territorial_weight    = 1.0;
+ float strategical_weight    = 1.0;
+ float attack_dragon_weight  = 1.0;
+ float followup_weight       = 1.0;
++
++int meaningless_black_moves[BOARDMAX];
++int meaningless_white_moves[BOARDMAX];
+diff --git a/engine/liberty.h b/engine/liberty.h
+index 2346d0b..aefe788 100644
+--- a/engine/liberty.h
++++ b/engine/liberty.h
+@@ -859,8 +859,8 @@ struct worm_data {
+ extern struct worm_data worm[BOARDMAX];
+ 
+ /* Unconditionally meaningless moves. */
+-int meaningless_black_moves[BOARDMAX];
+-int meaningless_white_moves[BOARDMAX];
++extern int meaningless_black_moves[BOARDMAX];
++extern int meaningless_white_moves[BOARDMAX];
+ 
+ /* Surround cache (see surround.c) */
+ 
