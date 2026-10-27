@@ -5224,7 +5224,7 @@ const Drive=(()=>{
       }
       for(const id of Object.keys(store.games))if(!store.games[id].driveId){await upload(id);up++}
       lsSet(store);renderLib();
-      if(G&&!store.games[G.id]){const ids=Object.keys(store.games);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]})}
+      if(G&&!/^__/.test(G.id)&&!store.games[G.id]){const ids=Object.keys(store.games);if(ids.length)openRoot(parseSGF(store.games[ids[0]].sgf),{id:ids[0]})}
       const parts=[down&&T('下载 {0} 盘',down),up&&T('上传 {0} 盘',up),gone&&T('移除 {0} 盘',gone)].filter(Boolean);
       st(T('已同步 · {0}',new Date().toLocaleTimeString())+(parts.length?' ('+parts.join(T('、'))+')':''));
       if(typeof flash==='function'&&parts.length)flash(T('已和 Google Drive 同步：{0}',parts.join(T('、'))));
