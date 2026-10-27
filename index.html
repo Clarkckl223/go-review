@@ -39,6 +39,7 @@
   --wood:#C49A55; --wood-edge:#A87F3C; --grid:#2A1D0C; --danger:#E0745F; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.tsview{padding:8px 10px;border-radius:8px;background:var(--accent-soft);min-height:2.6em;line-height:1.6}
 .tsp{position:relative}.tsfix{position:absolute;top:1px;right:3px;font-size:10px;font-style:normal;opacity:.8}
 .tsclock{margin-left:8px;font-size:14px;color:var(--muted)}.tsclock.warn{color:#C0392B;font-weight:700}
 .olplayers{display:flex;gap:8px;flex-wrap:wrap}.olpl{flex:1;min-width:10em;display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:8px}.olpl.on{border-color:var(--accent,#2F6B5A);box-shadow:0 0 0 2px rgba(47,107,90,.25)}.olclk{margin-left:auto;font-size:15px}.ollist{display:flex;flex-direction:column;gap:4px}.olp{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}.olp span{color:var(--muted)}.olp .btn{margin-left:auto}.olchal{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border-radius:8px;background:rgba(47,107,90,.12)}
@@ -687,6 +688,8 @@ const DRIVE_FOLDER = '围棋复盘';
 
 /* ===================== 中文 / English ===================== */
 const EN={
+"整盘分析还在跑，请等它完成":"Game review is still running; please wait",
+"按「下一手」一步一步看。":"Press Next to step through.","（这一手没有说明）":"(no comment for this move)","变化 {0}":"Var. {0}","回到做题":"Back to solving","看解说":"Commentary","AI 解说":"AI commentary","这题没有可以分析的手":"Nothing to analyse in this problem","AI 解说已写好。":"AI commentary added.","整本 AI 解说":"AI commentary for whole book","家里电脑在线时用它算，比较快、比较准。":"Uses your home PC when it’s online (faster and stronger).","第 {0}/{1} 题：":"Problem {0}/{1}: ","整本解说完成：写好 {0} 题。":"Done: commentary added to {0} problems.","家里电脑分析中…":"Analysing on home PC…","这台设备分析中…":"Analysing on this device…","AI 也选这里。":"AI agrees.","也可以；AI 首选 {0}（只差 {1} 目）。":"Also fine; AI prefers {0} (only {1} pts less).","AI 推荐 {0}，这手大约亏 {1} 目。":"AI suggests {0}; this move loses about {1} pts.","最后局面：{0}领先约 {1} 目（{0}胜率 {2}%）。":"Final position: {0} leads by about {1} pts ({0} win rate {2}%).",
 "你在这本内建练习册的修改、删除只会套用在你的班级。":"Your edits and deletions in this built-in workbook apply only to your class.","复制到班级练习册":"Copy to a class workbook","复制到我的练习册":"Copy to my workbooks","恢复原版（取消班级修改）":"Restore original (undo class edits)","（副本）":" (copy)","已复制，可以随意修改。":"Copied. You can edit it freely.","这题有问题":"Report a problem","哪里有问题？":"What’s wrong?","答案不对":"Wrong answer","题目摆错了":"Position is wrong","太难／看不懂":"Too hard / unclear","谢谢！已告诉老师。":"Thanks! Your teacher has been told.","学生回报的题":"Problems reported by students","问题":"Issue","打开":"Open","已处理":"Done","找不到这题（可能已删除）":"Problem not found (maybe deleted)","题库载入好了，再按一次「打开」":"Problems loaded. Press Open again.",
 "用时 {0}":"Time {0}","剩 {0}":"{0} left","时间到！":"Time’s up!","闯关测验":"Challenge","闯关测验（{0} 题）":"Challenge ({0} problems)","答对 {0}":"{0} correct","放弃":"Quit","限时":"Time limit","60 秒":"60 s","按难度":"By difficulty","最好成绩：{0}/{1}，{2}":"Best: {0}/{1}, {2}","闯关结果":"Challenge result","答对 {0} / {1} 题 · 总用时 {2} · 评级 {3}":"{0} / {1} correct · total {2} · grade {3}","奖励 +{0} 分":"Bonus +{0} pts","再来一次":"Try again","平均用时":"Avg. time","全班最卡的题":"Hardest problems for the class","题目":"Problem","没一次答对":"Not right first try",
 "出题":"Problems","老师出题时可「从图片导入」（截图自动认，照片点四个角）、按「AI 解答」；练习册可「打印」（附答案）。整盘分析后可「用这盘棋出题」。":"Teachers can import a problem from a picture (screenshots are read automatically; for photos tap the four corners) and press “AI answer”. Workbooks can be printed with answers. After a game review, “Make problems from this game” finds life-and-death positions.","对手":"Opponents","「新对局」可选 KataGo 或 GNU Go；「升级赛」连赢 2 盘升级、连输 3 盘降级。":"In New game choose KataGo or GNU Go. In the Ladder, 2 wins in a row rank you up and 3 losses drop you.","建立对局把链接传给朋友，或进大厅挑战；有读秒和等级分。":"Create a game and send the link, or challenge someone in the lobby. Games have byo-yomi and a rating.",
@@ -3741,14 +3744,14 @@ async function revEvalNodes(nodes,visits,onEach){
   const n=sizeOf(root());
   if(visits<=1){ // 快速：只用神经网络，一次算 8 个
     const B=AI.backend()==='webgl'?8:1;
-    for(let i=0;i<nodes.length;i+=B){if(rev.stop)return;
+    for(let i=0;i<nodes.length;i+=B){if(rev&&rev.stop)return;
       const chunk=nodes.slice(i,i+B),outs=await AI.run(chunk.map(nd=>AI.itemFor(nd)));
       outs.forEach((o,j)=>{const P=o.policy,a=[];for(let p=0;p<P.length;p++)if(P[p]>0)a.push([p===n*n?-1:p,P[p]]);a.sort((x,y)=>y[1]-x[1]);
         onEach(i+j,{w:o.winB,l:o.leadB,b:a.slice(0,3).map(x=>x[0]),pv:[a[0]?a[0][0]:-1],own:o.ownB,pp:a[0]?a[0][1]:1})});
     }
     return;
   }
-  for(let i=0;i<nodes.length;i++){if(rev.stop)return; // 标准 / 深入：每个局面用搜索算固定次数
+  for(let i=0;i<nodes.length;i++){if(rev&&rev.stop)return; // 标准 / 深入：每个局面用搜索算固定次数
     const nd=nodes[i],it=AI.itemFor(nd),[o]=await AI.run([it]),s=new Search(it);
     await s.run(Infinity,null,visits);const r=s.results();
     const best=r[0],sg=it.pla===1?1:-1,g2=best&&r[1]&&r[1].N>=2?Math.max(0,(best.leadB-r[1].leadB)*sg):null;
@@ -4327,7 +4330,7 @@ function olPanelClose(){if(ol&&ol.st&&ol.st.status==='play'&&ol.me){flash(T('对
    题目 = SGF：根节点摆好棋子（AB/AW）、PL 谁先下、C 题目说明；答案是变化树，
    正解的最后一手评论里有 RIGHT（或「正解」），错的有 WRONG。不在树里的下法都算错。
    班级资料放在 Firebase：games/cls_<班级代码>/layers/{meta, b_<练习册>, u_<学生>} */
-const TS_BUILTIN=[{"id": "starter-cap", "title": "吃子入门", "builtin": true, "problems": [{"id": "c1", "title": "提子", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[提子]C[黑先，把白子提掉。]PL[B]AB[br][cs][dr]AW[cr];B[cq]C[RIGHT 提掉了！])"}, {"id": "c2", "title": "双打吃", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[双打吃]C[黑先，一手同时打吃两块白棋。]PL[B]AB[bq][cr][fq][er]AW[cq][eq];B[dq](;W[cp];B[ep]C[RIGHT 双打吃，白只能救一边。])(;W[ep];B[cp]C[RIGHT 双打吃，白只能救一边。]))"}, {"id": "c3", "title": "征子", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[征子]C[黑先，用征子吃掉白子。要注意从哪一边打吃。]PL[B]AB[fo][go][ep]AW[fp](;B[fq];W[gp];B[hp]C[RIGHT 征子成立，白子往边上逃，逃不掉。])(;B[gp];W[fq]C[WRONG 方向错了，白往左下逃，征子不成立。]))"}, {"id": "c4", "title": "倒扑", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[倒扑]C[黑先，先送一子，再把白棋整块吃掉。]PL[B]AB[aq][bq][cq][dq][eq][fq][gq][gr][gs][ar][br][cr]AW[dr][er][fr][cs][fs];B[ds];W[es];B[ds]C[RIGHT 倒扑成功，吃掉五子！])"}]}, {"id": "starter-ld", "title": "死活入门", "builtin": true, "problems": [{"id": "l1", "title": "杀直三", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀直三]C[黑先，把白棋杀掉。]PL[B]AB[aq][bq][cq][dq][eq][er][es]AW[ar][br][cr][dr][ds](;B[bs]C[RIGHT 点在中间，白棋只剩一只眼。])(;B[as];W[bs]C[WRONG 白下在中间，做成两只眼。])(;B[cs];W[bs]C[WRONG 白下在中间，做成两只眼。]))"}, {"id": "l2", "title": "弯三做活", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[弯三做活]C[黑先，让黑棋活下来。]PL[B]AB[aq][bq][br][cr][cs]AW[ap][bp][cp][cq][dq][dr][ds](;B[as]C[RIGHT 下在角上，做成两只眼，活了！])(;B[ar];W[as]C[WRONG 白点在角上，黑只剩一只眼。])(;B[bs];W[as]C[WRONG 白点在角上，黑只剩一只眼。]))"}, {"id": "l3", "title": "杀丁四", "level": 3, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀丁四]C[黑先，把白棋杀掉。]PL[B]AB[aq][ap][bp][cp][dp][ep][eq][fq][fr][fs]AW[as][ar][br][bq][cq][dq][dr][er][es](;B[cs]C[RIGHT 点在丁四的中心，白棋活不了。])(;B[bs];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[ds];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[cr];W[cs]C[WRONG 白占到中心，做成两只眼。]))"}]}, {"id": "gk1", "title": "棋经众妙 · 活棋", "builtin": true, "src": "books/gk1.json", "count": 56, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk2", "title": "棋经众妙 · 杀棋", "builtin": true, "src": "books/gk2.json", "count": 33, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk3", "title": "棋经众妙 · 劫", "builtin": true, "src": "books/gk3.json", "count": 23, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk4", "title": "棋经众妙 · 对杀", "builtin": true, "src": "books/gk4.json", "count": 49, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk5", "title": "棋经众妙 · 接不归", "builtin": true, "src": "books/gk5.json", "count": 15, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk6", "title": "棋经众妙 · 连接", "builtin": true, "src": "books/gk6.json", "count": 34, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk7", "title": "棋经众妙 · 手筋", "builtin": true, "src": "books/gk7.json", "count": 14, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "xxqj", "title": "玄玄棋经（难）", "builtin": true, "src": "books/xxqj.json", "count": 95, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}];
+const TS_BUILTIN=[{"id": "starter-cap", "title": "吃子入门", "builtin": true, "problems": [{"id": "c1", "title": "提子", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[提子]C[黑先，把白子提掉。]PL[B]AB[br][cs][dr]AW[cr];B[cq]C[RIGHT 提掉了！])"}, {"id": "c2", "title": "双打吃", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[双打吃]C[黑先，一手同时打吃两块白棋。]PL[B]AB[bq][cr][fq][er]AW[cq][eq];B[dq](;W[cp];B[ep]C[RIGHT 双打吃，白只能救一边。])(;W[ep];B[cp]C[RIGHT 双打吃，白只能救一边。]))"}, {"id": "c3", "title": "征子", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[征子]C[黑先，用征子吃掉白子。要注意从哪一边打吃。]PL[B]AB[fo][go][ep]AW[fp](;B[fq];W[gp];B[hp]C[RIGHT 征子成立，白子往边上逃，逃不掉。])(;B[gp];W[fq]C[WRONG 方向错了，白往左下逃，征子不成立。]))"}, {"id": "c4", "title": "倒扑", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[倒扑]C[黑先，先送一子，再把白棋整块吃掉。]PL[B]AB[aq][bq][cq][dq][eq][fq][gq][gr][gs][ar][br][cr]AW[dr][er][fr][cs][fs];B[ds];W[es];B[ds]C[RIGHT 倒扑成功，吃掉五子！])"}]}, {"id": "starter-ld", "title": "死活入门", "builtin": true, "problems": [{"id": "l1", "title": "杀直三", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀直三]C[黑先，把白棋杀掉。]PL[B]AB[aq][bq][cq][dq][eq][er][es]AW[ar][br][cr][dr][ds](;B[bs]C[RIGHT 点在中间，白棋只剩一只眼。])(;B[as];W[bs]C[WRONG 白下在中间，做成两只眼。])(;B[cs];W[bs]C[WRONG 白下在中间，做成两只眼。]))"}, {"id": "l2", "title": "弯三做活", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[弯三做活]C[黑先，让黑棋活下来。]PL[B]AB[aq][bq][br][cr][cs]AW[ap][bp][cp][cq][dq][dr][ds](;B[as]C[RIGHT 下在角上，做成两只眼，活了！])(;B[ar];W[as]C[WRONG 白点在角上，黑只剩一只眼。])(;B[bs];W[as]C[WRONG 白点在角上，黑只剩一只眼。]))"}, {"id": "l3", "title": "杀丁四", "level": 3, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀丁四]C[黑先，把白棋杀掉。]PL[B]AB[aq][ap][bp][cp][dp][ep][eq][fq][fr][fs]AW[as][ar][br][bq][cq][dq][dr][er][es](;B[cs]C[RIGHT 点在丁四的中心，白棋活不了。])(;B[bs];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[ds];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[cr];W[cs]C[WRONG 白占到中心，做成两只眼。]))"}]}, {"id": "gq1", "title": "棋经众妙 · 活", "builtin": true, "src": "books/gq1.json", "count": 99, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq2", "title": "棋经众妙 · 杀", "builtin": true, "src": "books/gq2.json", "count": 71, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq3", "title": "棋经众妙 · 劫", "builtin": true, "src": "books/gq3.json", "count": 90, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq4", "title": "棋经众妙 · 对杀", "builtin": true, "src": "books/gq4.json", "count": 96, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq5", "title": "棋经众妙 · 追杀（接不归）", "builtin": true, "src": "books/gq5.json", "count": 40, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq6", "title": "棋经众妙 · 渡过", "builtin": true, "src": "books/gq6.json", "count": 74, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "gq7", "title": "棋经众妙 · 其他", "builtin": true, "src": "books/gq7.json", "count": 46, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "xq1", "title": "玄玄棋经 · 角", "builtin": true, "src": "books/xq1.json", "count": 115, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "xq2", "title": "玄玄棋经 · 边", "builtin": true, "src": "books/xq2.json", "count": 100, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "xq3", "title": "玄玄棋经 · 中央、攻杀", "builtin": true, "src": "books/xq3.json", "count": 33, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。", "problems": []}, {"id": "xq4", "title": "玄玄棋经 · 定式（欣赏）", "builtin": true, "src": "books/xq4.json", "count": 17, "credit": "古典题，公有领域。题目和答案依原书整理（解说文字没有收录）。 这一部是战斗变化，不判对错，用「下一手」一步一步看；老师可以按「整本 AI 解说」加上 KataGo 的分析。", "problems": [], "view": true}];
 const TS_KEY='goReview.ts';
 let tsStore=(()=>{try{return JSON.parse(localStorage.getItem(TS_KEY))||{}}catch(e){return{}}})();
 tsStore.books=tsStore.books||{};tsStore.log=tsStore.log||{};
@@ -4410,7 +4413,7 @@ function tsOpen(bookId,idx){
   if(judging){judging=false;$('#judgeToggle').setAttribute('aria-pressed','false')}tool='play';
   const p=b.problems[idx];let r;try{r=parseSGF(p.sgf)}catch(e){flash(T('这一题读不出来'));return}
   G={id:'__ts',root:r};cur=r;const n=sizeOf(r);
-  Object.assign(ts,{mode:'solve',bookId,idx,pid:tsPid(b,p),prob:p,node:r,tries:0,solved:false,shown:false,busy:false,wrong:null,msg:'',gained:0,t0:performance.now(),ms:0,over:false,quiz:!!(tsQuiz&&tsQuiz.bookId===bookId&&tsQuiz.list[tsQuiz.k]===idx)});tsTickStart();
+  Object.assign(ts,{mode:'solve',bookId,idx,pid:tsPid(b,p),prob:p,node:r,tries:0,solved:false,shown:false,busy:false,wrong:null,msg:'',gained:0,t0:performance.now(),ms:0,over:false,view:!!(b.view||p.view),quiz:!(b.view||p.view)&&!!(tsQuiz&&tsQuiz.bookId===bookId&&tsQuiz.list[tsQuiz.k]===idx)});tsTickStart();
   tsCrop=tsCropOf(r,n);tsView='solve';document.body.classList.add('is-ts');renderTree();render();renderTs();
 }
 function tsExit(){ // 回到原来的棋谱
@@ -4420,7 +4423,7 @@ function tsExit(){ // 回到原来的棋谱
 function tsReset(){if(!ts||ts.mode!=='solve')return;tsClean(G.root);cur=G.root;ts.node=G.root;ts.wrong=null;ts.busy=false;render();renderTs()}
 function tsClick(x,y){
   if(ts.mode==='edit')return tsEditClick(x,y);
-  if(ts.solved||ts.busy||ts.shown||ts.over)return;const n=sizeOf(root()),pt=xyToPt(x,y),col=nextColor(ts.node),st=computeState(ts.node,n);if(st.g[y][x])return;
+  if(ts.solved||ts.busy||ts.shown||ts.over||ts.view)return;const n=sizeOf(root()),pt=xyToPt(x,y),col=nextColor(ts.node),st=computeState(ts.node,n);if(st.g[y][x])return;
   const ch=ts.node.children.find(c=>{const m=moveOf(c);return m&&m[0]===col&&m[1]===pt});
   if(!ch){if(tsXG(G.root)){tsJudgeMove(x,y,col);return}ts.wrong=[x,y];playSound('stone');tsFail(T('不对，再想想。'));return}
   cur=ch;ts.node=ch;ts.wrong=null;soundFor(ch);render();
@@ -4559,7 +4562,8 @@ function renderTs(){
     if(b.credit)h+=`<p class="note" style="margin:0">${tsE(b.credit)}</p>`;
     if(b.builtin&&tsIsT())h+=`<p class="note" style="margin:0">${T('你在这本内建练习册的修改、删除只会套用在你的班级。')}</p>`;
     if(b.builtin&&b.problems.length)h+=`<div class="row"><button class="btn" data-a="copybook">${tsIsT()?T('复制到班级练习册'):T('复制到我的练习册')}</button>${b.hasFix&&tsIsT()?`<button class="btn warn" data-a="restorebook">${T('恢复原版（取消班级修改）')}</button>`:''}</div>`;
-    if(b.problems.length){const qb=(tsStore.quizBest||{})[b.id];h+=`<div class="row" style="align-items:center"><button class="btn pri" data-a="quiz">${T('闯关测验（{0} 题）',Math.min(10,b.problems.length))}</button><label>${T('限时')} <select id="tsLimit">${[['0',T('不限')],['30',T('30 秒')],['60',T('60 秒')],['auto',T('按难度')]].map(([v,l])=>`<option value="${v}"${String(tsStore.limit||'0')===v?' selected':''}>${l}</option>`).join('')}</select></label>${qb?`<span class="note" style="margin:0">${T('最好成绩：{0}/{1}，{2}',qb.ok,qb.n,tsFmt(qb.ms))}</span>`:''}</div>`}
+    if(b.problems.length&&ed)h+=`<div class="row"><button class="btn" data-a="aiexpbook">${T('整本 AI 解说')}</button><span class="note" style="margin:0">${T('家里电脑在线时用它算，比较快、比较准。')}</span></div>`;
+    if(b.problems.length&&!b.view){const qb=(tsStore.quizBest||{})[b.id];h+=`<div class="row" style="align-items:center"><button class="btn pri" data-a="quiz">${T('闯关测验（{0} 题）',Math.min(10,b.problems.length))}</button><label>${T('限时')} <select id="tsLimit">${[['0',T('不限')],['30',T('30 秒')],['60',T('60 秒')],['auto',T('按难度')]].map(([v,l])=>`<option value="${v}"${String(tsStore.limit||'0')===v?' selected':''}>${l}</option>`).join('')}</select></label>${qb?`<span class="note" style="margin:0">${T('最好成绩：{0}/{1}，{2}',qb.ok,qb.n,tsFmt(qb.ms))}</span>`:''}</div>`}
     if(b.problems.length)h+=`<div class="row"><button class="btn" data-a="print6">${T('打印（每页 6 题）')}</button><button class="btn" data-a="print12">${T('打印（每页 12 题）')}</button>${ed&&b.problems.some(p=>!/;[BW]\[/.test(p.sgf.slice(p.sgf.indexOf(';',1))))?`<button class="btn" data-a="aifill">${T('AI 补上没有答案的题')}</button>`:''}</div>`;
     if(ed&&!b.builtin)h+=`<div class="row"><button class="btn pri" data-a="newp">${T('新题目')}</button>${ts&&ts.prevG||G.id!=='__ts'?`<button class="btn" data-a="newpg">${T('用目前棋局出题')}</button>`:''}<label class="btn" style="cursor:pointer">${T('导入 SGF')}<input type="file" id="tsFile" accept=".sgf,text/plain" multiple hidden></label><button class="btn" data-a="dlbook">${T('下载练习册')}</button><button class="btn warn" data-a="delbook">${T('删除练习册')}</button></div>`;
   }else if(tsView==='solve'&&ts){
@@ -4567,9 +4571,13 @@ function renderTs(){
     h=`<div class="row" style="align-items:center"><button class="btn" data-a="back">← ${tsE(b?b.title:'')}</button><span>${T('第 {0} / {1} 题',ts.idx+1,b?b.problems.length:0)} · ${tsE(p.title)} · <span class="stars">${tsStars(p.level)}</span></span></div>`;
     if(ts.quiz)h=`<div class="row" style="align-items:center"><b>${T('闯关测验')}</b><span>${T('第 {0} / {1} 题',tsQuiz.k+1,tsQuiz.list.length)} · ${T('答对 {0}',tsQuiz.res.filter(x=>x.ok).length)} · <span class="stars">${tsStars(p.level)}</span></span><button class="btn" data-a="quitquiz" style="margin-left:auto">${T('放弃')}</button></div>`;
     h+=`<p class="tsq"><span class="dot ${col==='B'?'b':'w'}"></span> ${tsE(tsNote(G.root)||(col==='B'?T('黑先'):T('白先')))} <code class="tsclock" id="tsClock"></code></p>`;
+    if(ts.view){const c=cur===G.root?'':tsViewNote(cur);h+=`<div class="tsview">${c?tsE(c).replace(/\n/g,'<br>'):`<span class="note" style="margin:0">${cur===G.root?T('按「下一手」一步一步看。'):T('（这一手没有说明）')}</span>`}</div>`;
+      h+=`<div class="row"><button class="btn" data-a="vstart">⏮</button><button class="btn" data-a="vprev"${cur===G.root?' disabled':''}>◀ ${T('上一手')}</button><button class="btn pri" data-a="vnext"${cur.children.length?'':' disabled'}>${T('下一手')} ▶</button>${cur.children.length>1?cur.children.map((c,i)=>`<button class="btn" data-a="vvar" data-i="${i}">${T('变化 {0}',String.fromCharCode(65+i))}${/【AI/.test((c.props.C||[''])[0])?' AI':''}</button>`).join(''):''}</div>`;
+      h+=`<div class="row">${!(b&&b.view)&&!ts.prob.view?`<button class="btn" data-a="vexit">${T('回到做题')}</button>`:''}<button class="btn" data-a="prev"${ts.idx<=0?' disabled':''}>${T('上一题')}</button><button class="btn" data-a="next"${!b||ts.idx>=b.problems.length-1?' disabled':''}>${T('下一题')}</button>${tsCanEdit(b)?`<button class="btn" data-a="aiexp">${T('AI 解说')}</button>`:''}<button class="btn" data-a="back">← ${T('练习册')}</button></div>`;
+      el.innerHTML=h+(tsMsg?`<p class="status">${tsE(tsMsg)}</p>`:'');tsMsg='';return}
     const cls=ts.solved?'ok':ts.msg&&!ts.shown?'no':'';
     h+=`<p class="big ${cls}">${ts.solved?T('答对了！')+' '+tsE(ts.msg)+(ts.gained?' '+T('+{0} 分',ts.gained):''):ts.busy?T('对方应…'):tsE(ts.msg||T('在棋盘上点出你的答案。'))}</p>`;
-    if(!ts.quiz)h+=`<div class="row"><button class="btn" data-a="redo">${T('重做')}</button><button class="btn" data-a="show"${ts.solved?' disabled':''}>${T('看答案')}</button><button class="btn" data-a="prev"${ts.idx<=0?' disabled':''}>${T('上一题')}</button><button class="btn pri" data-a="next"${!b||ts.idx>=b.problems.length-1?' disabled':''}>${T('下一题')}</button>${tsCanEdit(b)?`<button class="btn" data-a="editp">${T('修改这题')}</button><button class="btn warn" data-a="delp">${T('删除这题')}</button>`:''}${L&&L.role==='student'?`<button class="btn" data-a="report">${T('这题有问题')}</button>`:''}</div>`;
+    if(!ts.quiz)h+=`<div class="row"><button class="btn" data-a="redo">${T('重做')}</button><button class="btn" data-a="show"${ts.solved?' disabled':''}>${T('看答案')}</button><button class="btn" data-a="prev"${ts.idx<=0?' disabled':''}>${T('上一题')}</button><button class="btn pri" data-a="next"${!b||ts.idx>=b.problems.length-1?' disabled':''}>${T('下一题')}</button>${tsCanEdit(b)?`<button class="btn" data-a="editp">${T('修改这题')}</button><button class="btn warn" data-a="delp">${T('删除这题')}</button>`:''}${L&&L.role==='student'?`<button class="btn" data-a="report">${T('这题有问题')}</button>`:''}${(ts.solved||ts.shown)?`<button class="btn" data-a="vview">${T('看解说')}</button>`:''}${tsCanEdit(b)?`<button class="btn" data-a="aiexp">${T('AI 解说')}</button>`:''}</div>`;
     if(ts.reporting)h+=`<div class="row"><span>${T('哪里有问题？')}</span>${[['ans',T('答案不对')],['pos',T('题目摆错了')],['hard',T('太难／看不懂')]].map(([w,l])=>`<button class="btn" data-a="sendrep" data-w="${w}">${l}</button>`).join('')}</div>`;
   }else if(tsView==='edit'&&ts){
     const setup=ts.phase==='setup';
@@ -4626,6 +4634,17 @@ async function tsAct(e){
     case'delbook':armed(t,T('再点一次确认删除'),async()=>{const b=tsBook(tsBookId);if(b.local){delete tsStore.books[b.id];tsSave()}else{await TsCloud.set(L.cls,'b_'+b.id,{removed:true});await tsRefreshCloud()}tsView='home';renderTs()});break;
     case'dlbook':tsDownloadBook(tsBook(tsBookId));break;
     case'quiz':tsQuizStart(tsBookId);break;
+    case'vview':ts.view=true;tsClean(G.root);cur=G.root;render();renderTs();break;
+    case'vexit':ts.view=false;tsReset();renderTs();break;
+    case'vstart':cur=G.root;render();renderTs();break;
+    case'vprev':if(cur.parent){cur=cur.parent;render();renderTs()}break;
+    case'vnext':if(cur.children.length){cur=cur.children[0];soundFor(cur);render();renderTs()}break;
+    case'vvar':{const c=cur.children[+t.dataset.i];if(c){cur=c;soundFor(c);render();renderTs()}break}
+    case'aiexp':await busy(async()=>{const b=tsWork(tsBook(ts.bookId)),i=ts.idx,p=b.problems[i];const ns=await tsAiExplain(p.sgf,!!(b.view||p.view),m=>{t.textContent=m});
+      if(!ns){tsMsg=T('这题没有可以分析的手');return}b.problems[i]={...p,sgf:ns};await tsSaveBook(b);tsOpen(ts.bookId,i);ts.view=true;cur=G.root;render();tsMsg=T('AI 解说已写好。')});break;
+    case'aiexpbook':await busy(async()=>{const b=tsWork(tsBook(tsBookId));let done=0,k=0;for(let i=0;i<b.problems.length;i++){const p=b.problems[i];if(/【AI】/.test(p.sgf))continue;
+      const ns=await tsAiExplain(p.sgf,!!(b.view||p.view),m=>{t.textContent=T('第 {0}/{1} 题：',i+1,b.problems.length)+m});if(ns){b.problems[i]={...p,sgf:ns};done++;if(++k%3===0)await tsSaveBook(b)}}
+      await tsSaveBook(b);tsMsg=T('整本解说完成：写好 {0} 题。',done)});break;
     case'copybook':await busy(async()=>{const b=tsBook(tsBookId),nb=tsNewBook();nb.title=b.title+T('（副本）');nb.problems=b.problems.map(p=>({id:p.id,title:p.title,level:p.level,sgf:p.sgf}));await tsSaveBook(nb);tsBookId=nb.id;tsMsg=T('已复制，可以随意修改。')});break;
     case'restorebook':armed(t,T('再点一次确认'),async()=>{await TsCloud.set(L.cls,'x_'+tsBookId,{fix:{},updated:Date.now(),by:L.name});await tsRefreshCloud();renderTs()});break;
     case'report':ts.reporting=!ts.reporting;renderTs();break;
@@ -4809,6 +4828,7 @@ function tsTick(){
   if(!ts||ts.mode!=='solve'){clearInterval(tsTickT);tsTickT=null;return}const el=$('#tsClock');
   const lim=tsLimitMs(ts.prob),e=ts.solved?ts.ms:performance.now()-ts.t0;
   if(el){el.textContent=lim&&!ts.solved?T('剩 {0}',tsFmt(Math.max(0,lim-e))):T('用时 {0}',tsFmt(e));el.classList.toggle('warn',!!lim&&!ts.solved&&lim-e<10000)}
+  if(ts.view){if(el)el.textContent='';return}
   if(lim&&!ts.solved&&!ts.shown&&!ts.over&&!ts.busy&&e>=lim){ts.over=true;ts.tries++;ts.msg=T('时间到！');tsRecord(false);renderTs();if(ts.quiz)tsQuizNext(false)}
 }
 function tsQuizStart(bookId){const b=tsBook(bookId);if(!b||!b.problems.length)return;const idx=b.problems.map((_,i)=>i);
@@ -4837,6 +4857,30 @@ function tsReports(users){const res=(tsCloud&&tsCloud.meta&&tsCloud.meta.resolve
   const name={};for(const b of tsBooks())b.problems.forEach((p,i)=>name[tsPid(b,p)]=b.title+' · '+(i+1));
   return`<b class="sub">${T('学生回报的题')}</b><div style="overflow-x:auto"><table class="score-t"><thead><tr><th style="text-align:left">${T('题目')}</th><th style="text-align:left">${T('问题')}</th><th></th></tr></thead><tbody>`+
     ids.sort((a,b)=>agg[b].n-agg[a].n).map(pid=>{const a=agg[pid];return`<tr><td style="text-align:left">${tsE(name[pid]||pid)}</td><td style="text-align:left">${Object.entries(a.w).map(([w,k])=>W[w]+(k>1?' ×'+k:'')).join('、')}<br><small>${tsE(a.who.join('、'))}</small></td><td><button class="btn" data-a="openrep" data-p="${tsE(pid)}">${T('打开')}</button><button class="btn" data-a="resolverep" data-p="${tsE(pid)}">${T('已处理')}</button></td></tr>`}).join('')+`</tbody></table></div>`}
+
+/* ---- AI 解说：KataGo 分析原书每一手，写进评论（欣赏模式的题再加 AI 推荐变化） ---- */
+function tsViewNote(nd){const c=(nd.props.C||[''])[0];return c.replace(/^\s*(RIGHT|WRONG)\s*/,'').replace(/\bRIGHT\b|\bWRONG\b/g,'').trim()}
+async function tsPcOnline(){if(!PC.on())return false;const o=await PC.status();return!!(o&&o.t&&Date.now()-o.t<150000)}
+async function tsAiExplain(sgf,addVars,onMsg){
+  const r=parseSGF(sgf);tsClean(r);(function w(nd){if(nd.props.C)nd.props.C=[nd.props.C[0].replace(/\n?【AI[^】]*】[^\n]*/g,'').trim()].filter(Boolean);if(nd.props.C&&!nd.props.C.length)delete nd.props.C;nd.children=nd.children.filter(c=>!c._ai&&!/^【AI 推荐】/.test((c.props.C||[''])[0]));nd.children.forEach(w)})(r);
+  const line=[r];let nd=r;while(nd.children.length){nd=nd.children[0];line.push(nd)}if(line.length<2)return null;
+  const n=sizeOf(r),my={visits:prefs.tsExpVisits||32,rows:new Array(line.length).fill(null),i:0,stop:false,mode:'deep',forced:true,pc:null};
+  if(rev&&rev.running)throw new Error(T('整盘分析还在跑，请等它完成'));const oldRev=rev;rev=null;
+  G0push(r);try{
+    if(await tsPcOnline()){onMsg&&onMsg(T('家里电脑分析中…'));await revStartPC(my,line,n)}
+    else{onMsg&&onMsg(T('这台设备分析中…'));await revLocal(my,line,n)}
+  }finally{G0pop();rev=oldRev}
+  const rows=my.rows,gtp=p=>p<0?T('停一手'):pcGtp(p,n),add=(nd,t)=>{const c=(nd.props.C||[''])[0];nd.props.C=[(c?c+'\n':'')+'【AI】'+t]};
+  for(let k=1;k<line.length;k++){const a=rows[k-1],b=rows[k],m=moveOf(line[k]);if(!a||!b||!m)continue;
+    const p=revPt(line[k],n),best=a.b&&a.b[0],sg=m[0]==='B'?1:-1,loss=Math.max(0,sg*(a.l-b.l));
+    if(p===best)add(line[k],T('AI 也选这里。'));
+    else if(loss<1.5)add(line[k],T('也可以；AI 首选 {0}（只差 {1} 目）。',gtp(best),loss.toFixed(1)));
+    else{add(line[k],T('AI 推荐 {0}，这手大约亏 {1} 目。',gtp(best),loss.toFixed(1)));
+      if(addVars&&a.pv&&a.pv.length&&best!=null&&best>=0){let par=line[k-1],c=m[0];a.pv.slice(0,6).forEach((q,i)=>{const ch={props:{[c]:[q<0?'':xyToPt(q%n,(q/n)|0)]},children:[],parent:par,_ai:1};if(i===0)ch.props.C=['【AI 推荐】'];par.children.push(ch);par=ch;c=c==='B'?'W':'B'})}}}
+  const z=addVars&&rows[line.length-1];if(z){const lead=z.l,who=lead>=0?T('黑'):T('白');add(line[line.length-1],T('最后局面：{0}领先约 {1} 目（{0}胜率 {2}%）。',who,Math.abs(lead).toFixed(1),Math.round((lead>=0?z.w:1-z.w)*100)))}
+  (function w(x){delete x._ai;x.children.forEach(w)})(r);
+  return toSGF(r);
+}
 
 /* ===================== 存成图片 ===================== */
 let imgMode='now',imgBlob=null,imgUrl=null;

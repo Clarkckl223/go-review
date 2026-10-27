@@ -38,9 +38,10 @@
 **练习与分享**
 - 「做题」：死活题、手筋题练习册
   - 内建：吃子入门、死活入门，以及古典题集《棋经众妙》（1812）、《玄玄棋经》（约 1347）
-  - 古典题的答案由 GNU Go 算出、再用 KataGo 检查；学生下了答案以外的棋，也由 GNU Go 判断对不对
+  - 古典题的题目和答案依原书整理（共 781 题，解说文字没有收录）；部分题目学生下了答案以外的棋，会由 GNU Go 判断对不对
   - 老师建立班级、出题、导入 SGF 题库；出题时可以「从图片导入」（截图自动认格线，照片点四个角），也可以按「AI 解答」
   - 「打印」：每页 6 或 12 题，答案附在后面，可以存成 PDF
+  - 「AI 解说」：用 KataGo 分析答案的每一手并写进评论（家里电脑在线时用它算），可以单题或整本；《玄玄棋经》定式之部是「欣赏模式」，一步一步看变化，不判对错
   - 老师可以修改、隐藏内建题（只套用在自己的班级），或把整本复制成自己的练习册；学生可以回报「这题有问题」
   - 做题有计时，可以设限时（30 秒、60 秒或按难度）；「闯关测验」随机抽 10 题，最后给评级；老师可以看每个学生的平均用时和全班最卡的题
   - 整盘分析后可以「用这盘棋出题」：AI 找出实战中要死要活的局面
@@ -88,7 +89,7 @@
   - 网络的 TensorFlow.js 版本由 Yuji Ichikawa 转换。这里另外修改了它的计算方式，让 7、9、13 路小棋盘也能正确使用。
   - https://github.com/lightvector/KataGo
 - **GNU Go**（Free Software Foundation，GPL v3）：线上对弈判断胜负、GNU Go 对手、死活题解答和判题。这里把官方原始码编译成 WebAssembly，没有修改算法；授权见 [`gnugo/COPYING.txt`](gnugo/COPYING.txt)，原始码：https://github.com/runningskull/gnugo（GNU Go 官方 git 的镜像）。
-- 古典题集《棋经众妙》《玄玄棋经》本身是公有领域；题目的电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案是 GNU Go 算的，不一定完美。
+- 古典题集《棋经众妙》《玄玄棋经》本身是公有领域；题目和答案依原书整理。
 - **goscorer**（David J Wu）：数目、双活和假眼判断，MIT 授权。https://github.com/lightvector/goscorer
 - **TensorFlow.js**、**ONNX Runtime Web**：Apache 2.0 / MIT 授权，从 jsDelivr 载入。
 - b18 网络（kata1-b18c384nbt）的 ONNX 版本取自 OnnxGo-models，依照 KataGo 网络授权使用，见 [`katago/LICENSE-b18.txt`](katago/LICENSE-b18.txt)。
@@ -119,7 +120,7 @@
 - **New game:** 7×7, 9×9, 13×13 or 19×19 boards, with handicap and komi. Play KataGo from 25 kyu to strongest, or GNU Go levels 1–10, or climb the ranking ladder (2 wins in a row to rank up, 3 losses to drop).
 
 **Practice and sharing**
-- Practise life-and-death workbooks: built-in beginner sets plus the classical Gokyo Shumyo (1812) and Xuanxuan Qijing (c. 1347), with answers computed by GNU Go and checked by KataGo. Moves outside the answer tree are judged by GNU Go.
+- Practise life-and-death workbooks: built-in beginner sets plus the classical Gokyo Shumyo (1812) and Xuanxuan Qijing (c. 1347), with the books' own answers. Moves outside the answer tree are judged by GNU Go.
 - Teachers create classes (Google sign-in), write problems, import SGF or a screenshot/photo, let the AI solve problems, and print workbooks with answers.
 - Online play: invite links or a lobby, game clocks with byo-yomi, spectator links, scoring by GNU Go, and a casual rating.
 - Practise with "guess the next move", and export the board as a PNG.
@@ -135,7 +136,7 @@
 **Credits**
 - KataGo network g170e-b10c128 by David J Wu, used under the KataGo license (see `katago/LICENSE.txt`). TensorFlow.js conversion by Yuji Ichikawa, with masking added for small boards.
 - GNU Go (GPL v3), compiled unmodified to WebAssembly; see `gnugo/COPYING.txt`. Source: https://github.com/runningskull/gnugo (mirror of the official GNU Go git).
-- Classical problem positions are public domain; digital transcriptions by Vít Brunner (tsumego.tasuki.org).
+- Classical problems and their answers are public domain (commentary not included).
 - goscorer (MIT) by David J Wu.
 - TensorFlow.js (Apache 2.0).
 - Move sounds from MultiGo 4.
