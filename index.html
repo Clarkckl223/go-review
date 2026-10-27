@@ -39,6 +39,8 @@
   --wood:#C49A55; --wood-edge:#A87F3C; --grid:#2A1D0C; --danger:#E0745F; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.olplayers{display:flex;gap:8px;flex-wrap:wrap}.olpl{flex:1;min-width:10em;display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:8px}.olpl.on{border-color:var(--accent,#2F6B5A);box-shadow:0 0 0 2px rgba(47,107,90,.25)}.olclk{margin-left:auto;font-size:15px}.ollist{display:flex;flex-direction:column;gap:4px}.olp{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}.olp span{color:var(--muted)}.olp .btn{margin-left:auto}.olchal{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;border-radius:8px;background:rgba(47,107,90,.12)}
+.picbox{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:10px}.picin{background:var(--bg);color:var(--ink);border-radius:10px;padding:12px;max-width:min(96vw,760px);max-height:94vh;overflow:auto;display:flex;flex-direction:column;gap:8px}.picwrap canvas{max-width:100%;height:auto;display:block;touch-action:manipulation;cursor:crosshair}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 32px}
 button,input,textarea,select{font:inherit;color:inherit}
@@ -302,6 +304,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
       <button class="btn" id="langBtn" title="English / 中文">EN</button>
       <button class="btn" id="shareBtn">分享</button>
       <button class="btn" id="tsToggle" aria-pressed="false">做题</button>
+      <button class="btn" id="olToggle" aria-pressed="false">线上对弈</button>
       <button class="btn" id="helpBtn">说明</button>
       <button class="btn" id="installBtn" hidden>安装 App</button>
       <button class="btn" id="undoBtn" title="撤销 (Ctrl+Z)" disabled>↶ 撤销</button>
@@ -430,6 +433,9 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <dt>AI</dt><dd>「AI 分析」看推荐点、胜率和变化，可设思考时间；「新对局」可和 AI 下。第一次下载约 12 MB。</dd>
         <dt>整盘分析</dt><dd>AI 逐手算整盘棋，画出胜率曲线，列出好手、恶手（各最多 10 手，好学的优先）和「最该记住的 3 件事」。分析结果跟着棋谱同步到其他设备；连接 Drive 时报告也会存进 Drive。和 AI 下完会自动分析。</dd>
         <dt>做题</dt><dd>按「做题」打开练习册（有入门吃子、死活题）。老师可以建立班级、出题、导入 SGF 题库；学生用班级代码 + 名字 + 4 位数密码登录，做题记录和积分会跨设备保存。</dd>
+        <dt>出题</dt><dd>老师出题时可「从图片导入」（截图自动认，照片点四个角）、按「AI 解答」；练习册可「打印」（附答案）。整盘分析后可「用这盘棋出题」。</dd>
+        <dt>对手</dt><dd>「新对局」可选 KataGo 或 GNU Go；「升级赛」连赢 2 盘升级、连输 3 盘降级。</dd>
+        <dt>线上对弈</dt><dd>建立对局把链接传给朋友，或进大厅挑战；有读秒和等级分。</dd>
         <dt>家里电脑</dt><dd>在「设置」产生配对码，家里电脑执行 katago_bridge.py 并输入同一个码；「整盘分析」选「家里电脑」，结果会传回手机。</dd>
         <dt>AI 网络</dt><dd>在「设置」选：手机、4 核以下电脑用轻量 b10；6–8 核以上电脑用强力 b18；有独立显卡的电脑分析用 b10，形势判断用 b18。</dd>
         <dt>同步</dt><dd>按「连接 Drive」，电脑、手机、iPad 自动同步。</dd>
@@ -474,20 +480,27 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
     <div class="score" id="newBox" hidden>
       <div class="score-head"><b>新对局</b><span>选棋盘大小和让子，可以和 AI 下，也可以自己摆。</span></div>
       <div class="score-opts"><span>棋盘</span><span class="seg" id="ngSize"><button data-v="7">7 路</button><button data-v="9">9 路</button><button data-v="13">13 路</button><button data-v="19">19 路</button></span></div>
-      <div class="score-opts">
+      <div class="score-opts" id="ngHaRow">
         <label for="ngHa"><span>让子</span><select id="ngHa"></select></label>
         <label for="ngKomi"><span>贴目</span><input id="ngKomi" type="number" step="0.5" inputmode="decimal"></label>
       </div>
-      <div class="score-opts"><span>对手</span><span class="seg" id="ngOpp"><button data-v="ai">和 AI 下</button><button data-v="self">自己摆</button></span></div>
+      <div class="score-opts"><span>对手</span><span class="seg" id="ngOpp"><button data-v="ai">和 AI 下</button><button data-v="ladder">升级赛</button><button data-v="self">自己摆</button></span></div>
       <div class="score-opts" id="ngAiRow">
         <label for="ngName"><span>我的名字</span><input id="ngName" maxlength="16" placeholder="必填，会记在棋谱里" style="width:11em"></label>
-        <span>我执</span><span class="seg" id="ngColor"><button data-v="B">黑棋</button><button data-v="W">白棋</button></span>
-        <label for="ngLevel"><span>AI 棋力</span><select id="ngLevel"></select></label>
-        <label class="chk" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ngAuto"> 自动调整棋力（赢了升一级，输了降一级）</label>
+        <span id="ngColorL" style="display:contents"><span>我执</span><span class="seg" id="ngColor"><button data-v="B">黑棋</button><button data-v="W">白棋</button></span></span>
+        <span id="ngEngL" style="display:contents"><span>AI</span><span class="seg" id="ngEng"><button data-v="kata">KataGo</button><button data-v="gnugo">GNU Go</button></span></span>
+        <label for="ngLevel" id="ngLevelL"><span>AI 棋力</span><select id="ngLevel"></select></label>
+        <label class="chk" id="ngAutoL" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ngAuto"> 自动调整棋力（赢了升一级，输了降一级）</label>
         <label for="ngTime" id="ngTimeL"><span>每步思考</span><select id="ngTime" class="aiPlayTime"><option value="1">1 秒</option><option value="5">5 秒</option><option value="10">10 秒</option><option value="30">30 秒</option></select></label>
       </div>
+      <p class="note" id="ngLadder" style="margin:0" hidden></p>
       <p class="note" id="ngNote" style="margin:0"></p>
       <div class="row"><button class="btn pri" id="ngStart">开始</button><button class="btn" id="ngClose">关闭</button></div>
+    </div>
+
+    <div class="score ol" id="olBox" hidden>
+      <div class="score-head"><b>线上对弈</b><span>邀请朋友，或在大厅找人下。</span><button class="btn" id="olClose" style="margin-left:auto">关闭</button></div>
+      <div id="olBody" class="stack"></div>
     </div>
 
     <div class="score ts" id="tsBox" hidden>
@@ -638,7 +651,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <b class="sub">家里电脑（KataGo）</b>
         <div class="row" style="gap:6px;align-items:center"><input id="pcCode" maxlength="24" placeholder="配对码" style="width:12em;height:34px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg);font-family:var(--f-mono)"><button class="btn" id="pcNew">产生配对码</button></div>
         <p class="note" id="pcState"></p>
-        <p class="note">在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用。配对码不要给别人。</p>
+        <p class="note">在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用；连了 Google Drive 的设备会自动拿到。配对码不要给别人。</p>
         <p class="note">落子、提子音效取自 MultiGo 4。</p>
       </div>
 
@@ -672,6 +685,8 @@ const DRIVE_FOLDER = '围棋复盘';
 
 /* ===================== 中文 / English ===================== */
 const EN={
+"出题":"Problems","老师出题时可「从图片导入」（截图自动认，照片点四个角）、按「AI 解答」；练习册可「打印」（附答案）。整盘分析后可「用这盘棋出题」。":"Teachers can import a problem from a picture (screenshots are read automatically; for photos tap the four corners) and press “AI answer”. Workbooks can be printed with answers. After a game review, “Make problems from this game” finds life-and-death positions.","对手":"Opponents","「新对局」可选 KataGo 或 GNU Go；「升级赛」连赢 2 盘升级、连输 3 盘降级。":"In New game choose KataGo or GNU Go. In the Ladder, 2 wins in a row rank you up and 3 losses drop you.","建立对局把链接传给朋友，或进大厅挑战；有读秒和等级分。":"Create a game and send the link, or challenge someone in the lobby. Games have byo-yomi and a rating.",
+'10 分':'10 min','20 分':'20 min','5 分':'5 min','AI 判断中…':'AI is checking…','AI 已经摆好正解，可以再自己加变化。':'The AI has added a correct line. You can add more variations.','AI 找不到这题的答案（可能不是死活题，或棋子不完整）':'The AI couldn’t solve this (maybe it isn’t a life-and-death problem, or stones are missing).','AI 找题中… {0}/{1}（找到 {2} 题）':'Finding problems… {0}/{1} ({2} found)','AI 无法判断，请按「重做」再试。':'The AI couldn’t judge this. Press Retry.','AI 补上没有答案的题':'AI: solve problems without answers','AI 解好 {0} 题（共 {1} 题没有答案）。AI 的答案可能不完美，请老师看一下。':'The AI solved {0} of {1} problems without answers. Please check them; AI answers may not be perfect.','AI 解答':'AI answer','AI 解题中… {0}/{1}':'AI solving… {0}/{1}','GNU Go 思考中…':'GNU Go is thinking…','GNU Go 无法载入':'Couldn’t load GNU Go','GNU Go 是传统的电脑围棋程序（大约 5–15 级），第一次要下载约 1 MB。':'GNU Go is a classic Go program (about 15–5 kyu). The first time it downloads about 1 MB.','GNU Go 等级 {0}':'GNU Go level {0}','Google 登录被取消或弹窗被拦截':'Google sign-in was cancelled or the pop-up was blocked','{0} 人在线':'{0} online','{0} 路升级赛 · 你的级位：{1}':'{0}×{0} ladder · your rank: {1}','{0} 路升级赛（{1}）':'{0}×{0} ladder ({1})','【AI 解答】':'[AI answer]','不对，对方这样应就不行了。':'Not quite: this reply refutes it.','不要':'No','不计时':'No clock','不让':'None','从图片导入（截图／照片）':'Import from picture (screenshot / photo)','共 {0} 盘，赢 {1} 盘，最高 {2}。':'{0} games, {1} wins, best {2}.','再连赢 {0} 盘就升级。':'Win {0} more in a row to rank up.','双方停一手，AI 正在算胜负…':'Both passed. The AI is scoring…','双方停一手，对局结束：{0}（GNU Go 判断死子，可以按「数子 / 数目」确认）。':'Both passed. Game over: {0} (GNU Go judged dead stones; check with Score).','双方停一手，正在算胜负…':'Both passed. Scoring…','取消对局':'Cancel game','变成打劫了，还有更好的下法。':'That makes a ko. There is a better move.','右上角':'Top-right corner','右下角':'Bottom-right corner','左上角':'Top-left corner','左下角':'Bottom-left corner','整个棋盘':'Whole board','吃掉了！':'Captured!','活了！':'Alive!','图片变题目':'Picture to problem','复制观战链接':'Copy watch link','大厅':'Lobby','密码不对（新班级请用 Google 登录）':'Wrong PIN (new classes use Google sign-in)','对局中':'Playing','对局已取消':'Game cancelled','对局结束：{0}':'Game over: {0}','对局还在进行，请先认输或下完':'The game is still on. Resign or finish first.','对手是同级的 AI，黑白轮流。连赢 {0} 盘升一级，连输 {1} 盘降一级。':'You play an AI of your rank, alternating colours. Win {0} in a row to rank up; lose {1} in a row to drop.','已复制链接':'Link copied','已放上 {0} 颗黑子、{1} 颗白子。可以再在棋盘上修改。':'Placed {0} black and {1} white stones. You can still edit on the board.','已绑定 Google 账号。以后用「老师登录（Google）」登录。':'Linked to your Google account. Sign in with “Teacher sign-in (Google)” from now on.','已连赢 {0} 盘':'{0} wins in a row','已连输 {0} 盘':'{0} losses in a row','已重设，{0} 下次登录时设定新密码':'Reset. {0} sets a new PIN at next sign-in.','建立对局，拿邀请链接':'Create game & get invite link','必填':'Required','我的对局题目':'Problems from my games','截图：已自动找到格线。点图上的交叉点可以改：空 → 黑 → 白。':'Screenshot: grid found. Tap a point to change it: empty → black → white.','打劫：要先在别处下一手，才能提回来':'Ko: play elsewhere first before taking back','打印':'Print','打印（每页 12 题）':'Print (12 per page)','打印（每页 6 题）':'Print (6 per page)','找不到格线，请用照片模式':'No grid found. Use photo mode.','找不到这盘对局':'Game not found','找到 {0} 题，放进「我的对局题目」。':'Found {0} problems, saved in “Problems from my games”.','把下面的链接传给对手，对手打开就开始。':'Send this link to your opponent. The game starts when they open it.','按 Ctrl+P（手机：分享 → 打印）打印，或存成 PDF。':'Press Ctrl+P (phone: Share → Print) to print or save as PDF.','挑战':'Challenge','接受':'Accept','改用截图模式':'Use screenshot mode','旧班级的老师密码':'Old class teacher PIN','时间':'Time','横向几条线':'Lines across','纵向几条线':'Lines down','没有送出（对方已经下了，或对局已结束）':'Not sent (your opponent moved, or the game ended)','没有送出：{0}':'Not sent: {0}','点图上的交叉点可以改：空 → 黑 → 白。':'Tap a point to change it: empty → black → white.','照片：依序点格线的四个角（左上 → 右上 → 右下 → 左下），已点 {0} 个。':'Photo: tap the four grid corners in order (top-left → top-right → bottom-right → bottom-left). {0} tapped.','现在没有其他人在大厅。把网址传给朋友，请他也打开「线上对弈」→「进入大厅」。':'Nobody else is in the lobby. Send the site to a friend and ask them to open Online → Enter lobby.','用 Google 账号建立新班级':'Create class with Google','用这个':'Use this','用这盘棋出题（AI）':'Make problems from this game (AI)','目前级位：{0}。':'Current rank: {0}.','离开':'Leave','第 {0} 题':'Problem {0}','等对手下…':'Waiting for opponent…','等待对手…':'Waiting for opponent…','等级分 {0} → {1}（{2}）':'Rating {0} → {1} ({2})','等级分 {0}（{1}，{2} 盘）':'Rating {0} ({1}, {2} games)','答案':'Answers','线上对局':'Online game','绑定 Google 账号（更安全）':'Link Google account (safer)','老师用 Google 账号登录：换设备也是同一个账号，别人不能改你的班级和练习册。':'Teachers sign in with Google: the same account on every device, and nobody else can change your class or workbooks.','老师登录（Google）':'Teacher sign-in (Google)','观战中':'Watching','认错了？改用照片模式':'Wrong? Use photo mode','记录没有上传，请检查网络':'Record not uploaded. Check your connection.','请先做整盘分析':'Run Game review first','请先输入你的名字':'Please enter your name first','请先输入你的名字，再打开邀请链接':'Enter your name, then the invite opens','请填好班级名称和老师名字':'Enter the class name and teacher name','读不出这张图片':'Can’t read this picture','读秒 {0}（{1} 次）':'Byo-yomi {0} ({1} left)','读秒：用完基本时间后，每手 30 秒，有 3 次。':'Byo-yomi: after main time, 30 s per move, 3 periods.','轮到你下':'Your move','这一题读不出来':'Can’t read this problem','这个 Google 账号不是这个班级的老师':'This Google account isn’t this class’s teacher','这个名字已被老师移出班级':'This name was removed by the teacher','这是棋盘的':'This is the board’s','这盘棋没有找到适合的死活题。':'No suitable life-and-death problems found in this game.','进入大厅':'Enter lobby','连不上班级资料：{0}':'Can’t reach class data: {0}','连线中…':'Connecting…','邀请你下一盘（{0} 路，{1}）':'invites you to a game ({0}×{0}, {1})','邀请朋友':'Invite a friend','重点四个角':'Tap corners again','降到 {0}，加油！':'Dropped to {0}. Keep going!','随机':'Random','题库下载中…':'Downloading problems…','题库下载失败：{0}':'Couldn’t download problems: {0}','黑白依序下 1、2、3…':'Play 1, 2, 3… alternately','（AI 判断）':'(AI judged)','（AI 解答）':'(AI answer)','（GNU Go 判断死子）':'(GNU Go judged dead stones)','（打劫）':'(ko)','（没有答案）':'(no answer)','（第 {0} 手的局面）':'(position at move {0})','，吃掉这块棋':': capture this group','，救活这块棋':': save this group','🎉 升级了！你现在是 {0}。':'🎉 Ranked up! You are now {0}.','线上对弈':'Online','升级赛':'Ladder','邀请朋友，或在大厅找人下。':'Invite a friend, or find someone in the lobby.','次':'visits',
 '围棋复盘本':'Go Review Notebook','保存':'Save','连接 Drive':'Connect Drive','重新连接 Drive':'Reconnect Drive',
 '↶ 撤销':'↶ Undo','↷ 重做':'↷ Redo','撤销 (Ctrl+Z)':'Undo (Ctrl+Z)','重做 (Ctrl+Y)':'Redo (Ctrl+Y)','保存 (Ctrl+S)':'Save (Ctrl+S)',
 '黑方':'Black','白方':'White','棋盘':'Go board','黑':'Black','白':'White',
@@ -713,7 +728,7 @@ const EN={
 '已下载。文件名最后的 .txt 删掉，就是 .sgf 棋谱':'Downloaded. Remove “.txt” from the end of the file name to get the .sgf.','已取消下载':'Download cancelled','下载不可用，请改用「复制 SGF」':'Download isn’t available here. Use Copy SGF instead.','如果没有开始下载，请改用「复制 SGF」':'If the download didn’t start, use Copy SGF instead.',
 '无法载入 Google 登录，请检查网络':'Couldn’t load Google sign-in. Check your connection.','登录窗口被关闭了':'The sign-in window was closed','登录失败（可能被浏览器拦截了弹窗）':'Sign-in failed (the browser may have blocked the pop-up)',
 '连接已过期，请点「连接 Drive」':'The connection expired. Click “Connect Drive”.','Drive 错误 {0}':'Drive error {0}','同步中…':'Syncing…',
-'下载 {0} 盘':'downloaded {0}','上传 {0} 盘':'uploaded {0}','移除 {0} 盘':'removed {0}','已同步 · {0}':'Synced · {0}','已和 Google Drive 同步：{0}':'Synced with Google Drive: {0}','、':', ',
+'下载 {0} 盘':'downloaded {0}','上传 {0} 盘':'uploaded {0}','移除 {0} 盘':'removed {0}','已同步 · {0}':'Synced · {0}','已从 Google Drive 取得家里电脑的配对码':'Got the home PC pair code from Google Drive','已和 Google Drive 同步：{0}':'Synced with Google Drive: {0}','、':', ',
 '同步失败：{0}':'Sync failed: {0}','已连接':'Connected','未连接。每次打开网页后点「连接 Drive」，就会自动同步。':'Not connected. Click “Connect Drive” each time you open the page and it will sync.',
 '正在连接…':'Connecting…','连接失败：{0}':'Connection failed: {0}',
 '已保存，正在同步到 Google Drive':'Saved. Syncing to Google Drive.','已保存在本机（连接 Google Drive 可同步到其他设备）':'Saved on this device. Connect Google Drive to sync to other devices.','无法保存，请用「导出」':'Can’t save. Use Export.',
@@ -781,7 +796,7 @@ const EN={
 '家里电脑目前离线，开机并执行小程序后会自动开始分析（可以先关掉这页）':'The home PC is offline. Analysis starts automatically once it is on and the program is running (you can close this page).',
 '还没设定。':'Not set up yet.','检查中…':'Checking…','电脑还没连上过。请在电脑上执行小程序并输入这个配对码。':'The PC hasn’t connected yet. Run the program on the PC and enter this code.',
 '家里电脑在线 ✓（{0}）':'Home PC online ✓ ({0})','家里电脑离线（最后在线：{0} 分钟前）':'Home PC offline (last seen {0} min ago)',
-'在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用。配对码不要给别人。':'Run katago_bridge.py on the home PC with the same code, then choose “Home PC” in Game review. Enter the same code on your phone, iPad or other computers to share it. Keep the code private.',
+'在家里电脑执行 katago_bridge.py，输入同一个配对码，「整盘分析」就可以选「家里电脑」。手机、iPad、其他电脑填同一个配对码，就能共用；连了 Google Drive 的设备会自动拿到。配对码不要给别人。':'Run katago_bridge.py on the home PC with the same code, then choose “Home PC” in Game review. Enter the same code on your phone, iPad or other computers to share it; devices connected to Google Drive get it automatically. Keep the code private.',
 '在「设置」产生配对码，家里电脑执行 katago_bridge.py 并输入同一个码；「整盘分析」选「家里电脑」，结果会传回手机。':'Create a pairing code in Settings, run katago_bridge.py on the home PC with the same code, then pick “Home PC” in Game review; the results come back to your phone.',
 // 等级 / 名字 / 对局后报告
 '报告已存到 Google Drive「围棋复盘」文件夹':'Report saved to the “围棋复盘” folder in Google Drive',
@@ -2694,7 +2709,7 @@ const savedText=()=>(typeof Shared!=='undefined'&&Shared.isShared())?(Shared.pen
 /* ===================== 外观与声音 ===================== */
 const PREF_KEY='goReview.prefs';
 let prefs={sound:'on'};
-try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.revCustom)prefs.revCustom=v.revCustom;if(v.revRateL)prefs.revRateL=v.revRateL;if(v.revRateP)prefs.revRateP=v.revRateP;if(v.pcCode)prefs.pcCode=v.pcCode;if(v.revEngine)prefs.revEngine=v.revEngine;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
+try{const v=JSON.parse(localStorage.getItem(PREF_KEY))||{};if(v.sound)prefs.sound=v.sound;if(v.lang)prefs.lang=v.lang;if(typeof v.me==='string')prefs.me=v.me;if(Array.isArray(v.authors))prefs.authors=v.authors;if(v.aiTime!=null)prefs.aiTime=v.aiTime;if(v.aiNet)prefs.aiNet=v.aiNet;if(v.revMode)prefs.revMode=v.revMode;if(v.revCustom)prefs.revCustom=v.revCustom;if(v.revRateL)prefs.revRateL=v.revRateL;if(v.revRateP)prefs.revRateP=v.revRateP;if(v.pcCode)prefs.pcCode=v.pcCode;if(v.pcCodeT)prefs.pcCodeT=v.pcCodeT;if(v.revEngine)prefs.revEngine=v.revEngine;if(v.aiPlayTime!=null)prefs.aiPlayTime=v.aiPlayTime}catch(e){}
 function setPref(k,v){prefs[k]=v;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}syncPrefUI();render()}
 function syncPrefUI(){document.querySelectorAll('[data-pref]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===prefs[g.dataset.pref])))}
 const SND={};
@@ -3509,20 +3524,49 @@ function levelIds(n){const kr=(a,b)=>Array.from({length:a-b+1},(_,i)=>(a-i)+'k')
   if(n<=13)return['25k','20k','18k',...kr(15,5),'1d','max'];
   return['25k','20k','18k','15k',...kr(10,1),...Array.from({length:9},(_,i)=>(i+1)+'d'),'max']}
 function levelObj(id){
-  if(id==='max')return{id,search:true};
+  if(id==='max')return{id,search:true};const g=/^g(\d+)$/.exec(id||'');if(g)return{id,gg:+g[1]};
   const m=/^(\d+)([kd])$/.exec(id||'')||[0,'10','k'],v=+m[1];
   if(m[2]==='d')return{id,...(DAN_T[v]||DAN_T[1])};
   let i=0;while(i<KYU_T.length-2&&v<KYU_T[i+1][0])i++;const A=KYU_T[i],B=KYU_T[i+1],f=Math.max(0,Math.min(1,(A[0]-v)/(A[0]-B[0])));
   return{id,k:Math.round(A[1]+(B[1]-A[1])*f),t:A[2]+(B[2]-A[2])*f,b:A[3]+(B[3]-A[3])*f};
 }
-function lvName(lv){const id=lv.id||lv;if(id==='max')return T('最强');const m=/^(\d+)([kd])$/.exec(id);return m?(m[2]==='k'?T('{0} 级',m[1]):T('{0} 段',m[1])):id}
+/* ---- GNU Go（GPL v3）：编译成 WebAssembly，在背景 worker 里执行，用 GTP 指令沟通 ---- */
+const GG=(()=>{let w=null,seq=0;const pend={};
+  function worker(){if(!w){w=new Worker('gnugo/gnugo-worker.js');
+    w.onmessage=e=>{const p=pend[e.data.id];delete pend[e.data.id];if(!p)return;e.data.error?p.rej(new Error(e.data.error)):p.res(e.data.out)};
+    w.onerror=e=>{for(const k in pend){pend[k].rej(new Error(T('GNU Go 无法载入')));delete pend[k]}w=null}}return w}
+  function gtpFor(node,r=root()){const n=sizeOf(r),L=['boardsize '+n,'clear_board','komi '+aiKomi().komi];
+    for(const[x,y]of expandPts(r.props.AB,n))L.push('play b '+pcGtp(y*n+x,n));for(const[x,y]of expandPts(r.props.AW,n))L.push('play w '+pcGtp(y*n+x,n));
+    const path=[];for(let x=node;x&&x!==r;x=x.parent)path.unshift(x);
+    for(const nd of path){const m=moveOf(nd);if(!m)continue;const p=revPt(nd,n);L.push(`play ${m[0].toLowerCase()} ${p==null?'pass':pcGtp(p,n)}`)}
+    return L}
+  function args(level){return['--mode','gtp','--level',String(level),'--seed',String(1+Math.floor(Math.random()*1e6)),guessRule()==='jp'?'--japanese-rules':'--chinese-rules']}
+  function call(level,lines){const id=++seq;return new Promise((res,rej)=>{pend[id]={res,rej};worker().postMessage({id,args:args(level),input:lines.join('\n')+'\nquit\n'})})}
+  async function genmove(node,level){const n=sizeOf(root()),L=gtpFor(node);L.push('genmove '+nextColor(node).toLowerCase());
+    const out=await call(level,L),m=/^=\s*([A-HJ-T]\d{1,2}|PASS|resign)\s*$/im.exec(out);if(!m)throw new Error('GNU Go');
+    const v=m[1].toUpperCase();if(v==='PASS')return -1;if(v==='RESIGN')return -2;return pcIdx(v,n)}
+  async function score(node){const L=gtpFor(node);L.push('final_score');const out=await call(1,L),m=/^=\s*([BW]\+[\d.]+|0)\s*$/im.exec(out);return m?m[1]:null}
+  async function raw(lines,level=10){ // 回传每个指令的回应：[{ok,t}]
+    const out=await call(level,lines);return out.split(/\n\n+/).map(x=>x.trim()).filter(Boolean).map(x=>({ok:x[0]==='=',t:x.replace(/^[=?]\s*/,'')}))}
+  return{genmove,score,raw,gtpFor,warm:()=>{try{worker()}catch(e){}}};
+})();
+const GG_IDS=Array.from({length:10},(_,i)=>'g'+(i+1));
+function oppIds(n,eng){return eng==='gnugo'?GG_IDS:levelIds(n)}
+function lvName(lv){const id=lv.id||lv;if(id==='max')return T('最强');const g=/^g(\d+)$/.exec(id);if(g)return T('GNU Go 等级 {0}',g[1]);const m=/^(\d+)([kd])$/.exec(id);return m?(m[2]==='k'?T('{0} 级',m[1]):T('{0} 段',m[1])):id}
 function handicapPts(n,h){const d=n>=13?3:2,a=d,b=n-1-d,c=(n-1)/2,pts=[];
   if(h>=2)pts.push([b,a],[a,b]);if(h>=3)pts.push([b,b]);if(h>=4)pts.push([a,a]);
   if(h===5||h===7||h===9)pts.push([c,c]);if(h>=6)pts.push([a,c],[b,c]);if(h>=8)pts.push([c,a],[c,b]);return pts}
-let ng={size:19,ha:0,komi:7.5,opp:'ai',color:'B',level:'10k',lv:{},auto:true,name:''};
+let ng={size:19,ha:0,komi:7.5,opp:'ai',color:'B',level:'10k',lv:{},auto:true,name:'',eng:'kata'};
 try{const v=JSON.parse(localStorage.getItem('goReview.newgame')||'null');if(v)ng={...ng,...v}}catch(e){}
 function ngSave(){try{localStorage.setItem('goReview.newgame',JSON.stringify(ng))}catch(e){}}
-function ngLevel(){const ids=levelIds(ng.size),v=ng.lv&&ng.lv[ng.size];return ids.includes(v)?v:ids.includes(ng.level)?ng.level:ids[Math.min(4,ids.length-1)]}
+function ngKey(n,eng){return eng==='gnugo'?'g'+n:n}
+function ngLevel(){const eng=ng.eng==='gnugo'?'gnugo':'kata',ids=oppIds(ng.size,eng),v=ng.lv&&ng.lv[ngKey(ng.size,eng)];return ids.includes(v)?v:eng==='gnugo'?'g5':ids.includes(ng.level)?ng.level:ids[Math.min(4,ids.length-1)]}
+/* ---- 升级赛：每个棋盘大小有自己的级位；连赢 2 盘升一级，连输 3 盘降一级 ---- */
+const LAD_UP=2,LAD_DOWN=3;
+let ladder={};try{ladder=JSON.parse(localStorage.getItem('goReview.ladder')||'{}')||{}}catch(e){}
+function ladSave(){try{localStorage.setItem('goReview.ladder',JSON.stringify(ladder))}catch(e){}}
+function ladOf(n){return ladder[n]||(ladder[n]={lv:'25k',streak:0,games:0,wins:0,best:'25k',hist:[]})}
+function ladIds(n){return levelIds(n).filter(x=>x!=='max')}
 function ngDefaultKomi(){return ng.ha>=1?0.5:KOMI_DEF[ng.size]}
 function renderNew(){
   document.querySelectorAll('#ngSize button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===ng.size));
@@ -3530,33 +3574,38 @@ function renderNew(){
   document.querySelectorAll('#ngColor button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ng.color));
   const ha=$('#ngHa');const mx=MAX_HA[ng.size];if(ng.ha>mx)ng.ha=mx;
   ha.innerHTML=[0,1,...Array.from({length:mx-1},(_,i)=>i+2)].map(h=>`<option value="${h}"${h===ng.ha?' selected':''}>${h===0?T('不让子'):h===1?T('让先（不贴目）'):T('让 {0} 子',h)}</option>`).join('');
-  const cl=ngLevel();$('#ngLevel').innerHTML=levelIds(ng.size).map(id=>`<option value="${id}"${id===cl?' selected':''}>${lvName(id)}${id==='max'?T('（按思考时间）'):''}</option>`).join('');
+  const lad=ng.opp==='ladder',L=ladOf(ng.size),eng=ng.eng==='gnugo'?'gnugo':'kata';
+  document.querySelectorAll('#ngEng button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===eng));
+  ['ngColorL','ngEngL','ngLevelL','ngAutoL'].forEach(id=>$('#'+id).hidden=lad);$('#ngHaRow').hidden=lad;
+  $('#ngLadder').hidden=!lad;if(lad){const k=L.streak>0?T('已连赢 {0} 盘',L.streak):L.streak<0?T('已连输 {0} 盘',-L.streak):'';
+    $('#ngLadder').innerHTML=`<b>${T('{0} 路升级赛 · 你的级位：{1}',ng.size,lvName(L.lv))}</b><br>${T('对手是同级的 AI，黑白轮流。连赢 {0} 盘升一级，连输 {1} 盘降一级。',LAD_UP,LAD_DOWN)}${k?' '+k+'。':''}${L.games?' '+T('共 {0} 盘，赢 {1} 盘，最高 {2}。',L.games,L.wins,lvName(L.best)):''}`}
+  const cl=ngLevel();$('#ngLevel').innerHTML=oppIds(ng.size,eng).map(id=>`<option value="${id}"${id===cl?' selected':''}>${lvName(id)}${id==='max'?T('（按思考时间）'):''}</option>`).join('');
   if(document.activeElement!==$('#ngName'))$('#ngName').value=ng.name||me()||'';$('#ngAuto').checked=ng.auto!==false;
   if(document.activeElement!==$('#ngKomi'))$('#ngKomi').value=ng.komi;
-  $('#ngAiRow').hidden=ng.opp!=='ai';$('#ngTimeL').hidden=cl!=='max';if(document.activeElement!==$('#ngTime'))$('#ngTime').value=String(prefs.aiPlayTime??5);
-  $('#ngNote').textContent=ng.opp==='ai'?T('第一次要下载约 12 MB。棋力是大约的。'):'';
+  $('#ngAiRow').hidden=ng.opp==='self';$('#ngTimeL').hidden=lad||cl!=='max';if(document.activeElement!==$('#ngTime'))$('#ngTime').value=String(prefs.aiPlayTime??5);
+  $('#ngNote').textContent=ng.opp==='self'?'':!lad&&eng==='gnugo'?T('GNU Go 是传统的电脑围棋程序（大约 5–15 级），第一次要下载约 1 MB。'):T('第一次要下载约 12 MB。棋力是大约的。');
 }
 function openNew(){stopPlay();$('#newBox').hidden=false;$('#newToggle').setAttribute('aria-pressed','true');renderNew();$('#newBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
 function closeNew(){$('#newBox').hidden=true;$('#newToggle').setAttribute('aria-pressed','false')}
 function startNewGame(){
-  const n=ng.size,h=ng.ha>=2?ng.ha:0,km=parseFloat($('#ngKomi').value);ng.komi=isFinite(km)?km:ngDefaultKomi();ngSave();
+  const lad=ng.opp==='ladder',n=ng.size,h=lad?0:ng.ha>=2?ng.ha:0,km=parseFloat($('#ngKomi').value);ng.komi=lad?KOMI_DEF[n]:isFinite(km)?km:ngDefaultKomi();ngSave();
   const name=($('#ngName').value||'').trim();
-  if(ng.opp==='ai'&&!name){flash(T('请先输入你的名字（会记在棋谱里）'));$('#ngName').focus();return}
+  if(ng.opp!=='self'&&!name){flash(T('请先输入你的名字（会记在棋谱里）'));$('#ngName').focus();return}
   ng.name=name;ngSave();
-  const lv=levelObj(ngLevel()),dt=new Date().toISOString().slice(0,10);
+  const LD=ladOf(n),lv=levelObj(lad?LD.lv:ngLevel()),dt=new Date().toISOString().slice(0,10),color=lad?(LD.games%2?'W':'B'):ng.color;
   const my=name||me()||T('我'),ai=T('AI（{0}）',lvName(lv));
   const esc=s=>String(s).replace(/([\]\\])/g,'\\$1');
   let PB=T('黑方'),PW=T('白方'),gn=T('{0} 路对局',n);
-  if(ng.opp==='ai'){PB=ng.color==='B'?my:ai;PW=ng.color==='B'?ai:my;gn=T('和 AI 对局')}
+  if(ng.opp!=='self'){PB=color==='B'?my:ai;PW=color==='B'?ai:my;gn=lad?T('{0} 路升级赛（{1}）',n,lvName(lv)):T('和 AI 对局')}
   let s=`(;GM[1]FF[4]CA[UTF-8]SZ[${n}]KM[${ng.komi}]RU[Chinese]DT[${dt}]GN[${esc(gn)}]PB[${esc(PB)}]PW[${esc(PW)}]`;
   if(h)s+=`HA[${h}]AB`+handicapPts(n,h).map(([x,y])=>`[${xyToPt(x,y)}]`).join('')+'PL[W]';
   s+=')';
   const r=parseSGF(s);const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};
   if(scoring)stopScoring();if(train)stopTrain();
   openRoot(r,{id});closeNew();
-  if(ng.opp==='ai'){vs={id,ai:ng.color==='B'?2:1,level:lv,auto:ng.auto!==false,low:0,over:false,thinking:false,msg:'',endMsg:''};tool='play';
+  if(ng.opp!=='self'){vs={id,ai:color==='B'?2:1,level:lv,auto:!lad&&ng.auto!==false,ladder:lad,low:0,over:false,thinking:false,msg:'',endMsg:''};tool='play';
     document.querySelectorAll('.tool[data-tool]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tool==='play'));
-    $('#vsBox').hidden=false;AI.load().catch(()=>{});renderVs();vsAiMove();$('#vsBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
+    $('#vsBox').hidden=false;if(lv.gg)GG.warm();else AI.load().catch(()=>{});renderVs();vsAiMove();$('#vsBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
 }
 
 /* ---- 和 AI 对局 ---- */
@@ -3585,6 +3634,14 @@ function vsAddMove(col,pt){const nd={props:{[col]:[pt]},children:[],parent:cur};
 async function vsAiMove(){
   if(!vs||vs.over||vs.thinking)return;const node=cur,col=vsAiCol();if(nextColor(node)!==col){renderVs();return}
   vs.thinking=true;vs.msg='';renderVs();const t0=Date.now();
+  if(vs.level.gg){try{
+      const p=await GG.genmove(node,vs.level.gg);await new Promise(r=>setTimeout(r,Math.max(0,450-(Date.now()-t0))));
+      if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}vs.thinking=false;const n=sizeOf(root());
+      if(p===-2){vsResult((vs.ai===1?'W':'B')+'+R',T('AI 认输，你赢了！'));return}
+      vsAddMove(col,p<0?'':xyToPt(p%n,(p/n)|0));
+      if(p<0){if(isPassNode(node,n)){vsEnd();return}vs.msg=T('AI 停一手。你也停一手的话，对局就结束。')}
+    }catch(e){if(vs){vs.thinking=false;vs.msg=T('AI 无法载入：{0}',(e&&e.message)||e)}}
+    renderVs();return}
   try{
     const res=await AI.analyze(node);if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}
     const n=sizeOf(root()),N=n*n,myWin=vs.ai===1?res.winB:1-res.winB,myLead=vs.ai===1?res.leadB:-res.leadB;
@@ -3607,14 +3664,22 @@ function vsFinish(re,msg){ // 对局结束：实战走成主线、写结果、�
   for(let x=cur;x.parent;x=x.parent){const q=x.parent,k=q.children.indexOf(x);if(k>0){q.children.splice(k,1);q.children.unshift(x)}q._sel=0}
   root().props.RE=[re];changed();renderInfo();
   const n=sizeOf(root()),user=vs.ai===1?'W':'B',win=re[0]===user,lose=re[0]===(user==='B'?'W':'B');
-  if(vs.auto&&vs.level.id!=='max'&&(win||lose)){const ids=levelIds(n),i=ids.indexOf(vs.level.id);
-    if(i>=0){const j=win?Math.min(ids.length-2,i+1):Math.max(0,i-1);if(j!==i){ng.lv=ng.lv||{};ng.lv[n]=ids[j];ngSave();
+  if(vs.ladder&&(win||lose)){const L=ladOf(n),ids=ladIds(n),i=Math.max(0,ids.indexOf(L.lv));L.games++;if(win)L.wins++;
+    L.streak=win?Math.max(0,L.streak)+1:Math.min(0,L.streak)-1;L.hist.push({t:Date.now(),r:win?'W':'L',lv:L.lv});if(L.hist.length>100)L.hist.shift();
+    let up=0;if(L.streak>=LAD_UP&&i<ids.length-1){L.lv=ids[i+1];L.streak=0;up=1}else if(L.streak<=-LAD_DOWN&&i>0){L.lv=ids[i-1];L.streak=0;up=-1}
+    if(up>0&&ids.indexOf(L.lv)>ids.indexOf(L.best))L.best=L.lv;ladSave();
+    vs.endMsg+=' '+(up>0?T('🎉 升级了！你现在是 {0}。',lvName(L.lv)):up<0?T('降到 {0}，加油！',lvName(L.lv)):win?T('再连赢 {0} 盘就升级。',LAD_UP-L.streak):T('目前级位：{0}。',lvName(L.lv)));
+    tsAward(up>0?20:0,'ladder',{['rank'+n]:L.lv})}
+  if(win||lose)tsAward(5,'game');
+  if(vs.auto&&vs.level.id!=='max'&&(win||lose)){const eng=vs.level.gg?'gnugo':'kata',ids=oppIds(n,eng),i=ids.indexOf(vs.level.id);
+    if(i>=0){const j=win?Math.min(ids.length-(eng==='gnugo'?1:2),i+1):Math.max(0,i-1);if(j!==i){ng.lv=ng.lv||{};ng.lv[ngKey(n,eng)]=ids[j];ngSave();
       vs.endMsg+=' '+(win?T('下一盘 AI 升到 {0}。',lvName(ids[j])):T('下一盘 AI 降到 {0}。',lvName(ids[j])))}}}
   renderVs();render();
   const uc=user==='B'?1:2;setTimeout(()=>{if(G&&G.id===vs.id){revOpen();revStart('std',uc)}},400);
 }
 function vsEnd(){ // 双方停一手：用 AI 判断死子并算出胜负
   vs.over=true;vs.endMsg=T('双方停一手，AI 正在判断胜负…');renderVs();const node=cur;
+  if(vs.level.gg){GG.score(node).then(re=>{if(!vs||cur!==node||!re)return;vsFinish(re,T('双方停一手，对局结束：{0}（GNU Go 判断死子，可以按「数子 / 数目」确认）。',resultText(re)))}).catch(()=>{});return}
   AI.analyze(node).then(()=>{if(!vs||cur!==node)return;const n=sizeOf(root()),st=computeState(node,n),e=aiEstimate(node,st);if(!e)return;
     const k=aiKomi(),r=root(),ha=parseInt(prop(r,'HA')||'0',10)||0,H=ha>=2?ha:0;
     const lead=Math.round((e.aB+e.tB+e.dame/2-H/2-(e.aW+e.tW+e.dame/2+H/2)-k.komi)*2)/2;
@@ -3632,11 +3697,12 @@ function renderVs(){
   if(!vs){return}const box=$('#vsBox');box.hidden=false;
   const r=root(),n=sizeOf(r),ha=parseInt(prop(r,'HA')||'0',10)||0,user=vs.ai===1?'W':'B';
   $('#vsSub').textContent=[T('AI 棋力：{0}',lvName(vs.level)),T('{0} 路',n),ha>=2?T('让 {0} 子',ha):'',T('贴 {0} 目',prop(r,'KM')||'0')].filter(Boolean).join(' · ');
-  const st=AI.status(),msg=$('#vsMsg');let t='';msg.className='big';
+  const st=vs.level.gg?'ready':AI.status(),msg=$('#vsMsg');let t='';msg.className='big';
   if(vs.over){t=vs.endMsg;msg.classList.add('ok')}
   else if(st==='loading')t=T('AI 下载中（约 {1} MB，只需下载一次）… {0}%',Math.round(AI.prog()*100),AI.net().mb);
   else if(st==='warm')t=T('AI 准备中…');
   else if(st==='error'){t=T('AI 无法载入：{0}',AI.err());msg.classList.add('no')}
+  else if(vs.thinking&&vs.level.gg)t=T('GNU Go 思考中…');
   else if(vs.thinking)t=vs.search&&vs.search.visits?T('AI 思考中… 已算 {0} 次',vs.search.visits.toLocaleString()):T('AI 思考中…');
   else if(vs.msg)t=vs.msg;
   else t=nextColor(cur)===user?T('轮到你下（{0}）',user==='B'?T('黑棋'):T('白棋')):T('轮到 AI');
@@ -3866,7 +3932,7 @@ function renderRev(){
     h+=`<b class="sub">${T('好手')}</b><div class="revkeys">`+(stt.goodList.length?stt.goodList.map(x=>`<button class="revk good${r.focus===x.k?' on':''}" data-k="${x.k}"><span class="cat cg">${x.good}</span><b>${T('第 {0} 手',x.k)} ${x.c===1?T('黑'):T('白')} ${revName(x.a,n)}</b> <span>${T('黑胜率 {0}% → {1}%',Math.round(x.w0*100),Math.round(x.w1*100))}</span><span class="ex">${revEsc(revPraise(x,n))}</span></button>`).join(''):`<p class="note">${r.mode==='fast'?T('「快速」模式只能找出「不容易想到」和「抓住失误」的好手；用「标准」或「深入」还能找出关键的一手。'):T('这盘没有特别突出的好手。')}</p>`)+'</div>';
     h+=`<b class="sub">${T('关键失误')}</b><div class="revkeys">`+(stt.key.length?stt.key.map(x=>{const pre=r.rows[x.k-1];
       return`<button class="revk${r.focus===x.k?' on':''}" data-k="${x.k}"><span class="cat c${x.cat==='?!'?'d':'b'}">${x.cat}</span><b>${T('第 {0} 手',x.k)} ${x.c===1?T('黑'):T('白')} ${revName(x.a,n)}</b> <span>${T('损失 {0} 目',x.loss.toFixed(1))} · ${T('黑胜率 {0}% → {1}%',Math.round(x.w0*100),Math.round(x.w1*100))}</span><span class="ex">${revEsc(revExplain(x.k,line,r.rows,n))} ${T('AI 推荐：{0}',(pre.pv||[]).slice(0,6).map(m=>revName(m,n)).join(' '))}</span></button>`}).join(''):`<p class="note">${T('没有明显的失误。')}</p>`)+'</div>';
-    h+=`<div class="row"><button class="btn" id="revWrite">${T('写进棋谱（评论和变化）')}</button><button class="btn" id="revReport">${T('下载报告')}</button></div>`;
+    h+=`<div class="row"><button class="btn" id="revWrite">${T('写进棋谱（评论和变化）')}</button><button class="btn" id="revReport">${T('下载报告')}</button><button class="btn" id="revProb">${T('用这盘棋出题（AI）')}</button></div>`;
   }
   res.innerHTML=h;
 }
@@ -3982,14 +4048,282 @@ function renderPcSet(){ // 设置分页：配对码和电脑状态
   st.textContent=T('检查中…');PC.status().then(o=>{const min=o&&o.t?Math.round((Date.now()-o.t)/60000):null;
     st.textContent=min==null?T('电脑还没连上过。请在电脑上执行小程序并输入这个配对码。'):min<=2?T('家里电脑在线 ✓（{0}）',o.model||'KataGo'):T('家里电脑离线（最后在线：{0} 分钟前）',min)});
 }
-function pcSetCode(v){prefs.pcCode=(v||'').replace(/[^A-Za-z0-9]/g,'').slice(0,24);try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}renderPcSet();renderRev()}
+function pcSetCode(v){const c=(v||'').replace(/[^A-Za-z0-9]/g,'').slice(0,24);if(c!==(prefs.pcCode||'')){prefs.pcCode=c;prefs.pcCodeT=Date.now()}try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}renderPcSet();renderRev();if(Drive.connected())Drive.saveNow()}
 function pcNewCode(){const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(10);crypto.getRandomValues(u);pcSetCode([...u].map(x=>a[x%a.length]).join(''))}
+
+/* ---- 图片变题目：截图自动找棋盘格线；照片点四个角。认出棋子后可以点一下修正 ---- */
+let picP=null; // {img, cv, s:缩小比例, mode:'auto'|'photo', grid:{xs,ys}|{corners,cols,rows}, edges:{t,b,l,r}, stones:[[]], corner}
+function picGray(ctx,w,h){const d=ctx.getImageData(0,0,w,h).data,g=new Float32Array(w*h);for(let i=0;i<w*h;i++)g[i]=d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114;return g}
+function picPeaks(prof){ // 格线的间距和位置
+  const N=prof.length,sm=new Float32Array(N);let s=0,k=0;const R=6;for(let i=0;i<N;i++){s=0;k=0;for(let j=Math.max(0,i-R*3);j<Math.min(N,i+R*3);j++){s+=prof[j];k++}sm[i]=prof[i]-s/k}
+  let best=0,lag=0;for(let L=10;L<Math.min(140,N/3);L++){let c=0;for(let i=0;i+L<N;i++)c+=Math.max(0,sm[i])*Math.max(0,sm[i+L]);c/=(N-L);if(c>best){best=c;lag=L}}
+  if(!lag)return null;
+  // 细调间距（小数）：在 lag±1 之间找让峰值和最大的
+  let bs=-1,bp=0,bl=lag;for(let L=lag-1;L<=lag+1;L+=0.05)for(let ph=0;ph<L;ph+=0.5){let v=0;for(let x=ph;x<N;x+=L)v+=Math.max(0,sm[Math.round(x)]||0);if(v>bs){bs=v;bp=ph;bl=L}}
+  const pos=[];for(let x=bp;x<N;x+=bl)pos.push(x);const val=pos.map(x=>{let m=0;for(let d=-1;d<=1;d++)m=Math.max(m,sm[Math.round(x)+d]||0);return m});
+  const mx=Math.max(...val);let i0=0,i1=pos.length-1;const ok=v=>v>mx*0.25;
+  // 最长的连续一段
+  let bi=0,bj=-1,ci=0;for(let i=0;i<pos.length;i++){if(!ok(val[i])){ci=i+1;continue}if(i-ci>bj-bi){bi=ci;bj=i}}
+  i0=bi;i1=bj;if(i1-i0<2)return null;return{step:bl,pos:pos.slice(i0,i1+1)}
+}
+function picDetect(){ // 截图：自动找格线
+  const{cv}=picP,w=cv.width,h=cv.height,ctx=cv.getContext('2d'),g=picGray(ctx,w,h);
+  // 暗的细线：比旁边暗
+  const dark=new Uint8Array(w*h);for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){const i=y*w+x,v=g[i],a=(g[i-2]+g[i+2]+g[i-2*w]+g[i+2*w])/4;if(v<a-18||v<70)dark[i]=1}
+  const row=new Float32Array(h),col=new Float32Array(w);for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(dark[y*w+x]){row[y]++;col[x]++}
+  const Y=picPeaks(row),X=picPeaks(col);if(!X||!Y||Math.abs(X.step/Y.step-1)>0.2)return false;
+  picP.mode='auto';picP.grid={xs:X.pos,ys:Y.pos,step:(X.step+Y.step)/2};picP.g=g;picEdges();picRead();return true;
+}
+function picEdges(){ // 第一条/最后一条线是不是棋盘的边：边的外面没有格线伸出去
+  const{cv,grid,g}=picP,w=cv.width,h=cv.height,s=grid.step,xs=grid.xs,ys=grid.ys;
+  const darkAt=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<1||y<1||x>=w-1||y>=h-1)return 0;let m=255;for(let d=-1;d<=1;d++)m=Math.min(m,g[y*w+x+d],g[(y+d)*w+x]);return m<110?1:0};
+  const frac=(pts)=>pts.reduce((a,[x,y])=>a+darkAt(x,y),0)/pts.length;
+  picP.edges={t:frac(xs.map(x=>[x,ys[0]-s*.45]))<0.3,b:frac(xs.map(x=>[x,ys[ys.length-1]+s*.45]))<0.3,l:frac(ys.map(y=>[xs[0]-s*.45,y]))<0.3,r:frac(ys.map(y=>[xs[xs.length-1]+s*.45,y]))<0.3};
+  const e=picP.edges;picP.corner=e.t&&e.b&&e.l&&e.r?'full':(e.b?'b':'t')+(e.r&&!e.l?'r':'l');
+}
+function picPt(i,j){ // 第 i 列、第 j 行交叉点在图上的位置
+  const P=picP;if(P.mode==='auto')return[P.grid.xs[i],P.grid.ys[j]];
+  const[c0,c1,c2,c3]=P.corners,u=P.cols>1?i/(P.cols-1):0,v=P.rows>1?j/(P.rows-1):0; // 左上、右上、右下、左下：双线性
+  const tx=c0[0]+(c1[0]-c0[0])*u,ty=c0[1]+(c1[1]-c0[1])*u,bx=c3[0]+(c2[0]-c3[0])*u,by=c3[1]+(c2[1]-c3[1])*u;return[tx+(bx-tx)*v,ty+(by-ty)*v]}
+function picDims(){const P=picP;return P.mode==='auto'?[P.grid.xs.length,P.grid.ys.length]:[P.cols,P.rows]}
+function picRead(){ // 每个交叉点：看平均亮度，分成黑子、白子、空
+  const P=picP,{cv}=P,w=cv.width,h=cv.height,g=P.g||(P.g=picGray(cv.getContext('2d'),w,h)),[nc,nr]=picDims();
+  let s=P.mode==='auto'?P.grid.step:Math.hypot(...[0,1].map(k=>(picPt(1,0)[k]-picPt(0,0)[k])));const r=Math.max(2,s*.28);
+  const mean=(cx,cy)=>{let a=0,k=0;for(let y=Math.round(cy-r);y<=cy+r;y++)for(let x=Math.round(cx-r);x<=cx+r;x++){if(x<0||y<0||x>=w||y>=h||(x-cx)**2+(y-cy)**2>r*r)continue;a+=g[y*w+x];k++}return k?a/k:128};
+  const m=[];for(let j=0;j<nr;j++){m.push([]);for(let i=0;i<nc;i++){const[x,y]=picPt(i,j);m[j].push(mean(x,y))}}
+  // 棋盘底色：空点之间（格子中央）的亮度
+  const bgs=[];for(let j=0;j+1<nr;j++)for(let i=0;i+1<nc;i++){const[a,b]=picPt(i,j),[c,d]=picPt(i+1,j+1);bgs.push(mean((a+c)/2,(b+d)/2))}bgs.sort((a,b)=>a-b);const bg=bgs[bgs.length>>1]||150;
+  P.stones=m.map(rw=>rw.map(v=>v<Math.min(90,bg-60)?1:v>Math.max(bg+22,165)?2:0));
+}
+function picMap(){ // 认出来的格子放到棋盘的哪一角
+  const P=picP,[nc,nr]=picDims();let n=19;if(P.corner==='full'&&nc===nr&&[7,9,13,19].includes(nc))n=nc;
+  const ox=P.corner==='full'?0:P.corner[1]==='r'?n-nc:0,oy=P.corner==='full'?0:P.corner[0]==='b'?n-nr:0;return{n,ox,oy}}
+function picApply(){ // 写进出题编辑器
+  const P=picP,{n,ox,oy}=picMap(),B=[],W=[];P.stones.forEach((rw,j)=>rw.forEach((v,i)=>{const x=i+ox,y=j+oy;if(x<0||y<0||x>=n||y>=n)return;if(v===1)B.push(xyToPt(x,y));if(v===2)W.push(xyToPt(x,y))}));
+  const r=G.root;r.props.SZ=[String(n)];delete r.props.AB;delete r.props.AW;if(B.length)r.props.AB=B;if(W.length)r.props.AW=W;r.children=[];cur=r;picClose();render();renderTs();
+  flash(T('已放上 {0} 颗黑子、{1} 颗白子。可以再在棋盘上修改。',B.length,W.length))}
+function picClose(){picP=null;const o=$('#picBox');if(o)o.remove()}
+function picOpen(file){
+  const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{
+    const sc=Math.min(1,900/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+    picP={img,cv,mode:'auto',corners:[],cols:10,rows:10,corner:'tl'};if(!picDetect()){picP.mode='photo';picP.stones=null}picUi()};
+  img.onerror=()=>flash(T('读不出这张图片'));img.src=url}
+function picUi(){
+  let o=$('#picBox');if(!o){o=document.createElement('div');o.id='picBox';o.className='picbox';document.body.appendChild(o)}
+  const P=picP,photo=P.mode==='photo',need=photo&&P.corners.length<4;
+  const cn={tl:T('左上角'),tr:T('右上角'),bl:T('左下角'),br:T('右下角'),full:T('整个棋盘')};
+  o.innerHTML=`<div class="picin"><div class="score-head"><b>${T('图片变题目')}</b><span>${photo?(need?T('照片：依序点格线的四个角（左上 → 右上 → 右下 → 左下），已点 {0} 个。',P.corners.length):T('点图上的交叉点可以改：空 → 黑 → 白。')):T('截图：已自动找到格线。点图上的交叉点可以改：空 → 黑 → 白。')}</span></div>
+    <div class="picwrap"><canvas id="picCv"></canvas></div>
+    <div class="score-opts">${photo?`<label>${T('横向几条线')} <input id="picCols" type="number" min="3" max="19" value="${P.cols}" style="width:4em"></label><label>${T('纵向几条线')} <input id="picRows" type="number" min="3" max="19" value="${P.rows}" style="width:4em"></label><button class="btn" data-i="reset">${T('重点四个角')}</button>`:''}
+      <span>${T('这是棋盘的')}</span><select id="picCorner">${Object.keys(cn).map(k=>`<option value="${k}"${k===P.corner?' selected':''}>${cn[k]}</option>`).join('')}</select>
+      <button class="btn" data-i="mode">${photo?T('改用截图模式'):T('认错了？改用照片模式')}</button></div>
+    <div class="row"><button class="btn pri" data-i="ok"${P.stones?'':' disabled'}>${T('用这个')}</button><button class="btn" data-i="cancel">${T('取消')}</button></div></div>`;
+  picDraw();
+  const cv=$('#picCv');cv.onclick=e=>{const rc=cv.getBoundingClientRect(),x=(e.clientX-rc.left)*cv.width/rc.width,y=(e.clientY-rc.top)*cv.height/rc.height;
+    if(P.mode==='photo'&&P.corners.length<4){P.corners.push([x,y]);if(P.corners.length===4)picRead();picUi();return}
+    if(!P.stones)return;const[nc,nr]=picDims();let bi=-1,bj=-1,bd=1e9;for(let j=0;j<nr;j++)for(let i=0;i<nc;i++){const[px,py]=picPt(i,j),d=(px-x)**2+(py-y)**2;if(d<bd){bd=d;bi=i;bj=j}}
+    if(bi>=0){P.stones[bj][bi]=(P.stones[bj][bi]+1)%3;picDraw()}};
+  o.onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;const a=b.dataset.i;
+    if(a==='cancel')picClose();else if(a==='ok')picApply();else if(a==='reset'){P.corners=[];P.stones=null;picUi()}
+    else if(a==='mode'){if(P.mode==='photo'){if(!picDetect())flash(T('找不到格线，请用照片模式'))}else{P.mode='photo';P.corners=[];P.stones=null}picUi()}};
+  const sel=$('#picCorner');sel.onchange=()=>{P.corner=sel.value};
+  const ci=$('#picCols'),ri=$('#picRows');if(ci)ci.onchange=()=>{P.cols=Math.max(3,Math.min(19,+ci.value||10));if(P.corners.length===4)picRead();picDraw()};if(ri)ri.onchange=()=>{P.rows=Math.max(3,Math.min(19,+ri.value||10));if(P.corners.length===4)picRead();picDraw()};
+}
+function picDraw(){
+  const P=picP,cv=$('#picCv');if(!cv)return;cv.width=P.cv.width;cv.height=P.cv.height;const c=cv.getContext('2d');c.drawImage(P.cv,0,0);
+  if(P.mode==='photo')P.corners.forEach(([x,y],k)=>{c.fillStyle='#E74C3C';c.beginPath();c.arc(x,y,6,0,7);c.fill();c.fillStyle='#fff';c.font='bold 11px sans-serif';c.fillText(k+1,x-3,y+4)});
+  if(!P.stones)return;const[nc,nr]=picDims();let s=Math.hypot(...[0,1].map(k=>picPt(Math.min(1,nc-1),0)[k]-picPt(0,0)[k]))||20;
+  for(let j=0;j<nr;j++)for(let i=0;i<nc;i++){const[x,y]=picPt(i,j),v=P.stones[j][i];c.lineWidth=2;
+    if(v){c.strokeStyle=v===1?'#E74C3C':'#2E86DE';c.beginPath();c.arc(x,y,s*.38,0,7);c.stroke();c.fillStyle=v===1?'rgba(0,0,0,.55)':'rgba(255,255,255,.7)';c.fill()}
+    else{c.fillStyle='rgba(46,204,113,.9)';c.fillRect(x-2,y-2,4,4)}}
+}
+
+/* ===================== 线上对弈：邀请链接、计时、大厅、等级分 =====================
+   对局：games/og_<id>/layers/state（sgf 栏位放 JSON）
+   大厅：games/lobby/layers/p_<玩家>（在线状态，每 30 秒更新）、c_<对方>_<我>（挑战）
+   等级分：games/lobby/layers/r_<玩家>  —— 只是好玩的参考分数，任何人都可以改自己的分数 */
+const OL_TIMES={'5':[300,30,3],'10':[600,30,3],'20':[1200,30,3],'0':[0,0,0]}; // 基本时间（秒）、读秒（秒）、读秒次数；0 = 不计时
+let olPending=null,ol=null; // 目前的线上对局 {id, st:状态, me:'B'|'W'|null（观战）, unsub, tick}
+let olView='home',olLobby={players:{},chal:{}},olLobbyUnsub=null,olBeat=null,olMsg='';
+const olUid=()=>{try{let u=localStorage.getItem('goReview.olId');if(!u){u=tsId(12);localStorage.setItem('goReview.olId',u)}return u}catch(e){return'tmp'+tsId(8)}};
+const olName=()=>(ng&&ng.name)||me()||'';
+async function olDoc(gid,name){const db=await Shared.db();return db.collection('games').doc(gid).collection('layers').doc(name)}
+const olPack=o=>({sgf:JSON.stringify(o),name:'state',updated:Date.now()});
+const olUnpack=d=>{try{return d&&d.exists?JSON.parse(d.data().sgf):null}catch(e){return null}};
+
+/* ---- 等级分（Elo）：1000 分起，大约 100 分一级；2100 = 1 段 ---- */
+function olRankName(r){r=Math.round(r);if(r>=2100)return T('{0} 段',Math.min(9,1+Math.floor((r-2100)/100)));return T('{0} 级',Math.min(30,Math.max(1,Math.ceil((2100-r)/100))))}
+async function olRating(uid){try{const d=olUnpack(await(await olDoc('lobby','r_'+uid)).get());return d||{r:1000,g:0}}catch(e){return{r:1000,g:0}}}
+async function olRateAfter(st){ // 对局结束：更新自己的分数（每个人只更新自己的）
+  if(!ol||!ol.me||st.rated===false||!/^[BW]\+/.test(st.re||''))return;const k='rated_'+st.id;try{if(localStorage.getItem(k))return;localStorage.setItem(k,'1')}catch(e){}
+  const meP=st[ol.me],op=st[ol.me==='B'?'W':'B'],mine=await olRating(meP.uid),R=mine.r,O=op.r||1000;
+  const win=st.re[0]===ol.me?1:0,E=1/(1+Math.pow(10,(O-R)/400)),K=mine.g<10?40:24,nr=Math.round(R+K*(win-E));
+  await(await olDoc('lobby','r_'+meP.uid)).set({sgf:JSON.stringify({r:nr,g:mine.g+1,name:meP.name,t:Date.now()}),name:'r_'+meP.uid,updated:Date.now()});
+  ol.rateMsg=T('等级分 {0} → {1}（{2}）',R,nr,olRankName(nr));renderOl();
+}
+
+/* ---- 时间 ---- */
+function olClock(st,c,now=Date.now()){ // 回传 {t:基本时间剩下(ms), p:读秒次数, b:这次读秒剩下(ms), out:超时}
+  const k=st.clock;if(!k||!k.main&&!k.byo)return null;let t=st['t'+c],p=st['p'+c],b=k.byo*1000;
+  if(st.status==='play'&&olToMove(st)===c){let e=now-st.turnT;if(e<=t)return{t:t-e,p,b,out:false};e-=t;t=0;
+    const lost=Math.floor(e/b);p-=lost;if(p<=0)return{t:0,p:0,b:0,out:true};return{t:0,p,b:b-(e-lost*b),out:false}}
+  return{t,p,b,out:false}}
+function olSpend(st,c,now){const k=st.clock;if(!k||!k.main&&!k.byo)return true;let t=st['t'+c],p=st['p'+c],e=now-st.turnT,b=k.byo*1000;
+  if(e<=t){st['t'+c]=t-e;return true}e-=t;st['t'+c]=0;const lost=Math.floor(e/b);p-=lost;st['p'+c]=p;return p>0}
+const olToMove=st=>{const k=st.moves.length;return(st.ha>=2?(k%2?'B':'W'):(k%2?'W':'B'))};
+const olFmt=ms=>{const s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+
+/* ---- 对局 ---- */
+function olRoot(st){const n=st.n;let s=`(;GM[1]FF[4]CA[UTF-8]SZ[${n}]KM[${st.komi}]RU[Chinese]DT[${new Date(st.created).toISOString().slice(0,10)}]GN[${T('线上对局')}]PB[${((st.B&&st.B.name)||'?').replace(/[\]\\]/g,'')}]PW[${((st.W&&st.W.name)||'?').replace(/[\]\\]/g,'')}]`;
+  if(st.ha>=2)s+=`HA[${st.ha}]AB`+handicapPts(n,st.ha).map(([x,y])=>`[${xyToPt(x,y)}]`).join('');if(st.re)s+=`RE[${st.re}]`;
+  let c=st.ha>=2?'W':'B';for(const m of st.moves){s+=`;${c}[${m}]`;c=c==='B'?'W':'B'}return parseSGF(s+')')}
+async function olCreate(opt){ // 建立对局：回传 id
+  const name=olName();if(!name)throw new Error(T('请先输入你的名字'));const id='og_'+tsId(10),uid=olUid(),R=await olRating(uid),[main,byo,per]=OL_TIMES[opt.time]||OL_TIMES['10'];
+  let col=opt.color;if(col==='R')col=Math.random()<.5?'B':'W';
+  const st={v:1,id,n:opt.n,komi:opt.ha>=2?0.5:KOMI_DEF[opt.n],ha:opt.ha||0,clock:{main,byo,per},tB:main*1000,tW:main*1000,pB:per,pW:per,moves:[],status:'wait',re:'',created:Date.now(),turnT:0,seq:0,rated:opt.rated!==false,
+    B:col==='B'?{name,uid,r:R.r}:null,W:col==='W'?{name,uid,r:R.r}:null};
+  await(await olDoc(id,'state')).set(olPack(st));return id}
+async function olTx(id,f){ // 用 transaction 改对局状态，避免两边同时改
+  const db=await Shared.db(),ref=await olDoc(id,'state');
+  return db.runTransaction(async tx=>{const d=await tx.get(ref),st=olUnpack(d);if(!st)throw new Error(T('找不到这盘对局'));const r=f(st);if(r===false)return false;st.seq++;tx.set(ref,olPack(st));return true})}
+async function olOpen(id){ // 打开对局（下棋或观战）
+  olClose(true);const uid=olUid();ol={id,st:null,me:null,first:true};olView='game';$('#olBox').hidden=false;renderOl();
+  try{const ref=await olDoc(id,'state');
+    // 空位就坐下
+    const d0=olUnpack(await ref.get());if(!d0){olMsg=T('找不到这盘对局');olView='home';ol=null;renderOl();return}
+    if(d0.status==='wait'&&(!d0.B||!d0.W)&&!(d0.B&&d0.B.uid===uid)&&!(d0.W&&d0.W.uid===uid)){const name=olName();
+      if(!name){olMsg=T('请先输入你的名字，再打开邀请链接');olPending=id;olView='home';ol=null;renderOl();return}
+      const R=await olRating(uid);await olTx(id,st=>{if(st.status!=='wait')return false;const seat=!st.B?'B':!st.W?'W':null;if(!seat)return false;st[seat]={name,uid,r:R.r};st.status='play';st.turnT=Date.now()})}
+    ol.unsub=ref.onSnapshot(d=>{const st=olUnpack(d);if(!st||!ol||ol.id!==id)return;olSync(st)},e=>{olMsg=e.message;renderOl()});
+    ol.tick=setInterval(olTick,500);
+  }catch(e){olMsg=e.message||String(e);renderOl()}
+}
+function olSync(st){
+  const uid=olUid(),prev=ol.st;ol.st=st;ol.me=st.B&&st.B.uid===uid?'B':st.W&&st.W.uid===uid?'W':null;
+  const r=olRoot(st);let lid=ol.lid;
+  if(!lid||!store.games[lid]){lid=ol.lid='ol_'+st.id;store.games[lid]={sgf:toSGF(r),key:gameKey(r),title:titleOf(r),updated:Date.now()}}
+  if(!G||G.id!==lid){if(scoring)stopScoring();if(train)stopTrain();openRoot(r,{id:lid});ol.lid=lid}
+  else{G.root=r}
+  cur=G.root;while(cur.children.length)cur=cur.children[0];
+  const rec=store.games[lid];rec.sgf=toSGF(G.root);rec.title=titleOf(G.root);rec.updated=Date.now();lsSet(store);
+  tool='play';renderTree();render();renderInfo();
+  if(prev&&st.moves.length>prev.moves.length){const nd=cur;if(moveOf(nd)&&moveOf(nd)[1])soundFor(nd)}
+  if(st.status==='end'&&(!prev||prev.status!=='end')){olRateAfter(st);renderLib()}
+  if(st.status==='score'&&ol.me)setTimeout(olScore,ol.me==='B'?0:1500); // 两边都试，先算好的写进去
+  renderOl();
+}
+function olTick(){if(!ol||!ol.st)return;const st=ol.st;if(st.status!=='play'){return}const c=olToMove(st),k=olClock(st,c);
+  if(k&&k.out&&!ol.claiming){ol.claiming=true;olTx(ol.id,s=>{if(s.status!=='play'||olToMove(s)!==c)return false;const kk=olClock(s,c);if(!kk||!kk.out)return false;s.status='end';s.re=(c==='B'?'W':'B')+'+T'}).finally(()=>{if(ol)ol.claiming=false})}
+  renderOlClock()}
+function olClick(x,y){ // 在棋盘上点：轮到自己才下
+  const st=ol.st;if(!st||st.status!=='play'||!ol.me||olToMove(st)!==ol.me||ol.sending)return;const n=st.n,col=ol.me,g=computeState(cur,n).g;if(g[y][x])return;
+  const test=g.map(r=>r.slice()),res=place(test,x,y,col==='B'?1:2,n);if(res.suicide)return flash(T('这里是禁着点（自杀）'));
+  if(cur.parent){const pg=computeState(cur.parent,n).g;if(pg.every((r,j)=>r.every((v,i)=>v===test[j][i])))return flash(T('打劫：要先在别处下一手，才能提回来'))}
+  olMove(xyToPt(x,y))}
+async function olMove(pt){ // pt：'' = 停一手
+  const st=ol.st,col=ol.me,k=st.moves.length;ol.sending=true;
+  // 先在本机显示，等数据库确认
+  const nd={props:{[col]:[pt]},children:[],parent:cur};cur.children.push(nd);cur=nd;render();if(pt)soundFor(nd);
+  try{const ok=await olTx(ol.id,s=>{if(s.status!=='play'||s.moves.length!==k||olToMove(s)!==col)return false;const now=Date.now();
+      if(!olSpend(s,col,now)){s.status='end';s.re=(col==='B'?'W':'B')+'+T';return}
+      s.moves.push(pt);s.turnT=now;
+      if(pt===''&&s.moves.length>=2&&s.moves[s.moves.length-2]===''){s.status='score'}});
+    if(ok===false)flash(T('没有送出（对方已经下了，或对局已结束）'))}
+  catch(e){flash(T('没有送出：{0}',e.message))}
+  finally{ol.sending=false;if(ol&&ol.st&&ol.st.status==='score')olScore()}
+}
+async function olScore(){ // 双方停一手：用 GNU Go 判断死子、算胜负（先算好的那一边写进去）
+  const st=ol.st;if(!st||st.status!=='score'||ol.scoring)return;ol.scoring=true;renderOl();
+  try{const re=await GG.score(cur);if(re)await olTx(ol.id,s=>{if(s.status!=='score')return false;s.status='end';s.re=re;s.why='score'})}catch(e){}
+  ol.scoring=false;renderOl()}
+async function olResign(){if(!ol||!ol.me)return;const c=ol.me;await olTx(ol.id,s=>{if(s.status!=='play'&&s.status!=='score')return false;s.status='end';s.re=(c==='B'?'W':'B')+'+R'})}
+async function olCancel(){if(!ol||!ol.st||ol.st.status!=='wait')return;await olTx(ol.id,s=>{if(s.status!=='wait')return false;s.status='end';s.re='Void'});olClose()}
+function olClose(keepView){if(ol){if(ol.unsub)ol.unsub();clearInterval(ol.tick)}ol=null;if(!keepView){olView='home';renderOl()}}
+const olLink=id=>shareBase()+'#p='+id.replace(/^og_/,'');
+
+/* ---- 大厅 ---- */
+async function olLobbyOpen(){
+  olView='lobby';renderOl();if(olLobbyUnsub)return;const db=await Shared.db(),col=db.collection('games').doc('lobby').collection('layers'),uid=olUid();
+  const beat=async()=>{const R=await olRating(uid);try{await col.doc('p_'+uid).set({sgf:JSON.stringify({name:olName(),r:R.r,t:Date.now(),busy:!!(ol&&ol.st&&ol.st.status==='play')}),name:'p_'+uid,updated:Date.now()})}catch(e){}};
+  await beat();olBeat=setInterval(beat,30000);
+  olLobbyUnsub=col.where('updated','>',Date.now()-10*60000).onSnapshot(qs=>{const P={},C={};qs.forEach(d=>{let o;try{o=JSON.parse(d.data().sgf)}catch(e){return}
+      if(d.id.startsWith('p_'))P[d.id.slice(2)]=o;else if(d.id.startsWith('c_'+uid+'_'))C[d.id]=o});olLobby={players:P,chal:C};renderOl()},e=>{olMsg=e.message;renderOl()});
+}
+function olLobbyClose(){if(olLobbyUnsub)olLobbyUnsub();olLobbyUnsub=null;clearInterval(olBeat);olBeat=null;
+  Shared.db().then(db=>db.collection('games').doc('lobby').collection('layers').doc('p_'+olUid()).set({sgf:JSON.stringify({name:olName(),t:0}),name:'off',updated:0})).catch(()=>{})}
+async function olChallenge(to,opt){const id=await olCreate(opt),db=await Shared.db(),uid=olUid();
+  await db.collection('games').doc('lobby').collection('layers').doc('c_'+to+'_'+uid).set({sgf:JSON.stringify({from:uid,name:olName(),gid:id,n:opt.n,time:opt.time,t:Date.now()}),name:'chal',updated:Date.now()});
+  olOpen(id)}
+async function olAnswer(cid,yes){const c=olLobby.chal[cid];const db=await Shared.db();await db.collection('games').doc('lobby').collection('layers').doc(cid).set({sgf:JSON.stringify({...c,done:yes?'yes':'no'}),name:'chal',updated:0});
+  delete olLobby.chal[cid];if(yes&&c)olOpen(c.gid);else renderOl()}
+
+/* ---- 画面 ---- */
+let olOpt={n:19,time:'10',color:'R',ha:0};try{Object.assign(olOpt,JSON.parse(localStorage.getItem('goReview.olOpt')||'{}'))}catch(e){}
+const olOptSave=()=>{try{localStorage.setItem('goReview.olOpt',JSON.stringify(olOpt))}catch(e){}};
+function olOptHtml(){const seg=(id,arr,v)=>`<span class="seg" data-o="${id}">${arr.map(([k,l])=>`<button data-v="${k}" aria-pressed="${String(v)===String(k)}">${l}</button>`).join('')}</span>`;
+  return`<div class="score-opts"><span>${T('棋盘')}</span>${seg('n',[[9,'9'],[13,'13'],[19,'19']],olOpt.n)}<span>${T('时间')}</span>${seg('time',[['5',T('5 分')],['10',T('10 分')],['20',T('20 分')],['0',T('不计时')]],olOpt.time)}</div>
+  <div class="score-opts"><span>${T('我执')}</span>${seg('color',[['R',T('随机')],['B',T('黑')],['W',T('白')]],olOpt.color)}<label>${T('让子')} <select data-o="ha">${[0,2,3,4,5,6,7,8,9].map(h=>`<option value="${h}"${h==olOpt.ha?' selected':''}>${h?h:T('不让')}</option>`).join('')}</select></label></div>
+  <p class="note" style="margin:0">${T('读秒：用完基本时间后，每手 30 秒，有 3 次。')}</p>`}
+function renderOl(){
+  const box=$('#olBox');if(!box||box.hidden)return;const body=$('#olBody');let h='';const name=olName();
+  const nameRow=`<div class="score-opts"><label>${T('我的名字')} <input id="olName" maxlength="16" value="${tsE(name)}" placeholder="${T('必填')}" style="width:9em"></label><span id="olMyR" class="note" style="margin:0"></span></div>`;
+  if(olView==='home'){
+    h=nameRow+`<b class="sub">${T('邀请朋友')}</b>`+olOptHtml()+`<div class="row"><button class="btn pri" data-p="create">${T('建立对局，拿邀请链接')}</button><button class="btn" data-p="lobby">${T('进入大厅')}</button></div>`;
+  }else if(olView==='lobby'){
+    const uid=olUid(),now=Date.now(),ps=Object.entries(olLobby.players).filter(([u,p])=>u!==uid&&p.t>now-90000).sort((a,b)=>(b[1].r||0)-(a[1].r||0));
+    h=`<div class="row"><button class="btn" data-p="home">← ${T('返回')}</button><b>${T('大厅')}</b><span class="note" style="margin:0">${T('{0} 人在线',ps.length+1)}</span></div>`;
+    for(const[cid,c]of Object.entries(olLobby.chal))if(!c.done&&c.t>now-120000)h+=`<div class="olchal"><b>${tsE(c.name)}</b> ${T('邀请你下一盘（{0} 路，{1}）',c.n,c.time==='0'?T('不计时'):T('{0} 分钟',c.time))}<button class="btn pri" data-p="yes" data-c="${cid}">${T('接受')}</button><button class="btn" data-p="no" data-c="${cid}">${T('不要')}</button></div>`;
+    h+=olOptHtml()+(ps.length?`<div class="ollist">`+ps.map(([u,p])=>`<div class="olp"><b>${tsE(p.name||'?')}</b><span>${olRankName(p.r||1000)} · ${p.r||1000}</span>${p.busy?`<span class="note" style="margin:0">${T('对局中')}</span>`:`<button class="btn" data-p="chal" data-u="${u}">${T('挑战')}</button>`}</div>`).join('')+`</div>`:`<p class="note">${T('现在没有其他人在大厅。把网址传给朋友，请他也打开「线上对弈」→「进入大厅」。')}</p>`);
+  }else if(olView==='game'){
+    const st=ol&&ol.st;
+    if(!st){h=`<p class="note">${T('连线中…')}</p>`}
+    else{const seat=c=>st[c]?`${tsE(st[c].name)} <small>${olRankName(st[c].r||1000)}</small>`:`<i>${T('等待对手…')}</i>`;
+      h=`<div class="olplayers"><div class="olpl" id="olPB"><span class="dot b"></span> ${seat('B')} <code class="olclk" id="olCB"></code></div><div class="olpl" id="olPW"><span class="dot w"></span> ${seat('W')} <code class="olclk" id="olCW"></code></div></div>`;
+      let msg='';if(st.status==='wait')msg=T('把下面的链接传给对手，对手打开就开始。');
+      else if(st.status==='play')msg=!ol.me?T('观战中'):olToMove(st)===ol.me?T('轮到你下'):T('等对手下…');
+      else if(st.status==='score')msg=ol.scoring?T('双方停一手，AI 正在算胜负…'):T('双方停一手，正在算胜负…');
+      else msg=st.re==='Void'?T('对局已取消'):T('对局结束：{0}',resultText(st.re))+(st.why==='score'?T('（GNU Go 判断死子）'):'');
+      h+=`<p class="big${st.status==='end'?' ok':''}">${msg}</p>`;if(ol.rateMsg)h+=`<p class="note" style="margin:0">${tsE(ol.rateMsg)}</p>`;
+      if(st.status==='wait')h+=`<div class="row"><input readonly id="olLinkI" value="${tsE(olLink(st.id))}" style="flex:1;min-width:10em;height:34px"><button class="btn pri" data-p="copy">${T('复制链接')}</button><button class="btn" data-p="cancel">${T('取消对局')}</button></div>`;
+      else if(st.status==='play'&&ol.me)h+=`<div class="row"><button class="btn" data-p="pass">${T('停一手')}</button><button class="btn warn" data-p="resign">${T('认输')}</button></div>`;
+      h+=`<div class="row">${st.status!=='wait'?`<button class="btn" data-p="copy">${T('复制观战链接')}</button>`:''}${st.status==='end'?`<button class="btn" data-p="review">${T('整盘分析')}</button>`:''}<button class="btn" data-p="leave">${T('离开')}</button></div>`;
+    }
+  }
+  if(olMsg)h+=`<p class="note" style="color:var(--bad,#C0392B)">${tsE(olMsg)}</p>`;
+  body.innerHTML=h;renderOlClock();
+  const ni=$('#olName');if(ni)ni.onchange=()=>{ng.name=ni.value.trim();ngSave();if(olPending&&ng.name){const p=olPending;olPending=null;olMsg='';olOpen(p)}};
+  const sel=body.querySelector('select[data-o="ha"]');if(sel)sel.onchange=()=>{olOpt.ha=+sel.value;olOptSave()};
+  const myR=$('#olMyR');if(myR)olRating(olUid()).then(R=>{if(myR.isConnected)myR.textContent=T('等级分 {0}（{1}，{2} 盘）',R.r,olRankName(R.r),R.g)}).catch(()=>{});
+}
+function renderOlClock(){if(!ol||!ol.st)return;const st=ol.st;for(const c of['B','W']){const el=$('#olC'+c);if(!el)continue;const k=olClock(st,c);
+  el.textContent=!k?'':k.t>0?olFmt(k.t)+(st.clock.per?` +${st.clock.per}×${st.clock.byo}s`:''):T('读秒 {0}（{1} 次）',olFmt(k.b),k.p);
+  const p=$('#olP'+c);if(p)p.classList.toggle('on',st.status==='play'&&olToMove(st)===c)}}
+async function olAct(e){
+  const t=e.target.closest('[data-p],[data-o] button');if(!t||!$('#olBody').contains(t))return;
+  const seg=t.closest('[data-o]');if(seg&&!t.dataset.p){const k=seg.dataset.o;olOpt[k]=k==='n'?+t.dataset.v:t.dataset.v;olOptSave();renderOl();return}
+  olMsg='';const a=t.dataset.p,need=()=>{if(!olName()){olMsg=T('请先输入你的名字');renderOl();return false}return true};
+  try{switch(a){
+    case'create':if(!need())return;t.disabled=true;olOpen(await olCreate(olOpt));break;
+    case'lobby':if(!need())return;await olLobbyOpen();break;
+    case'home':olLobbyClose();olView='home';renderOl();break;
+    case'chal':if(!need())return;t.disabled=true;await olChallenge(t.dataset.u,olOpt);break;
+    case'yes':await olAnswer(t.dataset.c,true);break;case'no':await olAnswer(t.dataset.c,false);break;
+    case'copy':{const v=olLink(ol.st.id);try{await navigator.clipboard.writeText(v);flash(T('已复制链接'))}catch(x){const i=$('#olLinkI');if(i){i.select();document.execCommand('copy')}flash(v)}break}
+    case'pass':olMove('');break;
+    case'resign':armed(t,T('再点一次确认认输'),olResign);break;
+    case'cancel':await olCancel();break;
+    case'leave':olClose();break;
+    case'review':olClose();revOpen();revStart();break;
+  }}catch(err){olMsg=err.message||String(err);renderOl()}
+}
+function olPanelOpen(){$('#olBox').hidden=false;$('#olToggle').setAttribute('aria-pressed','true');renderOl()}
+function olPanelClose(){if(ol&&ol.st&&ol.st.status==='play'&&ol.me){flash(T('对局还在进行，请先认输或下完'));return}olClose(true);olLobbyClose();olView='home';$('#olBox').hidden=true;$('#olToggle').setAttribute('aria-pressed','false')}
 
 /* ===================== 练习题：练习册、做题、出题、班级、积分 =====================
    题目 = SGF：根节点摆好棋子（AB/AW）、PL 谁先下、C 题目说明；答案是变化树，
    正解的最后一手评论里有 RIGHT（或「正解」），错的有 WRONG。不在树里的下法都算错。
    班级资料放在 Firebase：games/cls_<班级代码>/layers/{meta, b_<练习册>, u_<学生>} */
-const TS_BUILTIN=[{"id": "starter-cap", "title": "吃子入门", "builtin": true, "problems": [{"id": "c1", "title": "提子", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[提子]C[黑先，把白子提掉。]PL[B]AB[br][cs][dr]AW[cr];B[cq]C[RIGHT 提掉了！])"}, {"id": "c2", "title": "双打吃", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[双打吃]C[黑先，一手同时打吃两块白棋。]PL[B]AB[bq][cr][fq][er]AW[cq][eq];B[dq](;W[cp];B[ep]C[RIGHT 双打吃，白只能救一边。])(;W[ep];B[cp]C[RIGHT 双打吃，白只能救一边。]))"}, {"id": "c3", "title": "征子", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[征子]C[黑先，用征子吃掉白子。要注意从哪一边打吃。]PL[B]AB[fo][go][ep]AW[fp](;B[fq];W[gp];B[hp]C[RIGHT 征子成立，白子往边上逃，逃不掉。])(;B[gp];W[fq]C[WRONG 方向错了，白往左下逃，征子不成立。]))"}, {"id": "c4", "title": "倒扑", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[倒扑]C[黑先，先送一子，再把白棋整块吃掉。]PL[B]AB[aq][bq][cq][dq][eq][fq][gq][gr][gs][ar][br][cr]AW[dr][er][fr][cs][fs];B[ds];W[es];B[ds]C[RIGHT 倒扑成功，吃掉五子！])"}]}, {"id": "starter-ld", "title": "死活入门", "builtin": true, "problems": [{"id": "l1", "title": "杀直三", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀直三]C[黑先，把白棋杀掉。]PL[B]AB[aq][bq][cq][dq][eq][er][es]AW[ar][br][cr][dr][ds](;B[bs]C[RIGHT 点在中间，白棋只剩一只眼。])(;B[as];W[bs]C[WRONG 白下在中间，做成两只眼。])(;B[cs];W[bs]C[WRONG 白下在中间，做成两只眼。]))"}, {"id": "l2", "title": "弯三做活", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[弯三做活]C[黑先，让黑棋活下来。]PL[B]AB[aq][bq][br][cr][cs]AW[ap][bp][cp][cq][dq][dr][ds](;B[as]C[RIGHT 下在角上，做成两只眼，活了！])(;B[ar];W[as]C[WRONG 白点在角上，黑只剩一只眼。])(;B[bs];W[as]C[WRONG 白点在角上，黑只剩一只眼。]))"}, {"id": "l3", "title": "杀丁四", "level": 3, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀丁四]C[黑先，把白棋杀掉。]PL[B]AB[aq][ap][bp][cp][dp][ep][eq][fq][fr][fs]AW[as][ar][br][bq][cq][dq][dr][er][es](;B[cs]C[RIGHT 点在丁四的中心，白棋活不了。])(;B[bs];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[ds];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[cr];W[cs]C[WRONG 白占到中心，做成两只眼。]))"}]}];
+const TS_BUILTIN=[{"id": "starter-cap", "title": "吃子入门", "builtin": true, "problems": [{"id": "c1", "title": "提子", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[提子]C[黑先，把白子提掉。]PL[B]AB[br][cs][dr]AW[cr];B[cq]C[RIGHT 提掉了！])"}, {"id": "c2", "title": "双打吃", "level": 1, "sgf": "(;GM[1]FF[4]SZ[19]GN[双打吃]C[黑先，一手同时打吃两块白棋。]PL[B]AB[bq][cr][fq][er]AW[cq][eq];B[dq](;W[cp];B[ep]C[RIGHT 双打吃，白只能救一边。])(;W[ep];B[cp]C[RIGHT 双打吃，白只能救一边。]))"}, {"id": "c3", "title": "征子", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[征子]C[黑先，用征子吃掉白子。要注意从哪一边打吃。]PL[B]AB[fo][go][ep]AW[fp](;B[fq];W[gp];B[hp]C[RIGHT 征子成立，白子往边上逃，逃不掉。])(;B[gp];W[fq]C[WRONG 方向错了，白往左下逃，征子不成立。]))"}, {"id": "c4", "title": "倒扑", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[倒扑]C[黑先，先送一子，再把白棋整块吃掉。]PL[B]AB[aq][bq][cq][dq][eq][fq][gq][gr][gs][ar][br][cr]AW[dr][er][fr][cs][fs];B[ds];W[es];B[ds]C[RIGHT 倒扑成功，吃掉五子！])"}]}, {"id": "starter-ld", "title": "死活入门", "builtin": true, "problems": [{"id": "l1", "title": "杀直三", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀直三]C[黑先，把白棋杀掉。]PL[B]AB[aq][bq][cq][dq][eq][er][es]AW[ar][br][cr][dr][ds](;B[bs]C[RIGHT 点在中间，白棋只剩一只眼。])(;B[as];W[bs]C[WRONG 白下在中间，做成两只眼。])(;B[cs];W[bs]C[WRONG 白下在中间，做成两只眼。]))"}, {"id": "l2", "title": "弯三做活", "level": 2, "sgf": "(;GM[1]FF[4]SZ[19]GN[弯三做活]C[黑先，让黑棋活下来。]PL[B]AB[aq][bq][br][cr][cs]AW[ap][bp][cp][cq][dq][dr][ds](;B[as]C[RIGHT 下在角上，做成两只眼，活了！])(;B[ar];W[as]C[WRONG 白点在角上，黑只剩一只眼。])(;B[bs];W[as]C[WRONG 白点在角上，黑只剩一只眼。]))"}, {"id": "l3", "title": "杀丁四", "level": 3, "sgf": "(;GM[1]FF[4]SZ[19]GN[杀丁四]C[黑先，把白棋杀掉。]PL[B]AB[aq][ap][bp][cp][dp][ep][eq][fq][fr][fs]AW[as][ar][br][bq][cq][dq][dr][er][es](;B[cs]C[RIGHT 点在丁四的中心，白棋活不了。])(;B[bs];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[ds];W[cs]C[WRONG 白占到中心，做成两只眼。])(;B[cr];W[cs]C[WRONG 白占到中心，做成两只眼。]))"}]}, {"id": "gk1", "title": "棋经众妙 · 活棋", "builtin": true, "src": "books/gk1.json", "count": 56, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk2", "title": "棋经众妙 · 杀棋", "builtin": true, "src": "books/gk2.json", "count": 33, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk3", "title": "棋经众妙 · 劫", "builtin": true, "src": "books/gk3.json", "count": 23, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk4", "title": "棋经众妙 · 对杀", "builtin": true, "src": "books/gk4.json", "count": 49, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk5", "title": "棋经众妙 · 接不归", "builtin": true, "src": "books/gk5.json", "count": 15, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk6", "title": "棋经众妙 · 连接", "builtin": true, "src": "books/gk6.json", "count": 34, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "gk7", "title": "棋经众妙 · 手筋", "builtin": true, "src": "books/gk7.json", "count": 14, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}, {"id": "xxqj", "title": "玄玄棋经（难）", "builtin": true, "src": "books/xxqj.json", "count": 95, "credit": "古典题，公有领域；电子版由 Vít Brunner（tsumego.tasuki.org）整理。答案由 GNU Go 算出、KataGo 检查，可能不完美。", "problems": []}];
 const TS_KEY='goReview.ts';
 let tsStore=(()=>{try{return JSON.parse(localStorage.getItem(TS_KEY))||{}}catch(e){return{}}})();
 tsStore.books=tsStore.books||{};tsStore.log=tsStore.log||{};
@@ -3997,6 +4331,10 @@ function tsSave(){try{localStorage.setItem(TS_KEY,JSON.stringify(tsStore))}catch
 let ts=null,tsView='home',tsBookId=null,tsCloud=null,tsMsg='',tsCrop=null,tsTeacherView=null;
 const tsE=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tsId=(k=8)=>{const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(k);crypto.getRandomValues(u);return[...u].map(x=>a[x%a.length]).join('')};
+async function tsSlow(s,salt){ // PBKDF2：每猜一次密码都要算很久，不容易被乱试
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(s),'PBKDF2',false,['deriveBits']);
+  const b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode('goreview:'+salt),iterations:150000,hash:'SHA-256'},k,192);
+  return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function tsHash(s){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 const tsLogin=()=>tsStore.login||null;
 
@@ -4004,7 +4342,11 @@ const tsLogin=()=>tsStore.login||null;
 const TsCloud={
   async col(cls){const db=await Shared.db();return db.collection('games').doc('cls_'+cls).collection('layers')},
   async get(cls,name){const d=await(await this.col(cls)).doc(name).get();if(!d.exists)return null;try{return JSON.parse(d.data().sgf||'null')}catch(e){return null}},
-  async set(cls,name,obj){await(await this.col(cls)).doc(name).set({sgf:JSON.stringify(obj),name,updated:Date.now()})},
+  async set(cls,name,obj,extra){await(await this.col(cls)).doc(name).set({sgf:JSON.stringify(obj),name,updated:Date.now(),...(extra||{})})},
+  async keys(cls){const db=await Shared.db();return db.collection('games').doc('cls_'+cls).collection('keys')}, // 密码的「钥匙」：只能用名字取，不能列出
+  async hasKey(cls,k){try{const d=await(await this.keys(cls)).doc(k).get();return d.exists?d.data():null}catch(e){return null}},
+  async addKey(cls,k){await(await this.keys(cls)).doc(k).set({t:Date.now()})},
+  async meta(cls){const d=await(await this.col(cls)).doc('meta').get();if(!d.exists)return null;let o={};try{o=JSON.parse(d.data().sgf||'{}')}catch(e){}o.owner=d.data().owner||null;return o},
   async list(cls){const qs=await(await this.col(cls)).get();const o={};qs.forEach(d=>{try{o[d.id]=JSON.parse(d.data().sgf)}catch(e){}});return o}
 };
 const tsUserDoc=async name=>'u_'+(await tsHash('name:'+name)).slice(0,16);
@@ -4024,7 +4366,8 @@ async function tsSaveBook(b){const L=tsLogin();
 function tsNewBook(){const L=tsLogin();const b={id:tsId(),title:T('新练习册'),problems:[]};
   if(L&&L.role==='teacher'){b.cloud=true}else b.local=true;return b}
 const tsPid=(b,p)=>b.id+':'+p.id;
-function tsStat(b){let ok=0,first=0;for(const p of b.problems){const l=tsLogEntry(tsPid(b,p));if(l&&l.ok){ok++;if(l.first)first++}}return{ok,first,n:b.problems.length}}
+function tsStat(b){let ok=0,first=0;if(b.src&&!b.problems.length){for(const k in tsStore.log)if(k.startsWith(b.id+':')&&tsStore.log[k].ok){ok++;if(tsStore.log[k].first)first++}return{ok,first,n:b.count||0}}
+  for(const p of b.problems){const l=tsLogEntry(tsPid(b,p));if(l&&l.ok){ok++;if(l.first)first++}}return{ok,first,n:b.problems.length}}
 function tsLogEntry(pid){const L=tsLogin();if(L&&L.role==='student'&&tsCloud&&tsCloud.users[L.doc]){const c=(tsCloud.users[L.doc].log||{})[pid];if(c)return c}return tsStore.log[pid]}
 
 /* ---- SGF 题目工具 ---- */
@@ -4058,12 +4401,12 @@ function tsExit(){ // 回到原来的棋谱
   if(!ts)return;const p=ts;ts=null;tsCrop=null;document.body.classList.remove('is-ts');
   if(p.prevG){G=p.prevG;cur=p.prevCur||G.root}tool='play';renderWho();renderTree();render();renderInfo();
 }
-function tsReset(){if(!ts||ts.mode!=='solve')return;cur=G.root;ts.node=G.root;ts.wrong=null;ts.busy=false;render();renderTs()}
+function tsReset(){if(!ts||ts.mode!=='solve')return;tsClean(G.root);cur=G.root;ts.node=G.root;ts.wrong=null;ts.busy=false;render();renderTs()}
 function tsClick(x,y){
   if(ts.mode==='edit')return tsEditClick(x,y);
   if(ts.solved||ts.busy||ts.shown)return;const n=sizeOf(root()),pt=xyToPt(x,y),col=nextColor(ts.node),st=computeState(ts.node,n);if(st.g[y][x])return;
   const ch=ts.node.children.find(c=>{const m=moveOf(c);return m&&m[0]===col&&m[1]===pt});
-  if(!ch){ts.wrong=[x,y];playSound('stone');tsFail(T('不对，再想想。'));return}
+  if(!ch){if(tsXG(G.root)){tsJudgeMove(x,y,col);return}ts.wrong=[x,y];playSound('stone');tsFail(T('不对，再想想。'));return}
   cur=ch;ts.node=ch;ts.wrong=null;soundFor(ch);render();
   const v=tsVerdict(ch);if(v==='wrong'){tsFail(tsNote(ch)||T('这样不行。'));return}if(v==='right'&&!ch.children.length){tsWin(tsNote(ch));return}
   ts.busy=true;renderTs();
@@ -4092,9 +4435,9 @@ async function tsRecord(ok,viewed){ // 记录做题结果，回传这次得到�
     await TsCloud.set(L.cls,L.doc,u);if(tsCloud)tsCloud.users[L.doc]=u;L.pts=u.pts;tsStore.login=L;tsSave()}catch(err){flash(T('记录没有上传，请检查网络'))}}
   return gain;
 }
-async function tsAward(pts,what){ // 其他得分（和 AI 下完一盘）
+async function tsAward(pts,what,extra){ // 其他得分（和 AI 下完一盘、升级赛升级）；extra：一起记下的资料（例如级位）
   const L=tsLogin();tsStore.pts=(tsStore.pts||0)+pts;tsSave();
-  if(L&&L.role==='student'){try{const u=(await TsCloud.get(L.cls,L.doc))||{name:L.name};u.pts=(u.pts||0)+pts;u[what]=(u[what]||0)+1;u.last=Date.now();await TsCloud.set(L.cls,L.doc,u);L.pts=u.pts;tsStore.login=L;tsSave()}catch(e){}}
+  if(L&&L.role==='student'){try{const u=(await TsCloud.get(L.cls,L.doc))||{name:L.name};u.pts=(u.pts||0)+pts;u[what]=(u[what]||0)+1;if(extra)Object.assign(u,extra);u.last=Date.now();await TsCloud.set(L.cls,L.doc,u);L.pts=u.pts;tsStore.login=L;tsSave()}catch(e){}}
 }
 
 /* ---- 出题 ---- */
@@ -4146,21 +4489,33 @@ function tsDownloadBook(b){const t=b.problems.map(p=>p.sgf).join('\n');const a=d
 /* ---- 登录 ---- */
 async function tsStudentLogin(cls,name,pin){
   cls=cls.toUpperCase().replace(/[^A-Z0-9]/g,'');name=name.trim();if(!cls||!name||!/^\d{4}$/.test(pin))throw new Error(T('请填好班级代码、名字和 4 位数密码'));
-  const meta=await TsCloud.get(cls,'meta');if(!meta)throw new Error(T('找不到这个班级代码'));
-  const doc=await tsUserDoc(name),h=await tsHash(cls+':'+name+':'+pin),u=await TsCloud.get(cls,doc);
-  if(u&&u.removed)throw new Error(T('这个名字已被老师移出班级'));
-  if(u&&u.h&&u.h!==h)throw new Error(T('密码不对'));
-  const nu=u||{name,pts:0,log:{},joined:Date.now()};nu.h=h;nu.name=name;nu.last=Date.now();await TsCloud.set(cls,doc,nu);
+  const meta=await TsCloud.meta(cls);if(!meta)throw new Error(T('找不到这个班级代码'));
+  const doc=await tsUserDoc(name),u=await TsCloud.get(cls,doc);if(u&&u.removed)throw new Error(T('这个名字已被老师移出班级'));
+  const key='s_'+doc.slice(2)+'_'+(await tsSlow(pin,cls+':'+doc)),kd=await TsCloud.hasKey(cls,key);
+  const fresh=!u||(!u.kt&&!u.h)||(u.reset&&u.reset>(u.kt||0)); // 新学生，或老师刚重设密码
+  let ok=kd&&(!u||!u.reset||kd.t>=u.reset);
+  if(!ok&&u&&u.h&&!u.kt)ok=u.h===await tsHash(cls+':'+name+':'+pin); // 旧版的密码（升级）
+  if(!ok&&!fresh)throw new Error(T('密码不对'));
+  if(!kd||(u&&u.reset&&kd.t<u.reset))await TsCloud.addKey(cls,key);
+  const nu=u||{name,pts:0,log:{},joined:Date.now()};delete nu.h;nu.kt=Date.now();nu.name=name;nu.last=Date.now();await TsCloud.set(cls,doc,nu);
   tsStore.login={cls,clsName:meta.name,name,role:'student',doc,pts:nu.pts||0};tsSave();await tsRefreshCloud();
 }
-async function tsTeacherCreate(clsName,name,pin){
-  if(!clsName.trim()||!name.trim()||!/^\d{4,8}$/.test(pin))throw new Error(T('请填好班级名称、老师名字和 4–8 位数密码'));
-  let cls='';for(let i=0;i<5;i++){cls=tsId(6).toUpperCase();if(!(await TsCloud.get(cls,'meta')))break}
-  await TsCloud.set(cls,'meta',{name:clsName.trim(),teacher:name.trim(),th:await tsHash(cls+':teacher:'+pin),created:Date.now()});
-  tsStore.login={cls,clsName:clsName.trim(),name:name.trim(),role:'teacher'};tsSave();await tsRefreshCloud();return cls;
+async function tsGoogle(){ // 老师用 Google 账号登录（每台设备都是同一个账号，数据库只让这个账号改班级设定和练习册）
+  await Shared.db();const a=firebase.auth(),u=a.currentUser;if(u&&!u.isAnonymous)return u;const pv=new firebase.auth.GoogleAuthProvider();
+  try{return(await a.signInWithPopup(pv)).user}catch(e){if(/popup|cancel/i.test(e.code||'')){throw new Error(T('Google 登录被取消或弹窗被拦截'))}throw e}}
+async function tsTeacherCreate(clsName,name){
+  if(!clsName.trim()||!name.trim())throw new Error(T('请填好班级名称和老师名字'));
+  const g=await tsGoogle();let cls='';for(let i=0;i<5;i++){cls=tsId(6).toUpperCase();if(!(await TsCloud.meta(cls)))break}
+  await TsCloud.set(cls,'meta',{name:clsName.trim(),teacher:name.trim(),created:Date.now()},{owner:g.uid});
+  tsStore.login={cls,clsName:clsName.trim(),name:name.trim(),role:'teacher',g:1};tsSave();await tsRefreshCloud();return cls;
 }
-async function tsTeacherLogin(cls,pin){cls=cls.toUpperCase().replace(/[^A-Z0-9]/g,'');const meta=await TsCloud.get(cls,'meta');if(!meta)throw new Error(T('找不到这个班级代码'));
-  if(meta.th!==await tsHash(cls+':teacher:'+pin))throw new Error(T('密码不对'));tsStore.login={cls,clsName:meta.name,name:meta.teacher,role:'teacher'};tsSave();await tsRefreshCloud()}
+async function tsTeacherLogin(cls,pin){cls=cls.toUpperCase().replace(/[^A-Z0-9]/g,'');const meta=await TsCloud.meta(cls);if(!meta)throw new Error(T('找不到这个班级代码'));
+  if(meta.owner){const g=await tsGoogle();if(g.uid!==meta.owner)throw new Error(T('这个 Google 账号不是这个班级的老师'))}
+  else if(!meta.th||meta.th!==await tsHash(cls+':teacher:'+pin))throw new Error(T('密码不对（新班级请用 Google 登录）'));
+  tsStore.login={cls,clsName:meta.name,name:meta.teacher,role:'teacher',g:meta.owner?1:0};tsSave();await tsRefreshCloud()}
+async function tsBindGoogle(){ // 旧班级：绑定 Google 账号，之后只有这个账号能改
+  const L=tsLogin();const meta=await TsCloud.meta(L.cls);const g=await tsGoogle();const m={...meta};delete m.owner;delete m.th;
+  await TsCloud.set(L.cls,'meta',m,{owner:g.uid});L.g=1;tsStore.login=L;tsSave()}
 function tsLogout(){delete tsStore.login;tsSave();tsCloud=null;tsView='home';renderTs()}
 
 /* ---- 画面 ---- */
@@ -4170,17 +4525,20 @@ function tsClosePanel(){if(ts)tsExit();$('#tsBox').hidden=true;$('#tsToggle').se
 const tsStars=lv=>'★'.repeat(+lv||1);
 function renderTs(){
   const el=$('#tsBody');if(!el||$('#tsBox').hidden)return;const L=tsLogin();let h='';
-  const top=`<div class="tsbar">${L?`<span><b>${tsE(L.name)}</b>（${L.role==='teacher'?T('老师'):T('学生')}）· ${tsE(L.clsName||'')} <code>${L.cls}</code>${L.role==='student'?` · ${T('{0} 分',L.pts||0)}`:''}</span><button class="btn" data-a="rank">${L.role==='teacher'?T('全班记录'):T('排行榜')}</button><button class="btn" data-a="logout">${T('登出')}</button>`
+  const top=`<div class="tsbar">${L?`<span><b>${tsE(L.name)}</b>（${L.role==='teacher'?T('老师'):T('学生')}）· ${tsE(L.clsName||'')} <code>${L.cls}</code>${L.role==='student'?` · ${T('{0} 分',L.pts||0)}`:''}</span><button class="btn" data-a="rank">${L.role==='teacher'?T('全班记录'):T('排行榜')}</button><button class="btn" data-a="logout">${T('登出')}</button>${L.role==='teacher'&&!L.g?`<button class="btn" data-a="bindg">${T('绑定 Google 账号（更安全）')}</button>`:''}`
     :`<span class="note" style="margin:0">${T('没有登录：记录只存在这台设备（{0} 分）',tsStore.pts||0)}</span><button class="btn pri" data-a="login">${T('登录 / 加入班级')}</button>`}</div>`;
   if(tsView==='home'){
     h=top+`<div class="tsbooks">`+tsBooks().map(b=>{const s=tsStat(b);return`<button class="tsbook" data-a="book" data-b="${b.id}"><b>${tsE(b.title)}</b><span>${T('{0} 题',s.n)} · ${T('完成 {0}',s.ok)}${b.cloud?' · '+T('班级'):b.local?' · '+T('本机'):''}</span><i style="width:${s.n?Math.round(s.ok/s.n*100):0}%"></i></button>`}).join('')+`</div>`;
     h+=`<div class="row"><button class="btn" data-a="newbook">${T('新练习册')}</button></div>`;
   }else if(tsView==='book'){
     const b=tsBook(tsBookId);if(!b){tsView='home';return renderTs()}const ed=tsCanEdit(b);
+    if(b.src&&!b.problems.length){if(!b.loading){b.loading=1;tsLoadBook(b).catch(e=>{tsMsg=T('题库下载失败：{0}',e.message)}).finally(()=>{b.loading=0;renderTs()})}$('#tsBody').innerHTML=top+`<p class="note">${T('题库下载中…')}</p>`;return}
     h=top+`<div class="row" style="align-items:center"><button class="btn" data-a="home">← ${T('练习册')}</button>${ed?`<input id="tsBookTitle" value="${tsE(b.title)}" style="flex:1;min-width:8em;height:34px;border:1px solid var(--line);border-radius:6px;padding:0 8px;background:var(--bg)">`:`<b>${tsE(b.title)}</b>`}</div>`;
     h+=`<div class="tsgrid">`+b.problems.map((p,i)=>{const l=tsLogEntry(tsPid(b,p));const c=l&&l.ok?(l.first?'g':'b'):l&&l.tries?'r':'';return`<button class="tsp ${c}" data-a="solve" data-i="${i}" title="${tsE(p.title)}">${i+1}<small>${tsStars(p.level)}</small></button>`}).join('')+`</div>`;
     if(!b.problems.length)h+=`<p class="note">${T('还没有题目。')}</p>`;
     h+=`<p class="note" style="margin:0">${T('绿色：一次答对 · 蓝色：后来答对 · 红色：还没答对')}</p>`;
+    if(b.credit)h+=`<p class="note" style="margin:0">${tsE(b.credit)}</p>`;
+    if(b.problems.length)h+=`<div class="row"><button class="btn" data-a="print6">${T('打印（每页 6 题）')}</button><button class="btn" data-a="print12">${T('打印（每页 12 题）')}</button>${ed&&b.problems.some(p=>!/;[BW]\[/.test(p.sgf.slice(p.sgf.indexOf(';',1))))?`<button class="btn" data-a="aifill">${T('AI 补上没有答案的题')}</button>`:''}</div>`;
     if(ed)h+=`<div class="row"><button class="btn pri" data-a="newp">${T('新题目')}</button>${ts&&ts.prevG||G.id!=='__ts'?`<button class="btn" data-a="newpg">${T('用目前棋局出题')}</button>`:''}<label class="btn" style="cursor:pointer">${T('导入 SGF')}<input type="file" id="tsFile" accept=".sgf,text/plain" multiple hidden></label><button class="btn" data-a="dlbook">${T('下载练习册')}</button><button class="btn warn" data-a="delbook">${T('删除练习册')}</button></div>`;
   }else if(tsView==='solve'&&ts){
     const b=tsBook(ts.bookId),p=ts.prob,col=nextColor(G.root);
@@ -4196,15 +4554,16 @@ function renderTs(){
     h+=`<div class="score-opts"><label style="flex:1">${T('题目说明')} <input id="tsQ" value="${tsE(tsNote(G.root))}" placeholder="${T('例如：黑先活')}" style="flex:1;min-width:10em"></label></div>`;
     if(setup)h+=`<div class="score-opts"><span class="seg" id="tsStone"><button data-s="AB" aria-pressed="${ts.stone==='AB'}">${T('放黑子')}</button><button data-s="AW" aria-pressed="${ts.stone==='AW'}">${T('放白子')}</button><button data-s="AE" aria-pressed="${ts.stone==='AE'}">${T('擦掉')}</button></span>
       <span class="seg" id="tsFirst"><button data-c="B" aria-pressed="${prop(G.root,'PL')!=='W'}">${T('黑先')}</button><button data-c="W" aria-pressed="${prop(G.root,'PL')==='W'}">${T('白先')}</button></span></div>
+      <div class="row"><label class="btn" style="cursor:pointer">${T('从图片导入（截图／照片）')}<input type="file" id="tsImg" accept="image/*" hidden></label></div>
       <div class="row"><button class="btn pri" data-a="toanswer">${T('下一步：摆答案')}</button><button class="btn" data-a="cancel">${T('取消')}</button></div>`;
-    else h+=`<div class="row"><button class="btn" data-a="right">${T('这条是正解')}</button><button class="btn" data-a="wrongm">${T('这条是错的')}</button><button class="btn" data-a="tostart">${T('回到开头')}</button><button class="btn" data-a="tosetup">${T('回去改棋子')}</button></div>
+    else h+=`<div class="row"><button class="btn" data-a="right">${T('这条是正解')}</button><button class="btn" data-a="wrongm">${T('这条是错的')}</button><button class="btn" data-a="tostart">${T('回到开头')}</button><button class="btn" data-a="tosetup">${T('回去改棋子')}</button><button class="btn" data-a="aisolve">${T('AI 解答')}</button></div>
       <div class="row"><button class="btn pri" data-a="savep">${T('存进练习册')}</button><button class="btn" data-a="cancel">${T('取消')}</button></div>`;
   }else if(tsView==='login'){
     h=`<div class="row"><button class="btn" data-a="home">← ${T('返回')}</button></div>
     <b class="sub">${T('学生登录')}</b><div class="score-opts"><input id="tsCls" placeholder="${T('班级代码')}" maxlength="8" style="width:7em;text-transform:uppercase"><input id="tsName" placeholder="${T('名字')}" maxlength="16" style="width:8em" value="${tsE(me()||'')}"><input id="tsPin" placeholder="${T('4 位数密码')}" maxlength="4" inputmode="numeric" type="password" style="width:7em"><button class="btn pri" data-a="slogin">${T('登录')}</button></div>
     <p class="note" style="margin:0">${T('第一次登录会用这个名字加入班级，并设定密码。之后在任何设备用同样的名字和密码登录，记录都在。')}</p><hr>
-    <b class="sub">${T('老师')}</b><div class="score-opts"><input id="tsTCls" placeholder="${T('班级代码')}" maxlength="8" style="width:7em;text-transform:uppercase"><input id="tsTPin" placeholder="${T('老师密码')}" maxlength="8" inputmode="numeric" type="password" style="width:7em"><button class="btn" data-a="tlogin">${T('老师登录')}</button></div>
-    <div class="score-opts"><input id="tsNewCls" placeholder="${T('新班级名称')}" maxlength="20" style="width:9em"><input id="tsNewT" placeholder="${T('老师名字')}" maxlength="16" style="width:7em"><input id="tsNewPin" placeholder="${T('设定老师密码')}" maxlength="8" inputmode="numeric" type="password" style="width:8em"><button class="btn" data-a="tcreate">${T('建立新班级')}</button></div>`;
+    <b class="sub">${T('老师')}</b><div class="score-opts"><input id="tsTCls" placeholder="${T('班级代码')}" maxlength="8" style="width:7em;text-transform:uppercase"><input id="tsTPin" placeholder="${T('旧班级的老师密码')}" maxlength="8" inputmode="numeric" type="password" style="width:9em"><button class="btn" data-a="tlogin">${T('老师登录（Google）')}</button></div>
+    <div class="score-opts"><input id="tsNewCls" placeholder="${T('新班级名称')}" maxlength="20" style="width:9em"><input id="tsNewT" placeholder="${T('老师名字')}" maxlength="16" style="width:7em"><button class="btn" data-a="tcreate">${T('用 Google 账号建立新班级')}</button></div><p class="note" style="margin:0">${T('老师用 Google 账号登录：换设备也是同一个账号，别人不能改你的班级和练习册。')}</p>`;
   }else if(tsView==='rank'){
     const users=tsCloud?Object.entries(tsCloud.users):[];const isT=L&&L.role==='teacher';
     const rows=users.map(([doc,u])=>{let ok=0,first=0,tried=0;for(const k in u.log||{}){const l=u.log[k];tried++;if(l.ok){ok++;if(l.first)first++}}return{doc,u,ok,first,tried}}).sort((a,b)=>(b.u.pts||0)-(a.u.pts||0));
@@ -4217,6 +4576,7 @@ function renderTs(){
   }
   el.innerHTML=h+(tsMsg?`<p class="status">${tsE(tsMsg)}</p>`:'');tsMsg='';
   const ft=$('#tsFile');if(ft)ft.onchange=e=>{tsImport([...e.target.files],tsBookId);e.target.value=''};
+  const ti=$('#tsImg');if(ti)ti.onchange=e=>{const f=e.target.files[0];if(f)picOpen(f);ti.value=''};
   const bt=$('#tsBookTitle');if(bt)bt.onchange=async e=>{const b=tsBook(tsBookId);b.title=e.target.value.trim()||b.title;await tsSaveBook(b);renderTs()};
 }
 async function tsAct(e){
@@ -4234,6 +4594,11 @@ async function tsAct(e){
     case'newbook':{const b=tsNewBook();await busy(()=>tsSaveBook(b));tsBookId=b.id;tsView='book';renderTs();break}
     case'delbook':armed(t,T('再点一次确认删除'),async()=>{const b=tsBook(tsBookId);if(b.local){delete tsStore.books[b.id];tsSave()}else{await TsCloud.set(L.cls,'b_'+b.id,{removed:true});await tsRefreshCloud()}tsView='home';renderTs()});break;
     case'dlbook':tsDownloadBook(tsBook(tsBookId));break;
+    case'print6':tsPrint(tsBook(tsBookId),6);break;
+    case'print12':tsPrint(tsBook(tsBookId),12);break;
+    case'aifill':await busy(async()=>{const b=tsBook(tsBookId);const r=await tsAiFill(b,(d,n,ok)=>{t.textContent=T('AI 解题中… {0}/{1}',d,n)});await tsSaveBook(b);tsMsg=T('AI 解好 {0} 题（共 {1} 题没有答案）。AI 的答案可能不完美，请老师看一下。',r.ok,r.n)});break;
+    case'aisolve':await busy(async()=>{tsClean(G.root);const sol=await ggSolve(G.root);if(!sol){tsMsg=T('AI 找不到这题的答案（可能不是死活题，或棋子不完整）');return}
+      G.root.children=[];tsApplySolve(G.root,sol);cur=G.root;render();tsMsg=T('AI 已经摆好正解，可以再自己加变化。')});break;
     case'solve':tsOpen(tsBookId,+t.dataset.i);break;
     case'back':tsExit();tsView='book';renderTs();break;
     case'redo':ts.solved=false;ts.shown=false;ts.msg='';ts.gained=0;tsReset();break;
@@ -4252,15 +4617,147 @@ async function tsAct(e){
     case'savep':await busy(tsEditSave);break;
     case'cancel':{const bid=ts.bookId;tsExit();tsBookId=bid;tsView='book';renderTs();break}
     case'slogin':await busy(async()=>{await tsStudentLogin($('#tsCls').value,$('#tsName').value,$('#tsPin').value);tsView='home'});break;
+    case'bindg':await busy(async()=>{await tsBindGoogle();tsMsg=T('已绑定 Google 账号。以后用「老师登录（Google）」登录。')});break;
     case'tlogin':await busy(async()=>{await tsTeacherLogin($('#tsTCls').value,$('#tsTPin').value);tsView='home'});break;
-    case'tcreate':await busy(async()=>{const c=await tsTeacherCreate($('#tsNewCls').value,$('#tsNewT').value,$('#tsNewPin').value);tsView='home';tsMsg=T('班级已建立。班级代码：{0}（给学生登录用，请记下）',c)});break;
-    case'resetpin':await busy(async()=>{const u=tsCloud.users[t.dataset.d];u.h=null;await TsCloud.set(L.cls,t.dataset.d,u);tsMsg=T('已重设，{0} 下次登录时设定新密码',u.name)});break;
+    case'tcreate':await busy(async()=>{const c=await tsTeacherCreate($('#tsNewCls').value,$('#tsNewT').value);tsView='home';tsMsg=T('班级已建立。班级代码：{0}（给学生登录用，请记下）',c)});break;
+    case'resetpin':await busy(async()=>{const u=tsCloud.users[t.dataset.d];delete u.h;u.reset=Date.now();await TsCloud.set(L.cls,t.dataset.d,u);tsMsg=T('已重设，{0} 下次登录时设定新密码',u.name)});break;
     case'remove':armed(t,T('再点一次确认'),async()=>{const u=tsCloud.users[t.dataset.d];u.removed=true;await TsCloud.set(L.cls,t.dataset.d,u);tsTeacherView=null;await tsRefreshCloud();renderTs()});break;
   }
 }
 function tsOverlay(n,X){ // 做题时：下错的点画红色 ✕
   if(!ts||ts.mode!=='solve'||!ts.wrong)return'';const[x,y]=ts.wrong,a=U*0.24;
   return`<path d="M${X(x)-a} ${X(y)-a}L${X(x)+a} ${X(y)+a}M${X(x)+a} ${X(y)-a}L${X(x)-a} ${X(y)+a}" stroke="#C0392B" stroke-width="5" stroke-linecap="round"/>`;
+}
+
+/* ---- GNU Go 解题、判题（死活、对杀、劫） ----
+   题目根节点的 XG[目标:棋子:结果]，例如 XG[kill:D18:1]：吃掉 D18 那块棋；live = 救活；结果 2/3 表示要打劫。
+   学生下的棋不在答案树里时，就问 GNU Go：对方还有没有办法？ */
+const tsGtpV=(x,y,n)=>COLS[x]+(n-y);
+function tsXG(r){const v=(r.props.XG||[''])[0].split(':');return v[0]&&v[1]?{goal:v[0],t:v[1],code:+v[2]||1}:null}
+async function ggSolve(r){ // 回传 {goal,t,code,line:[['B','D18'],…]} 或 null
+  const n=sizeOf(r),pl=nextColor(r),base=GG.gtpFor(r,r),q=(r.props.C||[''])[0];
+  let res=await GG.raw([...base,'dragon_stones']);const ds=(res[res.length-2]||{t:''}).t.split('\n').map(l=>l.trim().split(/\s+/)).filter(a=>a[0]);
+  if(!ds.length)return null;
+  res=await GG.raw([...base,...ds.flatMap(d=>['color '+d[0],'dragon_status '+d[0]])]);const k0=base.length;
+  const info=ds.map((d,i)=>({v:d[0],sz:d.length,col:res[k0+i*2].t[0].toUpperCase(),st:res[k0+i*2+1].t.split(/\s+/)[0]})).filter(d=>d.st!=='alive');
+  const own=info.filter(d=>d.col===pl).sort((a,b)=>b.sz-a.sz),opp=info.filter(d=>d.col!==pl).sort((a,b)=>b.sz-a.sz);
+  const liveFirst=/活|live|connect|连/i.test(q)&&!/杀|kill|吃/i.test(q);
+  const cand=liveFirst?[...own.map(d=>['live',d]),...opp.map(d=>['kill',d])]:[...opp.map(d=>['kill',d]),...own.map(d=>['live',d])];
+  if(!cand.length)return null;
+  res=await GG.raw([...base,...cand.map(([g,d])=>(g==='live'?'owl_defend ':'owl_attack ')+d.v)]);
+  let best=null;cand.forEach(([g,d],i)=>{const a=res[k0+i].t.split(/\s+/),code=+a[0];if(code&&a[1]&&a[1]!=='PASS'){const c={goal:g,t:d.v,code,m:a[1]};if(!best||(code===1&&best.code!==1))best=c}});
+  if(!best)return null;
+  const me=best.goal==='live'?'owl_defend ':'owl_attack ',op=best.goal==='live'?'owl_attack ':'owl_defend ',oc=pl==='B'?'W':'B';
+  const line=[[pl,best.m]];
+  for(let k=0;k<5;k++){
+    const mv=line.map(([c,v])=>`play ${c.toLowerCase()} ${v}`);res=await GG.raw([...base,...mv,'color '+best.t,op+best.t]);
+    const j=base.length+mv.length;if(/empty/.test(res[j].t))break;const a=res[j+1].t.split(/\s+/);if(!+a[0]||!a[1]||a[1]==='PASS')break;
+    line.push([oc,a[1]]);const mv2=[...mv,`play ${oc.toLowerCase()} ${a[1]}`];
+    res=await GG.raw([...base,...mv2,'color '+best.t,me+best.t]);const j2=base.length+mv2.length;
+    if(/empty/.test(res[j2].t))break;const b=res[j2+1].t.split(/\s+/);if(!+b[0]||!b[1]||b[1]==='PASS')break;line.push([pl,b[1]]);
+  }
+  return{goal:best.goal,t:best.t,code:best.code,line};
+}
+function tsApplySolve(r,sol){ // 把解答写进题目：XG 和一条正解变化
+  const n=sizeOf(r);r.props.XG=[`${sol.goal}:${sol.t}:${sol.code}`];
+  let nd=r;for(const[c,v]of sol.line){const p=pcIdx(v,n);if(p<0)break;const pt=xyToPt(p%n,(p/n)|0);let ch=nd.children.find(x=>{const m=moveOf(x);return m&&m[0]===c&&m[1]===pt});
+    if(!ch){ch={props:{[c]:[pt]},children:[],parent:nd};nd.children.push(ch)}nd=ch}
+  if(nd!==r){const ko=sol.code>1?T('（打劫）'):'';nd.props.C=['RIGHT '+(sol.goal==='live'?T('活了！'):T('吃掉了！'))+ko+' '+T('【AI 解答】')]}
+  return r;
+}
+async function ggJudge(node,xg){ // 学生下了答案树以外的一手：'win' / 'ko' / {fail, m}
+  const r=G.root,res=await GG.raw([...GG.gtpFor(node,r),'color '+xg.t,(xg.goal==='live'?'owl_attack ':'owl_defend ')+xg.t]),j=res.length-3;
+  if(/empty/.test(res[j].t))return xg.goal==='kill'?'win':{fail:true,m:null};
+  const a=res[j+1].t.split(/\s+/),code=+a[0];
+  if(!code)return'win';if(code>=2)return xg.code>=2?'win':{fail:true,m:a[1],ko:true};
+  return{fail:true,m:a[1]&&a[1]!=='PASS'?a[1]:null};
+}
+async function tsJudgeMove(x,y,col){ // 由 tsClick 叫
+  const n=sizeOf(G.root),pt=xyToPt(x,y),nd={props:{[col]:[pt]},children:[],parent:ts.node,_tmp:1};ts.node.children.push(nd);cur=nd;ts.node=nd;soundFor(nd);ts.busy=true;ts.msg=T('AI 判断中…');render();renderTs();
+  let v;try{v=await ggJudge(nd,tsXG(G.root))}catch(e){v=null}
+  if(!ts||ts.node!==nd)return;ts.busy=false;
+  if(v==='win'){nd.props.C=['RIGHT'];tsWin(T('（AI 判断）'));return}
+  if(!v){ts.msg=T('AI 无法判断，请按「重做」再试。');renderTs();return}
+  if(v.m){const p=pcIdx(v.m,n);if(p>=0){const r={props:{[col==='B'?'W':'B']:[xyToPt(p%n,(p/n)|0)]},children:[],parent:nd,_tmp:1};nd.children.push(r);cur=r;ts.node=r;soundFor(r);render()}}
+  tsFail(v.ko?T('变成打劫了，还有更好的下法。'):T('不对，对方这样应就不行了。'));
+}
+function tsClean(r){(function w(nd){nd.children=nd.children.filter(c=>!c._tmp);nd.children.forEach(w)})(r)}
+
+/* ---- 内建的大题库：需要时才下载（books/*.json） ---- */
+async function tsLoadBook(b){if(!b||!b.src||b.problems&&b.problems.length)return b;
+  const j=await(await fetch(b.src)).json();b.problems=j.problems||[];return b}
+
+/* ---- AI 补答案：练习册里没有答案的题，用 GNU Go 算出正解 ---- */
+async function tsAiFill(b,onProg){let done=0,ok=0;const todo=b.problems.filter(p=>{try{const r=parseSGF(p.sgf);return!r.children.length}catch(e){return false}});
+  for(const p of todo){const r=parseSGF(p.sgf);G0push(r);let sol=null;try{sol=await ggSolve(r)}catch(e){}G0pop();
+    if(sol){tsApplySolve(r,sol);p.sgf=toSGF(r);ok++}done++;onProg&&onProg(done,todo.length,ok)}
+  return{n:todo.length,ok}}
+async function tsMakeFromGame(btn){ // 整盘分析的「用这盘棋出题」
+  const old=btn.textContent;btn.disabled=true;
+  try{const list=await tsFromGame((i,n,k)=>{btn.textContent=T('AI 找题中… {0}/{1}（找到 {2} 题）',i,n,k)});
+    if(!list.length){flash(T('这盘棋没有找到适合的死活题。'));return}
+    const id='mygames';const b=tsStore.books[id]||(tsStore.books[id]={title:T('我的对局题目'),problems:[]});
+    const t=titleOf(root());list.forEach(p=>{p.title=t+' · '+p.title});b.problems.push(...list);b.updated=Date.now();tsSave();
+    flash(T('找到 {0} 题，放进「我的对局题目」。',list.length));tsBookId=id;tsView='book';tsOpenPanel();renderTs()}
+  catch(e){flash(e.message||String(e))}finally{btn.disabled=false;btn.textContent=old}}
+let G0stack=[];function G0push(r){G0stack.push(G);G={id:'__ai',root:r}}function G0pop(){G=G0stack.pop()} // gtpFor 里的贴目、规则看 root()
+
+/* ---- 打印练习册：题目页（每页 6 或 12 题）+ 答案页 ---- */
+function tsDiagram(r,n,line,w){ // 黑白可打印的小棋盘；line：答案手顺（画编号）
+  const cr=tsCropOf(r,n)||[0,0,n-1,n-1],crop={x0:cr[0],y0:cr[1],x1:cr[2],y1:cr[3]};const st=computeState(r,n),g=st.g.map(a=>a.slice()),num={};
+  let c=nextColor(r)==='B'?1:2;(line||[]).forEach((p,i)=>{if(p<0){c=3-c;return}const x=p%n,y=(p/n)|0;if(!g[y][x]){g[y][x]=c;num[p]=i+1}c=3-c});
+  const u=24,X=i=>(i-crop.x0+1)*u,Y=i=>(i-crop.y0+1)*u,W=(crop.x1-crop.x0+2)*u,H=(crop.y1-crop.y0+2)*u;
+  let o=`<svg viewBox="0 0 ${W} ${H}" width="${w}" xmlns="http://www.w3.org/2000/svg"><rect width="${W}" height="${H}" fill="#fff"/>`;
+  for(let y=crop.y0;y<=crop.y1;y++)o+=`<line x1="${X(Math.max(crop.x0,0))-(crop.x0>0?u/2:0)}" y1="${Y(y)}" x2="${X(crop.x1)+(crop.x1<n-1?u/2:0)}" y2="${Y(y)}" stroke="#000" stroke-width="${y===0||y===n-1?1.6:.7}"/>`;
+  for(let x=crop.x0;x<=crop.x1;x++)o+=`<line x1="${X(x)}" y1="${Y(crop.y0)-(crop.y0>0?u/2:0)}" x2="${X(x)}" y2="${Y(crop.y1)+(crop.y1<n-1?u/2:0)}" stroke="#000" stroke-width="${x===0||x===n-1?1.6:.7}"/>`;
+  for(const[x,y]of starXY(n))if(x>=crop.x0&&x<=crop.x1&&y>=crop.y0&&y<=crop.y1)o+=`<circle cx="${X(x)}" cy="${Y(y)}" r="2.6"/>`;
+  for(let y=crop.y0;y<=crop.y1;y++)for(let x=crop.x0;x<=crop.x1;x++){const v=g[y][x];if(!v)continue;const k=num[y*n+x];
+    o+=`<circle cx="${X(x)}" cy="${Y(y)}" r="${u*.46}" fill="${v===1?'#000':'#fff'}" stroke="#000" stroke-width="1"/>`;
+    if(k)o+=`<text x="${X(x)}" y="${Y(y)}" text-anchor="middle" dominant-baseline="central" font-size="${k>9?11:13}" font-family="Arial" font-weight="700" fill="${v===1?'#fff':'#000'}">${k}</text>`}
+  return o+'</svg>';
+}
+function tsAnswerLine(r,n){const path=[];(function find(nd,acc){if(path.length)return;for(const c of nd.children){const a=acc.concat(c);if(tsVerdict(c)==='right'&&!c.children.length){path.push(...a);return}find(c,a)}})(r,[]);
+  return path.map(nd=>revPt(nd,n)).filter(p=>p!=null)}
+function tsPrint(b,per){
+  const items=b.problems.map((p,i)=>{let r;try{r=parseSGF(p.sgf)}catch(e){return null}const n=sizeOf(r);return{i,p,r,n,q:tsNote(r)||(nextColor(r)==='B'?T('黑先'):T('白先')),ans:tsAnswerLine(r,n)}}).filter(Boolean);
+  const cols=per===12?3:2,w=per===12?200:290,e=tsE;
+  const page=(list,ans)=>`<section class="pg"><h2>${e(b.title)}${ans?' · '+T('答案'):''}</h2><div class="g c${cols}">`+list.map(it=>`<div class="it"><div class="hd"><b>${it.i+1}.</b> ${e(it.q)} ${'★'.repeat(+it.p.level||1)}</div>${tsDiagram(it.r,it.n,ans?it.ans:null,w)}${ans?`<div class="an">${it.ans.length?T('黑白依序下 1、2、3…'):T('（没有答案）')}${(it.r.props.XG?' '+T('（AI 解答）'):'')}</div>`:''}</div>`).join('')+`</div></section>`;
+  let body='';for(let k=0;k<items.length;k+=per)body+=page(items.slice(k,k+per),false);
+  const aper=per===12?12:9;for(let k=0;k<items.length;k+=aper)body+=page(items.slice(k,k+aper),true);
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${e(b.title)}</title><style>
+  body{font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;margin:0;color:#000}
+  .pg{page-break-after:always;padding:10mm 8mm}.pg:last-child{page-break-after:auto}h2{font-size:15px;margin:0 0 6mm;border-bottom:1px solid #000;padding-bottom:2mm}
+  .g{display:grid;gap:6mm 6mm}.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.it{break-inside:avoid}.hd{font-size:13px;margin-bottom:2mm}.an{font-size:11px;color:#333}
+  svg{max-width:100%;height:auto}.bar{position:sticky;top:0;background:#f4f1ea;padding:8px;text-align:center;font-size:14px}@media print{.bar{display:none}}</style></head>
+  <body><div class="bar">${T('按 Ctrl+P（手机：分享 → 打印）打印，或存成 PDF。')} <button onclick="print()">${T('打印')}</button></div>${body}</body></html>`;
+  const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));const wdw=window.open(url,'_blank');
+  if(!wdw){const a=document.createElement('a');a.href=url;a.download=(b.title||'workbook')+'.html';a.click()}
+}
+
+/* ---- 从对局出题（AI）：整盘分析过的棋局里，找「有一块棋要死要活」而实战没下对的局面 ---- */
+async function tsFromGame(onProg){
+  if(!rev||!rev.rows||!rev.rows.some(Boolean))throw new Error(T('请先做整盘分析'));
+  const line=revLine(),n=sizeOf(root()),rows=rev.rows,cands=[];
+  for(let k=1;k<line.length;k++){const a=rows[k-1],b=rows[k];if(!a||!b)continue;const m=moveOf(line[k]);if(!m)continue;
+    const loss=(m[0]==='B'?1:-1)*(a.l-b.l);if(loss>=4||(a.g2||0)>=6)cands.push({k,loss})}
+  cands.sort((x,y)=>y.loss-x.loss);const top=cands.slice(0,12),out=[];let i=0;
+  for(const c of top){i++;onProg&&onProg(i,top.length,out.length);
+    const pos=line[c.k-1],st=computeState(pos,n),pl=nextColor(pos);
+    let s=`(;GM[1]FF[4]SZ[${n}]PL[${pl}]`;const B=[],W=[];for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(st.g[y][x]===1)B.push(xyToPt(x,y));if(st.g[y][x]===2)W.push(xyToPt(x,y))}
+    if(B.length)s+='AB'+B.map(p=>`[${p}]`).join('');if(W.length)s+='AW'+W.map(p=>`[${p}]`).join('');s+=')';
+    const r=parseSGF(s);G0push(r);let sol=null;try{sol=await ggSolve(r)}catch(e){}G0pop();
+    if(!sol||sol.code!==1)continue;
+    // 实战下对了就不用出题
+    const real=revPt(line[c.k],n),first=pcIdx(sol.line[0][1],n);if(real===first)continue;
+    // 只保留那块棋附近的棋子，看看结果一样不一样
+    const tp=pcIdx(sol.t,n),tx=tp%n,ty=(tp/n)|0,R=5,keep=(p)=>{const xy=ptToXY(p,n);return xy&&Math.abs(xy[0]-tx)<=R+3&&Math.abs(xy[1]-ty)<=R+3};
+    const r2=parseSGF(`(;GM[1]FF[4]SZ[${n}]PL[${pl}])`);const B2=B.filter(keep),W2=W.filter(keep);if(B2.length)r2.props.AB=B2;if(W2.length)r2.props.AW=W2;
+    G0push(r2);let sol2=null;try{sol2=await ggSolve(r2)}catch(e){}G0pop();
+    const use=sol2&&sol2.code===1&&sol2.t===sol.t&&sol2.line[0][1]===sol.line[0][1]?[r2,sol2]:[r,sol];
+    use[0].props.C=[(pl==='B'?T('黑先'):T('白先'))+(use[1].goal==='live'?T('，救活这块棋'):T('，吃掉这块棋'))+T('（第 {0} 手的局面）',c.k)];
+    tsApplySolve(use[0],use[1]);out.push({id:tsId(6),title:T('第 {0} 手',c.k),level:3,sgf:toSGF(use[0])});
+  }
+  return out;
 }
 
 /* ===================== 存成图片 ===================== */
@@ -4325,6 +4822,7 @@ function boardClick(ev){
   const pt2=xyToPt(x,y);
   if(train){trainClick(x,y);return}
   if(ts){if(ts.mode==='solve'){tsClick(x,y);return}if(ts.mode==='edit'&&tsEditClick(x,y))return}
+  if(ol&&ol.st&&G&&G.id===ol.lid){olClick(x,y);return}
   if(scoring){ // 点棋子：整块标成死子 / 取消
     const st=computeState(cur,n);if(!st.g[y][x])return;
     const grp=groupOf(st.g,x,y,n).stones.map(([a,b])=>b*n+a);const isDead=scoring.dead.has(y*n+x);
@@ -4456,11 +4954,13 @@ $('#ngHa').onchange=e=>{ng.ha=+e.target.value;ng.komi=ngDefaultKomi();renderNew(
 $('#ngKomi').onchange=e=>{const v=parseFloat(e.target.value);if(isFinite(v))ng.komi=v};
 $('#ngOpp').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.opp=b.dataset.v;renderNew()};
 $('#ngColor').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.color=b.dataset.v;renderNew()};
-$('#ngLevel').onchange=e=>{ng.lv=ng.lv||{};ng.lv[ng.size]=e.target.value;ngSave();renderNew()};
+$('#ngLevel').onchange=e=>{ng.lv=ng.lv||{};ng.lv[ngKey(ng.size,ng.eng==='gnugo'?'gnugo':'kata')]=e.target.value;ngSave();renderNew()};
+$('#ngEng').onclick=e=>{const b=e.target.closest('button');if(!b)return;ng.eng=b.dataset.v;ngSave();renderNew()};
 $('#ngName').oninput=e=>{ng.name=e.target.value};$('#ngAuto').onchange=e=>{ng.auto=e.target.checked;ngSave()};
 $('#aiToggle').onclick=()=>setAiHint(!aiHint);
 $('#revToggle').onclick=()=>$('#revBox').hidden?revOpen():revClose();
 $('#revClose').onclick=revClose;
+$('#olToggle').onclick=()=>$('#olBox').hidden?olPanelOpen():olPanelClose();$('#olClose').onclick=olPanelClose;$('#olBody').addEventListener('click',olAct);
 $('#tsToggle').onclick=()=>$('#tsBox').hidden?tsOpenPanel():tsClosePanel();$('#tsClose').onclick=tsClosePanel;$('#tsBody').addEventListener('click',tsAct);
 $('#revEngine').onclick=e=>{const b=e.target.closest('button');if(!b)return;prefs.revEngine=b.dataset.e;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}renderRev()};
 $('#pcCode').onchange=e=>pcSetCode(e.target.value);$('#pcNew').onclick=pcNewCode;
@@ -4473,6 +4973,7 @@ $('#revRes').addEventListener('click',e=>{
   const k=e.target.closest('.revk');if(k){revGo(+k.dataset.k);return}
   if(e.target.closest('#revWrite')){revWrite();return}
   if(e.target.closest('#revReport')){revDownload();return}
+  const pb=e.target.closest('#revProb');if(pb){tsMakeFromGame(pb);return}
   const gw=e.target.closest('.revgw');if(gw&&rev){const rc=gw.getBoundingClientRect(),M=rev.rows.length-1,x=(e.clientX-rc.left)/rc.width;revGo(Math.max(0,Math.min(M,Math.round((x*600-4)/592*M))))}});
 $('#aiTime').onchange=e=>{prefs.aiTime=+e.target.value;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(x){}Ana.paused=false;anaStop();render()};
 $('#aiRun').onclick=anaToggleRun;
@@ -4562,9 +5063,22 @@ const Drive=(()=>{
       const j=await(await api(`${API}?q=${q}&pageSize=1000&fields=nextPageToken,files(id,name,modifiedTime,appProperties)${pt?'&pageToken='+pt:''}`)).json();
       out=out.concat(j.files||[]);pt=j.nextPageToken||''}while(pt);
     return out.filter(f=>/\.sgf$/i.test(f.name))}
+  // 设定档（配对码等）：存在同一个文件夹的 goreview-settings.json，其他连了 Drive 的设备会自动拿到
+  async function syncSettings(){
+    const fo=await folder(),q=encodeURIComponent(`'${fo}' in parents and name='goreview-settings.json' and trashed=false`);
+    const j=await(await api(`${API}?q=${q}&fields=files(id)`)).json();const fid=j.files&&j.files[0]&&j.files[0].id;
+    let remote={};if(fid){try{remote=await(await api(`${API}/${fid}?alt=media`)).json()}catch(e){remote={}}}
+    const lt=prefs.pcCodeT||0,rt=remote.pcCodeT||0;
+    if(rt>lt&&remote.pcCode!==undefined){prefs.pcCode=remote.pcCode||'';prefs.pcCodeT=rt;try{localStorage.setItem(PREF_KEY,JSON.stringify(prefs))}catch(e){}
+      if(typeof renderPcSet==='function'){renderPcSet();renderRev()}if(prefs.pcCode&&typeof flash==='function')flash(T('已从 Google Drive 取得家里电脑的配对码'))}
+    else if(lt>rt||(!fid&&prefs.pcCode)){const body=JSON.stringify({...remote,pcCode:prefs.pcCode||'',pcCodeT:lt||Date.now()});
+      if(fid)await api(`${UP}/${fid}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});
+      else{const m=multipart({name:'goreview-settings.json',parents:[fo],mimeType:'application/json'},body,'application/json');await api(`${UP}?uploadType=multipart&fields=id`,{method:'POST',headers:{'Content-Type':m.type},body:m.body})}}
+  }
   async function syncAll(){
     if(!ok())return;if(busy){again=true;return}busy=true;st(T('同步中…'));
     try{
+      try{await syncSettings()}catch(e){console.warn('settings sync',e)}
       // 先处理本机删除的棋谱（移到 Drive 垃圾桶，可在 Drive 里还原）
       for(const fid of (store.trashQueue||[]).slice()){try{await api(`${API}/${fid}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({trashed:true})})}catch(e){}store.trashQueue=store.trashQueue.filter(x=>x!==fid)}
       const files=await listAll();const byId={};files.forEach(f=>byId[f.id]=f);
@@ -7064,7 +7578,7 @@ const Shared=(()=>{
     const V='https://www.gstatic.com/firebasejs/10.12.0/';
     await loadScript(V+'firebase-app-compat.js');await loadScript(V+'firebase-auth-compat.js');await loadScript(V+'firebase-firestore-compat.js');
     if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
-    await firebase.auth().signInAnonymously();
+    const u0=await new Promise(r=>{const un=firebase.auth().onAuthStateChanged(x=>{un();r(x)})});if(!u0)await firebase.auth().signInAnonymously(); // 老师用 Google 登录过就沿用
     const db=firebase.firestore(),gdoc=id=>db.collection('games').doc(id);
     be={create:(id,data)=>gdoc(id).set(data),read:id=>gdoc(id).get().then(d=>d.exists?d.data():null),
       put:(id,name,data)=>gdoc(id).collection('layers').doc(name).set(data),
@@ -7191,7 +7705,9 @@ if('serviceWorker' in navigator&&/github\.io$|^localhost$|^127\.0\.0\.1$/.test(l
   const snapFrom=async hh=>{const id=hh.slice(3).replace(/[^A-Za-z0-9]/g,'');history.replaceState(null,'',location.pathname+location.search);
     try{const t=await Shared.snapRead(id);if(!t)throw 0;importShared(t)}catch(e){flash(T('找不到这个快照链接的棋谱'))}};
   const joinFrom=hh=>{const id=hh.slice(3).replace(/[^A-Za-z0-9]/g,'');history.replaceState(null,'',location.pathname+location.search);return Shared.join(id)};
-  window.addEventListener('hashchange',()=>{if(/^#(g|sgf)=/.test(location.hash))handleHash(location.hash,()=>{});else if(/^#c=/.test(location.hash))joinFrom(location.hash);else if(/^#s=/.test(location.hash))snapFrom(location.hash)});
+  window.addEventListener('hashchange',()=>{if(/^#(g|sgf)=/.test(location.hash))handleHash(location.hash,()=>{});else if(/^#c=/.test(location.hash))joinFrom(location.hash);else if(/^#s=/.test(location.hash))snapFrom(location.hash);else if(/^#p=/.test(location.hash))playFrom(location.hash)});
+  const playFrom=hh=>{const id=hh.slice(3).replace(/[^A-Za-z0-9]/g,'');history.replaceState(null,'',location.pathname+location.search);olPanelOpen();olOpen('og_'+id)};
+  if(/^#p=/.test(h)){openLast();playFrom(h);return}
   if(/^#c=/.test(h)){openLast();joinFrom(h);return}
   if(/^#s=/.test(h)){openLast();snapFrom(h);return}
   if(/^#(g|sgf)=/.test(h)){handleHash(h,openLast);return}

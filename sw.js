@@ -17,7 +17,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  const isAi = (url.origin === location.origin && url.pathname.includes('/katago/')) || req.url.startsWith('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@') || req.url.startsWith('https://cdn.jsdelivr.net/npm/onnxruntime-web@');
+  const isAi = (url.origin === location.origin && (url.pathname.includes('/katago/')||url.pathname.includes('/gnugo/'))) || req.url.startsWith('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@') || req.url.startsWith('https://cdn.jsdelivr.net/npm/onnxruntime-web@');
   if (isAi) {
     e.respondWith(caches.open(AI_CACHE).then(c => c.match(req).then(r => r || fetch(req).then(res => {
       if (res.ok) c.put(req, res.clone());
