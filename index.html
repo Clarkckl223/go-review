@@ -3573,8 +3573,8 @@ AI.on(()=>{renderAiBar();renderAiNet();if(typeof renderVs==='function')renderVs(
 /* ---- 新对局：棋盘大小、让子、贴目、和 AI 下 ---- */
 const MAX_HA={7:5,9:9,13:9,19:9},KOMI_DEF={7:9,9:5.5,13:5.5,19:7.5}; // 中国数子：9 路黑 44 子、13 路 88 子、19 路 185 子才胜
 // 棋力等级（6 级以下：GNU Go 学生版；5 级～6 段：KataGo「校准棋力」，方法取自 KaTrain（MIT，Sander Land）；7～9 段：再加上搜索）
-// 学生版参数（三种棋盘各一套，用家里电脑的 calibrate.py 校准）：d=级位-6；温度 T=tA·d^tB；看漏（乱下一手）的机会 pA·d，最多 pMax
-const STU={9:{tA:0.35,tB:1.1,pA:0.02,pMax:0.6},13:{tA:0.3,tB:1.05,pA:0.012,pMax:0.4},19:{tA:0.25,tB:1.0,pA:0.006,pMax:0.25},base:6,lvLo:6,lvHi:10};
+// 学生版参数（三种棋盘各一套，用家里电脑的 calibrate.py 校准）：一律用 GNU Go 等级 10 找候选；d=级位-6；温度 T=tA·d^tB；8 级以下才会乱下一手，机会 pA·(级位-7)，最多 pMax
+const STU={9:{tA:0.5,tB:1.1,pA:0.02,pMax:0.6},13:{tA:0.3,tB:1.05,pA:0.012,pMax:0.4},19:{tA:0.25,tB:1.0,pA:0.006,pMax:0.25},base:6,lv:10};
 const stuP=n=>STU[n<=9?9:n<=13?13:19];
 const DAN_VISITS={7:8,8:32,9:128};
 function levelIds(n){const kr=(a,b)=>Array.from({length:a-b+1},(_,i)=>(a-i)+'k'),dn=(a,b)=>Array.from({length:b-a+1},(_,i)=>(a+i)+'d');
@@ -3623,11 +3623,11 @@ const GG=(()=>{let w=null,seq=0;const pend={};
     const out=await call(level,lines);return out.split(/\n\n+/).map(x=>x.trim()).filter(Boolean).map(x=>({ok:x[0]==='=',t:x.replace(/^[=?]\s*/,'')}))}
   async function student(node,kyu){ // 学生版：从 GNU Go 的候选手里，按级位随机挑（越低级越常挑差的、偶尔看漏乱下）
     const n=sizeOf(root()),col=nextColor(node).toLowerCase(),L=gtpFor(node),P=stuP(n),d=Math.max(0,kyu-STU.base);L.push('top_moves_'+(col==='b'?'black':'white'),'all_move_values');
-    const res=await raw(L,kyu<10?STU.lvHi:STU.lvLo),t=(res[res.length-2]||{t:''}).t,mv=[];
+    const res=await raw(L,STU.lv),t=(res[res.length-2]||{t:''}).t,mv=[];
     for(const line of t.split('\n')){const m=/^([A-HJ-T]\d{1,2})\s+(-?[\d.]+)/.exec(line.trim());if(m)mv.push([pcIdx(m[1],n),+m[2]])}
     const top=(res[res.length-3]||{t:''}).t.split(/\s+/);if(!mv.length&&top[0]&&/^[A-T]\d/.test(top[0]))mv.push([pcIdx(top[0],n),+top[1]||1]);
     if(!mv.length)return -1;mv.sort((a,b)=>b[1]-a[1]);
-    if(Math.random()<Math.min(P.pMax,P.pA*d)){const r=stuRandom(computeState(node,n).g,n,col==='b'?1:2);if(r>=0)return r}
+    if(Math.random()<Math.min(P.pMax,P.pA*Math.max(0,kyu-7))){const r=stuRandom(computeState(node,n).g,n,col==='b'?1:2);if(r>=0)return r}
     const T_=Math.max(0.3,P.tA*Math.pow(d,P.tB)),w=mv.map(x=>Math.exp((x[1]-mv[0][1])/T_));
     let z=w.reduce((a,b)=>a+b,0),rr=Math.random()*z;for(let i=0;i<mv.length;i++){rr-=w[i];if(rr<=0)return mv[i][0]}return mv[0][0]}
   return{genmove,score,raw,gtpFor,student,warm:()=>{try{worker()}catch(e){}}};
@@ -3707,7 +3707,7 @@ async function aiChoose(node,res,lv){
   if(moveNo(node)>N*1.5)return -1;
   const nb=AI_NB[n]||(AI_NB[n]=aiNbrs(n));
   const late=moveNo(node)>N*0.5,sg=pla===1?1:-1,ow=res.ownB;
-  const cand=[];for(let p=0;p<N;p++)if(P[p]>0&&!nb[p].every(q=>b[q]===pla)&&!(late&&ow&&lv.rank!=null&&Math.abs(ow[p])>0.85))cand.push([p,P[p]]); // 不填自己的眼；收官后不填自己的地、不进对方确定的地
+  const cand=[];for(let p=0;p<N;p++)if(P[p]>0&&!nb[p].every(q=>b[q]===pla)&&!(late&&ow&&lv.rank!=null&&(ow[p]*sg>0.85&&!nb[p].some(q=>b[q]===3-pla)||ow[p]*sg<-0.85&&!nb[p].some(q=>b[q]===pla))))cand.push([p,P[p]]); // 不填自己的眼；收官后不填自己的地、不进对方确定的地（但对方碰过来、或要救自己的子，照样应）
   cand.sort((x,y)=>y[1]-x[1]);
   if(!cand.length||P[N]>cand[0][1])return -1;
   if(lv.search||lv.visits){ // 最强：想一段时间；4–9 段：算固定次数（最多 30 秒）。选算得最多次的那一手
