@@ -1,0 +1,41 @@
+rules_version = '2';
+// 围棋复盘本的 Firestore 规则：复制全部内容，贴到 Firebase 控制台 → Firestore Database → 规则 → 发布
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function authed() { return request.auth != null; }
+    function small() {
+      return !('sgf' in request.resource.data) || (request.resource.data.sgf is string && request.resource.data.sgf.size() < 900000);
+    }
+    function metaPath(gid) { return /databases/$(database)/documents/games/$(gid)/layers/meta; }
+    // 班级的设定（meta）、练习册（b_…）和内建练习册的修改（x_…）：建立班级的老师（Google 账号）才能改
+    function teacherOk(gid) {
+      return !exists(metaPath(gid))
+        || !('owner' in get(metaPath(gid)).data)
+        || get(metaPath(gid)).data.owner == request.auth.uid;
+    }
+    function teacherDoc(name) { return name == 'meta' || name.matches('b_.*') || name.matches('x_.*'); }
+
+    match /games/{gid} {
+      allow read: if authed();
+      allow create, update: if authed() && small();
+      allow delete: if false;
+
+      match /layers/{name} {
+        allow read: if authed();
+        allow create, update: if authed() && small()
+          && (!gid.matches('cls_.*') || !teacherDoc(name) || teacherOk(gid))
+          && (!(gid.matches('cls_.*') && name == 'meta') || request.resource.data.get('owner', null) == null && !exists(metaPath(gid))
+              || request.resource.data.get('owner', null) == request.auth.uid);
+        allow delete: if false;
+      }
+
+      // 学生密码的「钥匙」：只能用名字取，不能列出、不能改
+      match /keys/{k} {
+        allow get: if authed();
+        allow list: if false;
+        allow create: if authed() && gid.matches('cls_.*') && k.size() < 120;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
