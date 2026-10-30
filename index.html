@@ -3574,9 +3574,9 @@ AI.on(()=>{renderAiBar();renderAiNet();if(typeof renderVs==='function')renderVs(
 const MAX_HA={7:5,9:9,13:9,19:9},KOMI_DEF={7:9,9:5.5,13:5.5,19:7.5}; // 中国数子：9 路黑 44 子、13 路 88 子、19 路 185 子才胜
 // 棋力等级（6 级以下：GNU Go 学生版；5 级～6 段：KataGo「校准棋力」，方法取自 KaTrain（MIT，Sander Land）；7～9 段：再加上搜索）
 // 学生版参数（三种棋盘各一套，用家里电脑的 calibrate.py 校准）：一律用 GNU Go 等级 10 找候选；d=级位-6；温度 T=tA·d^tB；8 级以下才会乱下一手，机会 pA·(级位-7)，最多 pMax
-const STU={9:{tA:0.5,tB:1.1,pA:0.02,pMax:0.6},13:{tA:0.3,tB:1.05,pA:0.012,pMax:0.4},19:{tA:0.25,tB:1.0,pA:0.006,pMax:0.25},base:6,lv:10};
+const STU={9:{tA:0.5,tB:1.1,pA:0.02,pMax:0.6},13:{tA:0.25,tB:1.05,pA:0.008,pMax:0.35},19:{tA:0.15,tB:1.0,pA:0.004,pMax:0.2},base:6,lv:10};
 const stuP=n=>STU[n<=9?9:n<=13?13:19];
-const DAN_VISITS={7:8,8:32,9:128};
+const DAN_VISITS={7:1,8:4,9:16},KYU_STRETCH=1.4; // 7 段：直接下 AI 第一感；8、9 段：算几次。级位拉开：5 级按 KaTrain 的 7 级下
 function levelIds(n){const kr=(a,b)=>Array.from({length:a-b+1},(_,i)=>(a-i)+'k'),dn=(a,b)=>Array.from({length:b-a+1},(_,i)=>(a+i)+'d');
   if(n<=7)return['30k','25k','20k','15k','10k','5k','1k','1d','3d','max'];
   if(n<=13)return['30k','25k','20k',...kr(18,10),'8k','6k','4k','2k','1d','3d','5d','max'];
@@ -3586,16 +3586,16 @@ function levelObj(id){
   if(id==='max')return{id,search:true};const g=/^g(\d+)$/.exec(id||'');if(g)return{id,gg:+g[1]};
   const k=rankKyu(id);if(k==null)return{id:'10k',stu:10};
   if(k>=STU.base)return{id,stu:k};
-  const d=1-k;if(d>=7)return{id,rank:-5,visits:DAN_VISITS[d]||128};
+  const d=1-k;if(d>=7){const v=DAN_VISITS[d]||16;return v>1?{id,rank:-5,visits:v}:{id,top:true}}
   return{id,rank:k};
 }
 function rankPick(cand,pass,n,kyu){ // KaTrain 的校准公式：随机抽 N 个合法点，选 AI 最喜欢的那个
-  const sq=n*n,legal=cand.length;if(!legal)return -1;
+  const sq=n*n,legal=cand.length;if(!legal)return -1;if(kyu>0)kyu*=KYU_STRETCH;
   if(pass>=(cand[Math.min(4,cand.length-1)][1]))return pass>cand[0][1]?-1:cand[0][0]; // 停一手在前 5 名：下最好的那手
   const ratio=(sq-legal)/sq,ov=0.8*(1-0.5*ratio);if(cand[0][1]>ov)return cand[0][0];
   const ov2=0.85+Math.max(0,0.02*(kyu-8));if(cand.length>1&&cand[0][1]+cand[1][1]>ov2)return cand[0][0];
-  const norm=legal/sq,orig=0.063015+0.7624*sq/Math.pow(10,-0.05737*kyu+1.9482),ex=3.002*norm*norm-norm-0.034889*kyu-0.5097;
-  const mod=(0.3931+0.6559*norm*Math.exp(-ex*ex)-0.01093*kyu)*orig,nm=Math.max(1,Math.round(sq*norm/(1.31165*(mod+1)-0.082653)));
+  const norm=legal/sq,orig=0.063015+0.7624*361/Math.pow(10,-0.05737*kyu+1.9482),ex=3.002*norm*norm-norm-0.034889*kyu-0.5097; // 公式按 19 路定；小棋盘按「抽几成的点」换算
+  const mod=(0.3931+0.6559*norm*Math.exp(-ex*ex)-0.01093*kyu)*orig,nm=Math.max(1,Math.round(legal*Math.min(1,1/(1.31165*(mod+1)-0.082653))));
   const pool=cand.slice();for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
   const pick=pool.slice(0,nm).sort((a,b)=>b[1]-a[1])[0];if(!pick||pick[1]<pass)return cand[0][0];return pick[0];
 }
@@ -3716,7 +3716,7 @@ async function aiChoose(node,res,lv){
     const r=s.results().filter(c=>c.move<0||!nb[c.move].every(q=>b[q]===pla));
     return r.length?r[0].move:cand[0][0];
   }
-  if(lv.rank!=null)return rankPick(cand,P[N],n,lv.rank);
+  if(lv.rank!=null&&moveNo(node)<=N*0.8)return rankPick(cand,P[N],n,lv.rank); // 很后面（收官）就下第一感，比较快收完
   return cand[0][0];
 }
 function vsAddMove(col,pt){const nd={props:{[col]:[pt]},children:[],parent:cur};cur.children.push(nd);cur=nd;cur.parent._sel=cur.parent.children.indexOf(cur);changed();render();if(pt)soundFor(nd);return nd}
@@ -3734,7 +3734,7 @@ async function vsAiMove(){
   try{
     if(vs.pc&&!vs.level.stu&&!vs.level.gg){ // 家里电脑当对手
       let p=null;try{const n=sizeOf(root()),v=vs.level.search?Math.max(200,(+(prefs.aiPlayTime??5))*400):vs.level.visits||1,o=await pcMove(node,v);
-        if(vs.level.rank!=null&&!vs.level.visits){const b=computeState(node,n).g,cand=[];for(let q=0;q<n*n;q++)if(o.policy[q]>0&&!b[(q/n)|0][q%n])cand.push([q,o.policy[q]]);cand.sort((x,y)=>y[1]-x[1]);p=rankPick(cand,o.policy[n*n]||0,n,vs.level.rank)}
+        if(vs.level.rank!=null&&!vs.level.visits){const b=computeState(node,n).g,cand=[];for(let q=0;q<n*n;q++)if(o.policy[q]>0&&!b[(q/n)|0][q%n])cand.push([q,o.policy[q]]);cand.sort((x,y)=>y[1]-x[1]);p=moveNo(node)>n*n*0.8&&cand.length&&cand[0][1]>=(o.policy[n*n]||0)?cand[0][0]:rankPick(cand,o.policy[n*n]||0,n,vs.level.rank)}
         else p=o.best.length?o.best[0]:-1}
       catch(e){vs.msg=T('家里电脑没有回应，改用这台设备');p=null}
       if(p!=null){if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}vs.thinking=false;const n=sizeOf(root());
