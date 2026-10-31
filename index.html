@@ -522,7 +522,7 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
         <span id="ngColorL" style="display:contents"><span>我执</span><span class="seg" id="ngColor"><button data-v="B">黑棋</button><button data-v="W">白棋</button><button data-v="R">猜先</button></span></span>
         <span id="ngEngL" style="display:contents"><span>AI</span><span class="seg" id="ngEng"><button data-v="kata">KataGo</button><button data-v="gnugo">GNU Go</button></span></span>
         <label for="ngLevel" id="ngLevelL"><span>AI 棋力</span><select id="ngLevel"></select></label>
-        <label class="chk" id="ngPcL" style="display:flex;gap:6px;align-items:center" hidden><input type="checkbox" id="ngPc"> 用家里电脑计算（5 级以上）</label>
+        <label class="chk" id="ngPcL" style="display:flex;gap:6px;align-items:center" hidden><input type="checkbox" id="ngPc"> 用家里电脑计算（20 级以上；20 级～1 段由仿人类 AI 下）</label>
         <label class="chk" id="ngAutoL" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ngAuto"> 自动调整棋力（赢了升一级，输了降一级）</label>
         <label for="ngTime" id="ngTimeL"><span>每步思考</span><select id="ngTime" class="aiPlayTime"><option value="1">1 秒</option><option value="5">5 秒</option><option value="10">10 秒</option><option value="30">30 秒</option></select></label>
       </div>
@@ -731,7 +731,7 @@ const EN={
 "猜先":"Nigiri","AI 抓了一把白子。你猜是单数还是双数？":"The AI grabbed some white stones. Odd or even?","单":"Odd","双":"Even","共 {0} 颗 — {1}！":"{0} stones — {1}!","你猜对了，你执黑":"You guessed right: you play Black","猜错了，你执白":"Wrong guess: you play White","第 1 局执黑、第 2 局执白、第 3 局猜先；贴 {0} 目（中国数子）。":"Game 1 Black, game 2 White, game 3 by nigiri; komi {0} (area scoring).","对手是 GNU Go 学生版。":"Opponent: GNU Go student.","对手是 KataGo 校准棋力。":"Opponent: calibrated KataGo.",
 "和 AI 下、升级赛、线上对弈、棋力认证、AI 对战":"vs AI, ladder, online, rank test, AI vs AI",
 "成绩：{0}":"Results: {0}",
-"用家里电脑计算（5 级以上）":"Use home PC (5k and up)","6 级以下由 GNU Go 学生版下（约 1 MB），5 级以上由 KataGo 下（约 12 MB）。棋力是校准过的大约值。":"6k and below: GNU Go student (about 1 MB). 5k and up: KataGo (about 12 MB). Levels are calibrated estimates.","家里电脑没有回应":"Home PC did not respond","家里电脑没有回应，改用这台设备":"Home PC did not respond; using this device","AI 对战":"AI vs AI","两个 AI 自己下，看谁比较强。":"Two AIs play each other.","盘数":"Games","每手间隔":"Delay","最快":"Fastest","AI 甲":"AI A","AI 乙":"AI B","轮流执黑":"Alternate Black","甲 {0} : {1} 乙":"A {0} : {1} B","和 {0}":"{0} draws","第 {0} / {1} 盘":"Game {0} / {1}","开始对战":"Start","棋谱会存进「我的棋谱」。大量对战（几百盘）请用家里电脑的 calibrate.py，比较快。":"Games are saved in My games. For hundreds of games, use calibrate.py on the home PC.","AI 出错：{0}":"AI error: {0}","第 {0} 盘：{1}（甲执{2}）":"Game {0}: {1} (A played {2})","棋力认证":"Rank certification","对同级的 AI 下三局，赢两局就通过。":"Play three games against an AI of that rank; win two to pass.","{0} 路 {1} 认证 · 第 {2} 局 · {3} 胜 {4} 败":"{0}×{0} {1} test · game {2} · {3} W {4} L","下一局":"Next game","开始第一局":"Start game 1","放弃这次认证":"Give up this test","鼓励认证：你执黑，不贴目。":"Encouragement test: you play Black, no komi.","正式认证：黑白轮流，正常贴目。":"Formal test: colours alternate, normal komi.","认证中不能悔棋、不能看提示和形势判断。":"No undo, hints or estimates during the test.","必填，会写在证书上":"Required, shown on the certificate","要考的级位":"Rank","开始认证":"Start test","10 级以下是鼓励认证：你执黑、不贴目，对手是 GNU Go 学生版。":"10k and below is an encouragement test: you play Black with no komi against GNU Go student.","9 级以上是正式认证：黑白轮流、正常贴目，对手是 KataGo 校准棋力。":"9k and up is a formal test: colours alternate with normal komi against calibrated KataGo.","成长地图":"Progress map","{0} 通过":"Passed {0}","{0} 路 {1} 认证 第 {2} 局":"{0}×{0} {1} test, game {2}","🎉 恭喜！通过 {0} 路 {1} 认证。":"🎉 Congratulations! You passed the {0}×{0} {1} test.","这次没有通过（{0} 胜 {1} 败），再练练，随时可以再考！":"Not passed this time ({0} W {1} L). Keep practising and try again any time!","目前 {0} 胜 {1} 败，按「棋力认证」→「下一局」继续。":"{0} W {1} L so far. Open Rank certification → Next game to continue.","围棋棋力认证证书":"Go Rank Certificate","兹证明":"This certifies that","通过 {0} 路棋力认证，达到":"has passed the {0}×{0} rank test at","三局成绩：{0}":"Results: {0}","胜":"W","败":"L","认证日期：{0}":"Date: {0}","围棋复盘本 · AI 考官（{0}）":"Go Review Notebook · AI examiner ({0})","GNU Go 学生版":"GNU Go student","KataGo 校准棋力":"calibrated KataGo","路":"x","认证":"Certified",
+"用家里电脑计算（20 级以上；20 级～1 段由仿人类 AI 下）":"Use home PC (20k and up; 20k–1d by the human-like AI)","5 级以下由 GNU Go 学生版下（约 1 MB），4 级以上由 KataGo 下（约 12 MB）。棋力是校准过的大约值。":"5k and below: GNU Go student (about 1 MB). 4k and up: KataGo (about 12 MB). Levels are calibrated estimates.","家里电脑没有回应":"Home PC did not respond","家里电脑没有回应，改用这台设备":"Home PC did not respond; using this device","AI 对战":"AI vs AI","两个 AI 自己下，看谁比较强。":"Two AIs play each other.","盘数":"Games","每手间隔":"Delay","最快":"Fastest","AI 甲":"AI A","AI 乙":"AI B","轮流执黑":"Alternate Black","甲 {0} : {1} 乙":"A {0} : {1} B","和 {0}":"{0} draws","第 {0} / {1} 盘":"Game {0} / {1}","开始对战":"Start","棋谱会存进「我的棋谱」。大量对战（几百盘）请用家里电脑的 calibrate.py，比较快。":"Games are saved in My games. For hundreds of games, use calibrate.py on the home PC.","AI 出错：{0}":"AI error: {0}","第 {0} 盘：{1}（甲执{2}）":"Game {0}: {1} (A played {2})","棋力认证":"Rank certification","对同级的 AI 下三局，赢两局就通过。":"Play three games against an AI of that rank; win two to pass.","{0} 路 {1} 认证 · 第 {2} 局 · {3} 胜 {4} 败":"{0}×{0} {1} test · game {2} · {3} W {4} L","下一局":"Next game","开始第一局":"Start game 1","放弃这次认证":"Give up this test","鼓励认证：你执黑，不贴目。":"Encouragement test: you play Black, no komi.","正式认证：黑白轮流，正常贴目。":"Formal test: colours alternate, normal komi.","认证中不能悔棋、不能看提示和形势判断。":"No undo, hints or estimates during the test.","必填，会写在证书上":"Required, shown on the certificate","要考的级位":"Rank","开始认证":"Start test","10 级以下是鼓励认证：你执黑、不贴目，对手是 GNU Go 学生版。":"10k and below is an encouragement test: you play Black with no komi against GNU Go student.","9 级以上是正式认证：黑白轮流、正常贴目，对手是 KataGo 校准棋力。":"9k and up is a formal test: colours alternate with normal komi against calibrated KataGo.","成长地图":"Progress map","{0} 通过":"Passed {0}","{0} 路 {1} 认证 第 {2} 局":"{0}×{0} {1} test, game {2}","🎉 恭喜！通过 {0} 路 {1} 认证。":"🎉 Congratulations! You passed the {0}×{0} {1} test.","这次没有通过（{0} 胜 {1} 败），再练练，随时可以再考！":"Not passed this time ({0} W {1} L). Keep practising and try again any time!","目前 {0} 胜 {1} 败，按「棋力认证」→「下一局」继续。":"{0} W {1} L so far. Open Rank certification → Next game to continue.","围棋棋力认证证书":"Go Rank Certificate","兹证明":"This certifies that","通过 {0} 路棋力认证，达到":"has passed the {0}×{0} rank test at","三局成绩：{0}":"Results: {0}","胜":"W","败":"L","认证日期：{0}":"Date: {0}","围棋复盘本 · AI 考官（{0}）":"Go Review Notebook · AI examiner ({0})","GNU Go 学生版":"GNU Go student","KataGo 校准棋力":"calibrated KataGo","路":"x","认证":"Certified",
 "还有一次机会。":"One more try.","作业本（随机 {0} 题）":"Homework ({0} random)","闯关模式（{0} 题）":"Challenge ({0})","作业本结果":"Homework result","过关 {0} / {1} 题 · 总用时 {2}":"Passed {0} / {1} · total {2}","答错的 {0} 题已放进「我的错题本」，答对 3 次才会移出。":"{0} missed problems went into My mistakes; each leaves after 3 correct answers.","点一题回去看：可以试下、看答案、看解说。":"Tap a problem to review: try moves, see the answer and commentary.","第二次":"2nd try","回到结果":"Back to results","我的错题本":"My mistakes","答对 {0}/3":"{0}/3 correct","载入中…":"Loading…","作业本、闯关答错的题会放进来；同一题答对 3 次就移出。":"Problems missed in homework or challenges land here; each leaves after 3 correct answers.","这题答对 3 次，已移出错题本":"Answered correctly 3 times — removed from My mistakes",
 "试下模式：黑白都由你摆，不算答题。":"Try mode: you play both colours; it doesn’t count as an answer.","退一手":"Undo","清除":"Clear","AI 应一手":"AI reply","进阶：黑白双方都由你摆，摆出双方最强的应对。":"Advanced: play both sides and show the strongest moves for each.","试下":"Try","做题方式":"Mode","一般":"Normal","进阶（黑白都自己摆）":"Advanced (play both sides)","这里已经有棋子":"There is already a stone here","AI 停一手：这里已经没有要下的地方":"AI passes: nothing left to play here","对方不会这样应；想想对方最强的应手。":"The opponent wouldn’t answer like that; find their strongest reply.","对方还有更强的应手。":"The opponent has a stronger reply.","好，现在摆出对方最强的应手。":"Good. Now play the opponent’s strongest reply.","对，轮到你了。":"Right, your turn.","形势判断":"Estimate",
 "先在下面选好，按「开始」":"Choose below, then press Start",
@@ -3572,7 +3572,7 @@ AI.on(()=>{renderAiBar();renderAiNet();if(typeof renderVs==='function')renderVs(
 
 /* ---- 新对局：棋盘大小、让子、贴目、和 AI 下 ---- */
 const MAX_HA={7:5,9:9,13:9,19:9},KOMI_DEF={7:9,9:5.5,13:5.5,19:7.5}; // 中国数子：9 路黑 44 子、13 路 88 子、19 路 185 子才胜
-// 棋力等级（6 级以下：GNU Go 学生版；5 级～6 段：KataGo「校准棋力」，方法取自 KaTrain（MIT，Sander Land）；7～9 段：再加上搜索）
+// 棋力等级（名字以仿人类为准；5 级以下：GNU Go 学生版；4 级～6 段：KataGo「校准棋力」，方法取自 KaTrain（MIT，Sander Land）；7～9 段：再加上搜索）
 // 学生版参数（三种棋盘各一套，用家里电脑的 calibrate.py 校准）：一律用 GNU Go 等级 10 找候选；d=级位-6；温度 T=tA·d^tB；8 级以下才会乱下一手，机会 pA·(级位-7)，最多 pMax
 const STU={9:{tA:0.5,tB:1.1,pA:0.02,pMax:0.6},13:{tA:0.28,tB:1.05,pA:0.008,pMax:0.35,b0:6},19:{tA:0.15,tB:1.0,pA:0.004,pMax:0.2},base:6,lv:10};
 const stuP=n=>STU[n<=9?9:n<=13?13:19];
@@ -3582,12 +3582,21 @@ function levelIds(n){const kr=(a,b)=>Array.from({length:a-b+1},(_,i)=>(a-i)+'k')
   if(n<=13)return['30k','25k','20k',...kr(18,10),'8k','6k','4k','2k','1d','3d','5d','max'];
   return['25k','20k','18k',...kr(15,1),...dn(1,9),'max']}
 function rankKyu(id){const m=/^(\d+)([kd])$/.exec(id||'');if(!m)return null;return m[2]==='k'?+m[1]:1-(+m[1])} // 5k→5，1d→0，5d→-4
-function levelObj(id){
+// 级位名字以仿人类（KataGo Human SL）为准；下面是「名字 → 内部强度」对照表（家里电脑 calibrate.py --map 量出来的）
+const LV_MAP={
+  19:{stu:[[30,54],[25,46],[20,38],[15,30],[10,24],[5,11]],kata:[[5,9],[1,4],[0,3],[-2,-0.3]]},
+  13:{stu:[[30,34],[25,30],[20,26],[10,13.5],[5,10]],kata:[[5,7],[0,1.5],[-2,-0.5]]}};
+function lvLerp(t,x){ // 分段直线；超出两端就照最后一段的斜率延长
+  for(let i=0;i<t.length-1;i++){const[a,A]=t[i],[b,B]=t[i+1];if((x<=a&&x>=b)||i===t.length-2||(i===0&&x>a))return A+(B-A)*(x-a)/(b-a)}return t[0][1]}
+function levelObj(id,n){
   if(id==='max')return{id,search:true};const g=/^g(\d+)$/.exec(id||'');if(g)return{id,gg:+g[1]};
-  const k=rankKyu(id);if(k==null)return{id:'10k',stu:10};
-  if(k>=STU.base)return{id,stu:k};
-  const d=1-k;if(d>=7){const v=DAN_VISITS[d]||16;return v>1?{id,rank:-5,visits:v}:{id,top:true}}
-  return{id,rank:k};
+  n=n||(typeof ng!=='undefined'&&ng.size)||19;const M=LV_MAP[n>=19?19:13];
+  let k=rankKyu(id);if(k==null){id='10k';k=10}
+  const hum=n>=13&&k>=0&&k<=20?(k>0?'rank_'+k+'k':'rank_1d'):null; // 家里电脑有仿人类模型时：20 级～1 段由它下
+  if(k>=5)return{id,stu:Math.round(lvLerp(M.stu,k)*10)/10,hum};
+  const d=1-k; // 7～9 段（用 Zen7 对照过）：7 段抽点更多；8 段直接下第一感；9 段每手算 8 次
+  if(d>=9)return{id,rank:-5,visits:8};if(d===8)return{id,top:true};if(d===7)return{id,rank:-7.5};
+  return{id,rank:Math.round(lvLerp(M.kata,k)*100)/100,hum};
 }
 function rankPick(cand,pass,n,kyu){ // KaTrain 的校准公式：随机抽 N 个合法点，选 AI 最喜欢的那个
   const sq=n*n,legal=cand.length;if(!legal)return -1;kyu*=kyu>0?KYU_STRETCH:DAN_STRETCH;
@@ -3627,7 +3636,7 @@ const GG=(()=>{let w=null,seq=0;const pend={};
     for(const line of t.split('\n')){const m=/^([A-HJ-T]\d{1,2})\s+(-?[\d.]+)/.exec(line.trim());if(m)mv.push([pcIdx(m[1],n),+m[2]])}
     const top=(res[res.length-3]||{t:''}).t.split(/\s+/);if(!mv.length&&top[0]&&/^[A-T]\d/.test(top[0]))mv.push([pcIdx(top[0],n),+top[1]||1]);
     if(!mv.length)return -1;mv.sort((a,b)=>b[1]-a[1]);
-    if(Math.random()<Math.min(P.pMax,P.pA*Math.max(0,kyu-(P.b0||7)))){const r=stuRandom(computeState(node,n).g,n,col==='b'?1:2);if(r>=0)return r}
+    if(Math.random()<Math.min(0.9,Math.min(P.pMax,P.pA*Math.max(0,kyu-(P.b0||7)))+Math.max(0,kyu-30)*0.02)){const r=stuRandom(computeState(node,n).g,n,col==='b'?1:2);if(r>=0)return r}
     const T_=Math.max(0.3,P.tA*Math.pow(d,P.tB)),w=mv.map(x=>Math.exp((x[1]-mv[0][1])/T_));
     let z=w.reduce((a,b)=>a+b,0),rr=Math.random()*z;for(let i=0;i<mv.length;i++){rr-=w[i];if(rr<=0)return mv[i][0]}return mv[0][0]}
   return{genmove,score,raw,gtpFor,student,warm:()=>{try{worker()}catch(e){}}};
@@ -3667,7 +3676,7 @@ function renderNew(){if(G&&G.id==='__blank'&&sizeOf(G.root)!==ng.size)blankBoard
   if(document.activeElement!==$('#ngKomi'))$('#ngKomi').value=ng.komi;
   $('#ngAiRow').hidden=ng.opp==='self';$('#ngTimeL').hidden=lad||cl!=='max';if(document.activeElement!==$('#ngTime'))$('#ngTime').value=String(prefs.aiPlayTime??5);
   $('#ngPcL').hidden=!(PC.on()&&ng.opp!=='self');$('#ngPc').checked=prefs.vsPc!==false;
-  $('#ngNote').textContent=ng.opp==='self'?'':!lad&&eng==='gnugo'?T('GNU Go 是传统的电脑围棋程序（大约 5–15 级），第一次要下载约 1 MB。'):eng==='kata'?T('6 级以下由 GNU Go 学生版下（约 1 MB），5 级以上由 KataGo 下（约 12 MB）。棋力是校准过的大约值。'):T('第一次要下载约 12 MB。棋力是大约的。');
+  $('#ngNote').textContent=ng.opp==='self'?'':!lad&&eng==='gnugo'?T('GNU Go 是传统的电脑围棋程序（大约 5–15 级），第一次要下载约 1 MB。'):eng==='kata'?T('5 级以下由 GNU Go 学生版下（约 1 MB），4 级以上由 KataGo 下（约 12 MB）。棋力是校准过的大约值。'):T('第一次要下载约 12 MB。棋力是大约的。');
 }
 function openNew(){stopPlay();$('#newBox').hidden=false;$('#newToggle').setAttribute('aria-pressed','true');renderNew();$('#newBox').scrollIntoView({block:'nearest',behavior:'smooth'})}
 function closeNew(){$('#newBox').hidden=true;$('#newToggle').setAttribute('aria-pressed','false')}
@@ -3679,7 +3688,7 @@ function startNewGame2(forceCol){
   const name=($('#ngName').value||'').trim();
   if(ng.opp!=='self'&&!name){flash(T('请先输入你的名字（会记在棋谱里）'));$('#ngName').focus();return}
   ng.name=name;ngSave();
-  const LD=ladOf(n),lv=levelObj(lad?LD.lv:ngLevel()),dt=new Date().toISOString().slice(0,10),color=lad?(LD.games%2?'W':'B'):forceCol||(ng.color==='R'?'B':ng.color);
+  const LD=ladOf(n),lv=levelObj(lad?LD.lv:ngLevel(),n),dt=new Date().toISOString().slice(0,10),color=lad?(LD.games%2?'W':'B'):forceCol||(ng.color==='R'?'B':ng.color);
   const my=name||me()||T('我'),ai=T('AI（{0}）',lvName(lv));
   const esc=s=>String(s).replace(/([\]\\])/g,'\\$1');
   let PB=T('黑方'),PW=T('白方'),gn=T('{0} 路对局',n);
@@ -3731,6 +3740,18 @@ function vsAddMove(col,pt){const nd={props:{[col]:[pt]},children:[],parent:cur};
 async function vsAiMove(){
   if(!vs||vs.over||vs.thinking)return;const node=cur,col=vsAiCol();if(nextColor(node)!==col){renderVs();return}
   vs.thinking=true;vs.msg='';renderVs();const t0=Date.now();
+  if(vs.pc&&vs.level.hum&&vs.humOk!==false){ // 家里电脑的仿人类 AI（20 级～1 段）
+    let p=null;try{const n=sizeOf(root()),N=n*n,dp=aiDeep(node,n),o=await pcMove(node,dp?800:1,vs.level.hum);
+      if(!o.hp)vs.humOk=false; // 电脑上没有仿人类模型：改用平常的 AI
+      else{const me=vs.ai,sg=me===1?1:-1,mn=moveNo(node);
+        if(isPassNode(node,n)&&(o.l*sg>0||mn>N*0.83))p=-1;
+        else if(dp)p=o.best.length?o.best[0]:-1;
+        else{const g=computeState(node,n).g,c=[];for(let q=0;q<N;q++){const x=q%n,y=(q/n)|0;if(g[y][x]||!(o.hp[q]>0))continue;
+            const nb=[[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(([a,b])=>a>=0&&b>=0&&a<n&&b<n);if(nb.every(([a,b])=>g[b][a]===me))continue;c.push([q,o.hp[q]])}
+          if(mn>N*0.5)c.push([-1,o.hp[N]||0]);p=c.length?pickW(c,c.map(z=>z[1])):-1}}}
+    catch(e){vs.msg=T('家里电脑没有回应，改用这台设备');p=null}
+    if(p!=null){if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}vs.thinking=false;const n=sizeOf(root());
+      vsAddMove(col,p<0?'':xyToPt(p%n,(p/n)|0));if(p<0){if(isPassNode(node,n)){vsEnd();return}vs.msg=T('AI 停一手。你也停一手的话，对局就结束。')}renderVs();return}}
   if(vs.level.gg||vs.level.stu){try{
       const p=vs.level.stu?await GG.student(node,vs.level.stu):await GG.genmove(node,vs.level.gg);await new Promise(r=>setTimeout(r,Math.max(0,450-(Date.now()-t0))));
       if(!vs||cur!==node){if(vs){vs.thinking=false;renderVs()}return}vs.thinking=false;const n=sizeOf(root());
@@ -3868,6 +3889,28 @@ function revGroupText(nd,before,after,n,mover){
   if(saved.length>=2)t+=T('让 {0} 一带 {1} 颗{2}子活了出来。',where(saved),saved.length,oc);
   return t;
 }
+// 失误分类（参考「业余 1 级常犯的 5 个错误」）：用 AI 的形势判断（每个点属于谁）和棋形来认
+const REV_TY={life:'死活出错',live:'放过对方的弱棋',dead:'救不该救的子（该弃就弃）',strong:'去攻强棋（攻弱不攻强）',small:'下在已经定型的地方（太小）',crowd:'往棋子多的地方挤（应该走宽处）',low:'往低处钻（一、二路）',tri:'空三角（愚形）'};
+function revTypes(nd,before,after,n,me,k){
+  const a=revPt(nd,n);if(a==null||a<0||!before||!nd.parent)return[];
+  const g=computeState(nd.parent,n).g,x=a%n,y=(a/n)|0,sg=me===1?1:-1,opp=3-me,N=n*n,t=[],at=(X,Y)=>X>=0&&Y>=0&&X<n&&Y<n;
+  const nb=[[x+1,y],[x-1,y],[x,y+1],[x,y-1]].filter(([X,Y])=>at(X,Y)),own=(X,Y)=>before[Y*n+X]*sg;
+  if(after){let lost=0,saved=0;const st=computeState(nd,n).g;for(let p=0;p<N;p++){const c=st[(p/n)|0][p%n];if(!c)continue;const ob=before[p]*sg,oa=after[p]*sg;if(c===me&&ob>0.3&&oa<-0.3)lost++;if(c!==me&&ob>0.3&&oa<-0.3)saved++}
+    if(lost>=2)t.push('life');if(saved>=2)t.push('live')}
+  if(nb.some(([X,Y])=>g[Y][X]===me&&own(X,Y)<-0.5))t.push('dead');
+  if(k<=N*0.5&&nb.some(([X,Y])=>g[Y][X]===opp&&own(X,Y)<-0.75)&&!nb.some(([X,Y])=>g[Y][X]===opp&&own(X,Y)>-0.3))t.push('strong');
+  if(Math.abs(before[a])>0.75&&!nb.some(([X,Y])=>g[Y][X]===opp))t.push('small');
+  if(k<=N*0.25){let c=0;for(let Y=y-2;Y<=y+2;Y++)for(let X=x-2;X<=x+2;X++)if(at(X,Y)&&g[Y][X])c++;if(c>=4)t.push('crowd')}
+  if(n>=13&&Math.min(x,y,n-1-x,n-1-y)<=1&&k<=N*0.45)t.push('low');
+  for(const[dx,dy]of[[-1,-1],[0,-1],[-1,0],[0,0]]){const cs=[[x+dx,y+dy],[x+dx+1,y+dy],[x+dx,y+dy+1],[x+dx+1,y+dy+1]];if(!cs.every(([X,Y])=>at(X,Y)))continue;
+    let mine=0,emp=0;for(const[X,Y]of cs){if(X===x&&Y===y)mine++;else if(g[Y][X]===me)mine++;else if(!g[Y][X])emp++}if(mine===3&&emp===1){t.push('tri');break}}
+  return t;
+}
+function revTyOf(k,line,rows,n){ // 这手失误属于哪几类（往棋子多的地方挤：AI 推荐的点要在别处才算；空三角：是 AI 前三选、或已经到官子就不算）
+  const r=rows[k],pre=rows[k-1];if(!r||!r.ty||!pre)return[];const a=revPt(line[k],n),b=pre.b[0];
+  const N=n*n;
+  return r.ty.filter(t=>t!=='tri'||(!pre.b.includes(a)&&k<=N*0.5)).filter(t=>t!=='crowd'||(b!=null&&b>=0&&a>=0&&Math.max(Math.abs(a%n-b%n),Math.abs(((a/n)|0)-((b/n)|0)))>=4)).slice(0,2);
+}
 function revExplain(k,line,rows,n){ // 一手失误的说明文字
   const nd=line[k],m=moveOf(nd),a=revPt(nd,n),pre=rows[k-1],b=pre.b[0],pv=pre.pv||[b];
   let t='';
@@ -3877,7 +3920,8 @@ function revExplain(k,line,rows,n){ // 一手失误的说明文字
     if(laterIdx>=2&&laterIdx%2===0)t=T('次序错误：应该先下 {0}，{1} 可以之后再下。',revName(b,n),revName(a,n));
     else if(d<=2)t=T('局部下法有误：这一带应该下在 {0}。',revName(b,n));
     else t=T('方向错误：这时最大的地方在 {0}，{1} 不是急所。',revName(b,n),revName(a,n))}
-  return t+(rows[k].g||'');
+  const ty=revTyOf(k,line,rows,n);
+  return(ty.length?'【'+ty.map(x=>T(REV_TY[x])).join('、')+'】':'')+t+(rows[k].g||'');
 }
 function revPraise(x,n){ // 好手的称赞文字
   const p=[];
@@ -3899,6 +3943,7 @@ function revStats(line,rows,n,only){ // 双方统计、关键手
       if(punish)why.push('punish');if(critical)why.push('critical');if(hard)why.push('hard');
       if(why.length)good=hard&&(critical||punish)?'!!':'!'}
     if(good){s.good++;if(good==='!!')s.great++}
+    if(cat){s.ty=s.ty||{};for(const t of revTyOf(k,line,rows,n))s.ty[t]=(s.ty[t]||0)+1}
     moves.push({k,c,a,loss,wd,cat,w0:pre.w,w1:post.w,good,why,pp:pre.pp,g2:pre.g2})}
   // 选手：重要程度 × 好不好学。正确下法就在附近（局部）、会让一块棋死活改变（结果明确）的优先；远处的大场判断排后
   const mine=x=>!only||x.c===only,dist=(p,q)=>p<0||q<0||p==null||q==null?99:Math.max(Math.abs(p%n-q%n),Math.abs(((p/n)|0)-((q/n)|0)));
@@ -3918,6 +3963,8 @@ function revSummary(st,n){ // 总评文字
   for(const c of [1,2]){const s=st.S[c];if(!s.cnt)continue;let best=-1,bv=1e9;for(let i=0;i<3;i++)if(s.ph[i][1]>=3&&s.ph[i][0]/s.ph[i][1]<bv){bv=s.ph[i][0]/s.ph[i][1];best=i}
     const parts=[],multi=s.ph.filter(x=>x[1]>=3).length>=2;if(s.good)parts.push(s.great?T('好手 {0} 手（其中妙手 {1}）',s.good,s.great):T('好手 {0} 手',s.good));if(s.streak>=3)parts.push(T('最长连续 {0} 手和 AI 首选一样',s.streak));if(best>=0&&multi)parts.push(T('{0}下得最好，平均每手只损失 {1} 目',T(REV_PHASE[best]),bv.toFixed(1)));
     if(parts.length)out.push(T('{0}的优点：{1}。',c===1?T('黑'):T('白'),parts.join('，')))}
+  for(const c of [1,2]){const s=st.S[c];if(!s.ty)continue;const a=Object.entries(s.ty).sort((x,y)=>y[1]-x[1]).slice(0,3);
+    if(a.length)out.push(T('{0}常犯的错：{1}。',c===1?T('黑'):T('白'),a.map(([t,v])=>T('{0} {1} 次',T(REV_TY[t]),v)).join('、')))}
   if(st.swing)out.push(T('全局最大转折：第 {0} 手（{1} {2}），黑胜率从 {3}% 变成 {4}%。',st.swing.k,st.swing.c===1?T('黑'):T('白'),revName(st.swing.a,n),Math.round(st.swing.w0*100),Math.round(st.swing.w1*100)));
   return out;
 }
@@ -3983,11 +4030,11 @@ async function revLocal(my,line,n){ // 用这台设备的 AI 算
   const tL=performance.now();
     const own=new Array(line.length);
     await revEvalNodes(line,my.visits,(k,r)=>{own[k]=r.own;if(my.own)my.own[k]=r.own;delete r.own;my.rows[k]={w:+r.w.toFixed(4),l:+r.l.toFixed(2),b:r.b,pv:r.pv,pp:+(+r.pp).toFixed(3)};if(r.g2!=null)my.rows[k].g2=+r.g2.toFixed(1);my.i++;
-      if(k>=1&&own[k-1]){const m=moveOf(line[k]);if(m)my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
+      if(k>=1&&own[k-1]){const m=moveOf(line[k]);if(m){my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2);my.rows[k].ty=revTypes(line[k],own[k-1],own[k],n,m[0]==='B'?1:2,k)}}
       if(k+1<line.length&&own[k+1]===undefined){} // 下一手算好时再补
       if(my.i%4===0||my.i===line.length)renderRev()},my.allow);
     // 补算：先算到 k+1 才知道 k+1 那手的变化（快速模式一批一批，顺序可能先后）
-    for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&my.rows[k].g===undefined&&own[k-1]&&own[k])my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2)}
+    for(let k=1;k<line.length;k++){const m=moveOf(line[k]);if(m&&my.rows[k]&&own[k-1]&&own[k]){if(my.rows[k].g===undefined)my.rows[k].g=revGroupText(line[k],own[k-1],own[k],n,m[0]==='B'?1:2);my.rows[k].ty=revTypes(line[k],own[k-1],own[k],n,m[0]==='B'?1:2,k)}}
   if(!my.stop&&my.visits>=16){const sec=(performance.now()-tL)/1000;if(sec>3)revSaveRate('L',my.visits*line.length/sec)}
 }
 async function revStart(forceMode,only){ // only：和 AI 对局时只看自己（1 黑 / 2 白）
@@ -4143,7 +4190,7 @@ async function revStartPC(my,line,n){ // 由 revStart 叫：等电脑算好，�
         if(o.model)my.net=T('KataGo（家里电脑）')+' '+o.model;
         const own=(o.own||[]).map(s=>s?pcOwnDec(s,n):null);if(my.own)own.forEach((x,k)=>{my.own[k]=x});
         line.forEach((nd,k)=>{const r=o.rows&&o.rows[k];if(!r)return;my.rows[k]=r;
-          if(k>=1&&own[k-1]&&own[k]){const m=moveOf(nd);if(m)r.g=revGroupText(nd,own[k-1],own[k],n,m[0]==='B'?1:2)}});
+          if(k>=1&&own[k-1]&&own[k]){const m=moveOf(nd);if(m){r.g=revGroupText(nd,own[k-1],own[k],n,m[0]==='B'?1:2);r.ty=revTypes(nd,own[k-1],own[k],n,m[0]==='B'?1:2,k)}}});
         if(tRun){const sec=(performance.now()-tRun)/1000;if(sec>5)revSaveRate('P',job.visits*line.length/sec)}
         my.i=line.length;resolve()}
     });
@@ -4159,13 +4206,13 @@ function pcSetCode(v){const c=(v||'').replace(/[^A-Za-z0-9]/g,'').slice(0,24);if
 function pcNewCode(){const a='abcdefghijkmnpqrstuvwxyz23456789',u=new Uint8Array(10);crypto.getRandomValues(u);pcSetCode([...u].map(x=>a[x%a.length]).join(''))}
 
 /* ---- 和 AI 对局：让家里电脑算这一手（网页按级位挑） ---- */
-async function pcMove(node,visits){
+async function pcMove(node,visits,profile){
   const r=root(),n=sizeOf(r),line=[];for(let x=node;x;x=x.parent)line.unshift(x);
-  const job=pcJob(line,n,visits);job.kind='move';
+  const job=pcJob(line,n,visits);job.kind='move';if(profile)job.profile=profile;
   await PC.send(job);
   return new Promise((resolve,reject)=>{const to=setTimeout(()=>{PC.stop();reject(new Error(T('家里电脑没有回应')))},45000);
     PC.watch(job.id,o=>{if(o.state==='error'){clearTimeout(to);PC.stop();reject(new Error(o.msg||'KataGo'))}
-      else if(o.state==='done'){clearTimeout(to);PC.stop();resolve({policy:Float32Array.from((o.policy||[]).map(v=>v<0?0:v)),best:o.best||[],w:o.w,l:o.l})}})});
+      else if(o.state==='done'){clearTimeout(to);PC.stop();resolve({policy:Float32Array.from((o.policy||[]).map(v=>v<0?0:v)),best:o.best||[],w:o.w,l:o.l,hp:o.hp?Float32Array.from(o.hp.map(v=>v<0?0:v)):null})}})});
 }
 
 /* ---- 图片变题目：截图自动找棋盘格线；照片点四个角。认出棋子后可以点一下修正 ---- */
@@ -4522,7 +4569,7 @@ function renderDuel(){
 async function duelRun(){
   const o=duelOpt;duel={...o,score:{a:0,b:0},draw:0,gi:0,running:true,stop:false,last:''};renderDuel();
   for(;duel.gi<duel.games&&!duel.stop;duel.gi++){
-    const aBlack=!o.swap||duel.gi%2===0,LB=levelObj(aBlack?o.a:o.b),LW=levelObj(aBlack?o.b:o.a),n=o.n;
+    const aBlack=!o.swap||duel.gi%2===0,n=o.n,LB=levelObj(aBlack?o.a:o.b,n),LW=levelObj(aBlack?o.b:o.a,n);
     const r=parseSGF(`(;GM[1]FF[4]CA[UTF-8]SZ[${n}]KM[${KOMI_DEF[n]}]RU[Chinese]DT[${new Date().toISOString().slice(0,10)}]GN[${T('AI 对战')} ${duel.gi+1}]PB[${lvName(LB)}]PW[${lvName(LW)}])`);
     const id=newId();store.games[id]={sgf:toSGF(r),key:id,title:titleOf(r),updated:Date.now()};openRoot(r,{id});
     let passes=0,k=0,re=null;
@@ -4572,7 +4619,7 @@ function renderCert(){
 function certOpen(){if(typeof setMode==='function'&&curMode()!=='play')setMode('play');closeNew();$('#duelBox').hidden=true;if(!$('#olBox').hidden)olPanelClose();$('#certBox').hidden=false;cert.msg='';renderCert()}
 function certClose(){$('#certBox').hidden=true}
 function certGame(){ // 开始认证的下一局
-  const A=cert.active,n=A.n,k=A.res.length,lv=levelObj(A.lv),name=A.name;
+  const A=cert.active,n=A.n,k=A.res.length,lv=levelObj(A.lv,n),name=A.name;
   if(k>=2&&!A.col3){$('#certBox').hidden=true;nigiri().then(c=>{A.col3=c;certSave();$('#certBox').hidden=false;certGame()});return}
   const userB=k===0?true:k===1?false:A.col3==='B';
   const komi=KOMI_DEF[n],dt=new Date().toISOString().slice(0,10),esc=s=>String(s).replace(/([\]\\])/g,'\\$1'),ai=T('AI（{0}）',lvName(lv));
